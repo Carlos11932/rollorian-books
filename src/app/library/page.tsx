@@ -92,7 +92,7 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
       _count: { id: true },
     });
     counts = allCounts.reduce<StatusCounts>(
-      (acc, row) => {
+      (acc: StatusCounts, row: (typeof allCounts)[number]) => {
         acc[row.status as BookStatus] = row._count.id;
         return acc;
       },
