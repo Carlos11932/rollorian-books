@@ -1,0 +1,59 @@
+import "server-only";
+
+import type { GoogleBooksVolume } from "./types";
+
+const GOOGLE_BOOKS_URL = "https://www.googleapis.com/books/v1/volumes";
+const DEFAULT_SEARCH_LIMIT = 10;
+
+interface FetchBooksOptions {
+  maxResults?: number;
+}
+
+export async function fetchBooks(
+  query: string,
+  options: FetchBooksOptions = {}
+): Promise<GoogleBooksVolume[]> {
+  const url = new URL(GOOGLE_BOOKS_URL);
+  url.searchParams.set("q", query);
+  url.searchParams.set(
+    "maxResults",
+    String(options.maxResults ?? DEFAULT_SEARCH_LIMIT)
+  );
+  url.searchParams.set("printType", "books");
+  url.searchParams.set("orderBy", "relevance");
+
+  const apiKey = process.env["GOOGLE_BOOKS_API_KEY"];
+  if (apiKey) {
+    url.searchParams.set("key", apiKey);
+  }
+
+  let response: Response;
+
+  try {
+    response = await fetch(url.toString(), {
+      headers: {
+        Accept: "application/json",
+      },
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    throw new Error(`Failed to reach Google Books: ${message}`);
+  }
+
+  if (!response.ok) {
+    throw new Error(`Google Books request failed with status ${response.status}`);
+  }
+
+  const payload: unknown = await response.json();
+
+  if (
+    typeof payload === "object" &&
+    payload !== null &&
+    "items" in payload &&
+    Array.isArray((payload as { items: unknown }).items)
+  ) {
+    return (payload as { items: GoogleBooksVolume[] }).items;
+  }
+
+  return [];
+}
