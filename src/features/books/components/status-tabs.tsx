@@ -1,0 +1,110 @@
+"use client";
+
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { cn } from "@/lib/cn";
+
+const STATUS_TAB = {
+  ALL: "all",
+  WISHLIST: "WISHLIST",
+  TO_READ: "TO_READ",
+  READING: "READING",
+  READ: "READ",
+} as const;
+
+type StatusTabValue = (typeof STATUS_TAB)[keyof typeof STATUS_TAB];
+
+const TAB_LABELS: Record<StatusTabValue, string> = {
+  all: "All",
+  WISHLIST: "Wishlist",
+  TO_READ: "To Read",
+  READING: "Reading",
+  READ: "Read",
+};
+
+interface StatusCounts {
+  WISHLIST: number;
+  TO_READ: number;
+  READING: number;
+  READ: number;
+}
+
+interface StatusTabsProps {
+  activeStatus: StatusTabValue;
+  counts: StatusCounts;
+}
+
+const ALL_TABS: StatusTabValue[] = [
+  STATUS_TAB.ALL,
+  STATUS_TAB.WISHLIST,
+  STATUS_TAB.TO_READ,
+  STATUS_TAB.READING,
+  STATUS_TAB.READ,
+];
+
+function getTabCount(tab: StatusTabValue, counts: StatusCounts): number | null {
+  if (tab === STATUS_TAB.ALL) return null;
+  return counts[tab as keyof StatusCounts];
+}
+
+export function StatusTabs({ activeStatus, counts }: StatusTabsProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  function handleTabClick(tab: StatusTabValue) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (tab === STATUS_TAB.ALL) {
+      params.delete("status");
+    } else {
+      params.set("status", tab);
+    }
+    const query = params.toString();
+    router.push(`${pathname}${query ? `?${query}` : ""}`);
+  }
+
+  return (
+    <div
+      role="tablist"
+      aria-label="Library statuses"
+      className="flex flex-wrap gap-2"
+    >
+      {ALL_TABS.map((tab) => {
+        const isActive = tab === activeStatus;
+        const count = getTabCount(tab, counts);
+
+        return (
+          <button
+            key={tab}
+            role="tab"
+            aria-selected={isActive}
+            type="button"
+            onClick={() => handleTabClick(tab)}
+            className={cn(
+              "inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold transition-all duration-200",
+              "focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent",
+              isActive
+                ? "bg-gradient-to-br from-accent to-accent-strong text-white border border-transparent"
+                : "bg-white/6 text-muted border border-white/12 hover:text-text hover:-translate-y-px",
+            )}
+          >
+            {TAB_LABELS[tab]}
+            {count !== null && (
+              <span
+                className={cn(
+                  "inline-flex items-center justify-center min-w-[1.2rem] h-5 px-1 rounded-full text-xs tabular-nums",
+                  isActive
+                    ? "bg-white/20 text-white"
+                    : "bg-white/10 text-muted",
+                )}
+              >
+                {count}
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+export type { StatusTabValue, StatusCounts };
