@@ -1,65 +1,101 @@
-import Image from "next/image";
+import Link from "next/link";
+import type { BookStatus } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
+import { BookRailSection } from "@/features/shared/ui/book-rail-section";
+import { StatPill } from "@/features/shared/components/stat-pill";
+import { EmptyState } from "@/features/shared/components/empty-state";
+import { Button } from "@/features/shared/components/button";
+import { HeroBanner } from "@/features/books/components/hero-banner";
+import { BrowseCardWrapper } from "@/features/books/components/browse-card-wrapper";
+import { serializeBook, type SerializableBook } from "@/features/books/types";
 
-export default function Home() {
+const STATUS_RAIL_CONFIG: Array<{
+  status: BookStatus;
+  title: string;
+  eyebrow: string;
+}> = [
+  { status: "READING", title: "Currently Reading", eyebrow: "In progress" },
+  { status: "READ", title: "Finished", eyebrow: "Completed" },
+  { status: "TO_READ", title: "To Read", eyebrow: "Up next" },
+  { status: "WISHLIST", title: "Wishlist", eyebrow: "Want to read" },
+];
+
+export default async function Home() {
+  const books = await prisma.book.findMany({
+    orderBy: { updatedAt: "desc" },
+  });
+
+  if (books.length === 0) {
+    return (
+      <EmptyState
+        icon="📚"
+        title="Your archive is empty"
+        description="Search for books and save them to your personal library."
+        action={
+          <Link href="/search">
+            <Button variant="primary">Find your first book</Button>
+          </Link>
+        }
+        className="mt-8 min-h-[60vh]"
+      />
+    );
+  }
+
+  // Group books by status (serialized for client components)
+  const byStatus: Record<BookStatus, SerializableBook[]> = {
+    READING: [],
+    READ: [],
+    TO_READ: [],
+    WISHLIST: [],
+  };
+
+  const serializedBooks = books.map(serializeBook);
+
+  for (const book of serializedBooks) {
+    byStatus[book.status].push(book);
+  }
+
+  // Featured book: first READING, or first overall
+  const featuredBook =
+    byStatus.READING[0] ?? serializedBooks[0] ?? null;
+
+  // Stats
+  const totalBooks = books.length;
+  const readingCount = byStatus.READING.length;
+  const readCount = byStatus.READ.length;
+  const wishlistCount = byStatus.WISHLIST.length;
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <>
+      {/* Hero */}
+      <HeroBanner book={featuredBook} />
+
+      {/* Stats row */}
+      <div className="flex flex-wrap gap-2" role="region" aria-label="Library statistics">
+        <StatPill value={totalBooks} label="total books" />
+        <StatPill value={readingCount} label="reading" />
+        <StatPill value={readCount} label="read" />
+        <StatPill value={wishlistCount} label="on wishlist" />
+      </div>
+
+      {/* Book rails by status */}
+      {STATUS_RAIL_CONFIG.map(({ status, title, eyebrow }) => {
+        const railBooks = byStatus[status];
+        if (railBooks.length === 0) return null;
+
+        return (
+          <BookRailSection
+            key={status}
+            title={title}
+            eyebrow={eyebrow}
+            count={railBooks.length}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+            {railBooks.map((book, index) => (
+              <BrowseCardWrapper key={book.id} book={book} index={index} />
+            ))}
+          </BookRailSection>
+        );
+      })}
+    </>
   );
 }
