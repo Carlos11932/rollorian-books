@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { NextRequest } from "next/server";
-import type { Book } from "@prisma/client";
+import type { Book } from "@/lib/types/book";
 import { prisma } from "@/lib/prisma";
 import { createBookSchema } from "@/lib/schemas/book";
 import type { BookStatus } from "@/lib/schemas/book";

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { Book, BookStatus } from "@prisma/client";
+import type { Book, BookStatus } from "@/lib/types/book";
 import { prisma } from "@/lib/prisma";
 import { BookRailSection } from "@/features/shared/ui/book-rail-section";
 import { StatPill } from "@/features/shared/components/stat-pill";

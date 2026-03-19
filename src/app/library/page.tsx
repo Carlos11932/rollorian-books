@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import type { BookStatus as PrismaBookStatus } from "@prisma/client";
+import type { BookStatus as PrismaBookStatus } from "@/lib/types/book";
 import { prisma } from "@/lib/prisma";
 import { BookRailSection } from "@/features/shared/ui/book-rail-section";
 import { LibraryBookCard } from "@/features/books/components/library-book-card";

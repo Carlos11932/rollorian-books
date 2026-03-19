@@ -1,0 +1,38 @@
+/**
+ * Manually-defined Book model and BookStatus enum that mirror the Prisma schema.
+ *
+ * WHY: Prisma 7 with driver adapters does NOT reliably export model types
+ * (like `Book`) from `@prisma/client` on every platform. The enum
+ * `BookStatus` IS exported, but for consistency we co-locate both here.
+ *
+ * These types MUST stay in sync with `prisma/schema.prisma`.
+ */
+
+export const BookStatus = {
+  WISHLIST: "WISHLIST",
+  TO_READ: "TO_READ",
+  READING: "READING",
+  READ: "READ",
+} as const;
+
+export type BookStatus = (typeof BookStatus)[keyof typeof BookStatus];
+
+export interface Book {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  authors: string[];
+  description: string | null;
+  coverUrl: string | null;
+  publisher: string | null;
+  publishedDate: string | null;
+  pageCount: number | null;
+  isbn10: string | null;
+  isbn13: string | null;
+  status: BookStatus;
+  rating: number | null;
+  notes: string | null;
+  genres: string[];
+  createdAt: Date;
+  updatedAt: Date;
+}

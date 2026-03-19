@@ -1,4 +1,4 @@
-import type { Book } from "@prisma/client";
+import type { Book } from "@/lib/types/book";
 
 /**
  * Serializable version of the Prisma Book model.

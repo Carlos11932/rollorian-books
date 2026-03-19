@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ChangeEvent } from "react";
-import type { BookStatus } from "@prisma/client";
+import type { BookStatus } from "@/lib/types/book";
 import { cn } from "@/lib/cn";
 import { Badge } from "@/features/shared/components/badge";
 import { Button } from "@/features/shared/components/button";

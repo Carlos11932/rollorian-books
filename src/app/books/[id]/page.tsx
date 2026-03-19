@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import type { Book } from "@prisma/client";
+import type { Book } from "@/lib/types/book";
 import { prisma } from "@/lib/prisma";
 import { fetchBookById } from "@/lib/google-books/client";
 import { serializeBook } from "@/features/books/types";
