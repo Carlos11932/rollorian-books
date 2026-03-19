@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { NextRequest } from "next/server";
+import type { Book } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { createBookSchema } from "@/lib/schemas/book";
 import type { BookStatus } from "@/lib/schemas/book";
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest): Promise<Response> {
       );
     }
 
-    const books = await prisma.book.findMany({
+    const books: Book[] = await prisma.book.findMany({
       where: {
         ...(statusParam !== null && isBookStatus(statusParam)
           ? { status: statusParam }
@@ -67,7 +68,7 @@ export async function POST(request: NextRequest): Promise<Response> {
       );
     }
 
-    const book = await prisma.book.create({
+    const book: Book = await prisma.book.create({
       data: result.data,
     });
 

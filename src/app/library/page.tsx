@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import type { BookStatus as PrismaBookStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { BookRailSection } from "@/features/shared/ui/book-rail-section";
 import { LibraryBookCard } from "@/features/books/components/library-book-card";
@@ -7,6 +8,25 @@ import { EmptyState } from "@/features/shared/components/empty-state";
 import type { StatusTabValue, StatusCounts } from "@/features/books/components/status-tabs";
 import type { BookStatus } from "@/features/shared/components/badge";
 import LibraryLoading from "./loading";
+
+/** Explicit shape for books fetched with the select clause below. */
+interface LibraryBookRow {
+  id: string;
+  title: string;
+  authors: string[];
+  coverUrl: string | null;
+  status: PrismaBookStatus;
+  rating: number | null;
+  notes: string | null;
+  publisher: string | null;
+  publishedDate: string | null;
+}
+
+/** Explicit shape for groupBy status counts. */
+interface StatusCountRow {
+  status: PrismaBookStatus;
+  _count: { id: number };
+}
 
 const BOOK_STATUS = {
   WISHLIST: "WISHLIST",
@@ -56,7 +76,7 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
   const activeStatus = resolveActiveStatus(statusParam);
 
   // Fetch all books; if status is active fetch only that status
-  const books = await prisma.book.findMany({
+  const books: LibraryBookRow[] = await prisma.book.findMany({
     where: activeStatus !== "all" ? { status: activeStatus } : undefined,
     orderBy: { createdAt: "desc" },
     select: {
@@ -78,7 +98,7 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
 
   if (activeStatus === "all") {
     const grouped = books.reduce<Record<BookStatus, number>>(
-      (acc: Record<BookStatus, number>, book: (typeof books)[number]) => {
+      (acc: Record<BookStatus, number>, book: LibraryBookRow) => {
         acc[book.status as BookStatus] = (acc[book.status as BookStatus] ?? 0) + 1;
         return acc;
       },
@@ -92,7 +112,7 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
       _count: { id: true },
     });
     counts = allCounts.reduce<StatusCounts>(
-      (acc: StatusCounts, row: (typeof allCounts)[number]) => {
+      (acc: StatusCounts, row: { status: PrismaBookStatus; _count: { id: number } }) => {
         acc[row.status as BookStatus] = row._count.id;
         return acc;
       },
@@ -149,7 +169,7 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
           count={books.length}
           emptyCopy="No books match this filter."
         >
-          {books.map((book) => (
+          {books.map((book: LibraryBookRow) => (
             <div key={book.id} className="shrink-0 w-[clamp(260px,32vw,340px)]" style={{ scrollSnapAlign: "start" }}>
               <LibraryBookCard book={{
                 ...book,
@@ -166,8 +186,8 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
       ) : (
         /* All statuses — one rail per status that has books */
         <div className="grid gap-4">
-          {STATUS_ORDERED.map((status) => {
-            const statusBooks = books.filter((b) => b.status === status);
+          {STATUS_ORDERED.map((status: BookStatus) => {
+            const statusBooks = books.filter((b: LibraryBookRow) => b.status === status);
             return (
               <BookRailSection
                 key={status}
@@ -177,7 +197,7 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
                 emptyTitle={`No ${status === "TO_READ" ? "To Read" : status.toLowerCase()} books`}
                 emptyCopy={STATUS_EMPTY_COPY[status]}
               >
-                {statusBooks.map((book) => (
+                {statusBooks.map((book: LibraryBookRow) => (
                   <div key={book.id} className="shrink-0 w-[clamp(260px,32vw,340px)]" style={{ scrollSnapAlign: "start" }}>
                     <LibraryBookCard book={{
                       ...book,

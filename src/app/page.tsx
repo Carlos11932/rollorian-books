@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { BookStatus } from "@prisma/client";
+import type { Book, BookStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { BookRailSection } from "@/features/shared/ui/book-rail-section";
 import { StatPill } from "@/features/shared/components/stat-pill";
@@ -21,7 +21,7 @@ const STATUS_RAIL_CONFIG: Array<{
 ];
 
 export default async function Home() {
-  const books = await prisma.book.findMany({
+  const books: Book[] = await prisma.book.findMany({
     orderBy: { updatedAt: "desc" },
   });
 
@@ -49,7 +49,7 @@ export default async function Home() {
     WISHLIST: [],
   };
 
-  const serializedBooks = books.map(serializeBook);
+  const serializedBooks: SerializableBook[] = books.map((book: Book) => serializeBook(book));
 
   for (const book of serializedBooks) {
     byStatus[book.status].push(book);
@@ -90,7 +90,7 @@ export default async function Home() {
             eyebrow={eyebrow}
             count={railBooks.length}
           >
-            {railBooks.map((book, index) => (
+            {railBooks.map((book: SerializableBook, index: number) => (
               <BrowseCardWrapper key={book.id} book={book} index={index} />
             ))}
           </BookRailSection>

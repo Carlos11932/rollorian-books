@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { NextRequest } from "next/server";
+import type { Book } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { updateBookSchema } from "@/lib/schemas/book";
 
@@ -15,7 +16,7 @@ export async function GET(
   try {
     const { id } = await params;
 
-    const book = await prisma.book.findUnique({ where: { id } });
+    const book: Book | null = await prisma.book.findUnique({ where: { id } });
 
     if (!book) {
       return Response.json({ error: "Book not found" }, { status: 404 });
@@ -35,7 +36,7 @@ export async function PATCH(
   try {
     const { id } = await params;
 
-    const existing = await prisma.book.findUnique({ where: { id } });
+    const existing: Book | null = await prisma.book.findUnique({ where: { id } });
     if (!existing) {
       return Response.json({ error: "Book not found" }, { status: 404 });
     }
@@ -50,7 +51,7 @@ export async function PATCH(
       );
     }
 
-    const book = await prisma.book.update({
+    const book: Book = await prisma.book.update({
       where: { id },
       data: result.data,
     });
@@ -69,7 +70,7 @@ export async function DELETE(
   try {
     const { id } = await params;
 
-    const existing = await prisma.book.findUnique({ where: { id } });
+    const existing: Book | null = await prisma.book.findUnique({ where: { id } });
     if (!existing) {
       return Response.json({ error: "Book not found" }, { status: 404 });
     }

@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import type { Book } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { fetchBookById } from "@/lib/google-books/client";
 import { serializeBook } from "@/features/books/types";
@@ -18,7 +19,7 @@ interface BookDetailPageProps {
 // Helpers to resolve the book from multiple sources
 // ---------------------------------------------------------------------------
 
-type LocalBook = Awaited<ReturnType<typeof prisma.book.findUnique>> & {};
+type LocalBook = Book;
 
 interface GoogleBookView {
   source: "google";
@@ -55,7 +56,7 @@ async function resolveBook(id: string): Promise<ResolvedBook | null> {
   // contain hyphens/underscores. We attempt Prisma first; if it throws because
   // the ID format is invalid we treat it as "not found locally".
   try {
-    const local = await prisma.book.findUnique({ where: { id } });
+    const local: Book | null = await prisma.book.findUnique({ where: { id } });
     if (local) {
       return { source: "local", book: local };
     }
@@ -80,7 +81,7 @@ function selectIdentifier(
   identifiers: { type: string; identifier: string }[] | undefined,
   type: string,
 ): string | null {
-  return identifiers?.find((i) => i.type === type)?.identifier ?? null;
+  return identifiers?.find((i: { type: string; identifier: string }) => i.type === type)?.identifier ?? null;
 }
 
 function googleVolumeToView(volume: GoogleBooksVolume): GoogleBookView {
@@ -388,7 +389,7 @@ function BookFactsGrid({
         <div className="col-span-2">
           <dt className="text-xs font-bold uppercase tracking-wide text-muted">Genres</dt>
           <dd className="mt-1 flex flex-wrap gap-1.5">
-            {genres.map((genre) => (
+            {genres.map((genre: string) => (
               <span
                 key={genre}
                 className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs border border-line bg-white/6 text-muted"
