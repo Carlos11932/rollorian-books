@@ -78,7 +78,7 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
 
   if (activeStatus === "all") {
     const grouped = books.reduce<Record<BookStatus, number>>(
-      (acc: Record<BookStatus, number>, book) => {
+      (acc: Record<BookStatus, number>, book: (typeof books)[number]) => {
         acc[book.status as BookStatus] = (acc[book.status as BookStatus] ?? 0) + 1;
         return acc;
       },
