@@ -75,3 +75,7 @@ function normalizeBook(item: GoogleBooksVolume): NormalizedBook {
 export function normalizeSearchResults(docs: GoogleBooksVolume[]): NormalizedBook[] {
   return docs.map(normalizeBook);
 }
+
+export function normalizeSingleBook(volume: GoogleBooksVolume): NormalizedBook {
+  return normalizeBook(volume);
+}
