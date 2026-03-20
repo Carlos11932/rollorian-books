@@ -77,7 +77,6 @@ export default async function Home() {
             <div className="w-full h-full bg-surface-container" />
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/60 to-transparent pointer-events-none" />
-          <div className="absolute inset-0 bg-gradient-to-r from-surface via-transparent to-transparent pointer-events-none" />
         </div>
 
         {/* Hero content */}
