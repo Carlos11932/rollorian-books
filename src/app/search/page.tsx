@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import type { NormalizedBook } from "@/lib/google-books/types";
 import type { SerializableBook } from "@/features/books/types";
+import type { BookStatus } from "@/lib/types/book";
 import { BookCard } from "@/features/books/components/book-card";
 import { Skeleton } from "@/features/shared/components/skeleton";
 
@@ -53,6 +54,11 @@ async function saveBookToLibrary(book: NormalizedBook): Promise<void> {
   }
 }
 
+interface LibraryBookEntry {
+  isbn13: string | null;
+  status: BookStatus;
+}
+
 // ── Component ───────────────────────────────────────────────────────────────
 
 export default function SearchPage() {
@@ -63,7 +69,35 @@ export default function SearchPage() {
   const [hasSearched, setHasSearched] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Library books indexed by isbn13 for fast lookup
+  const [libraryIndex, setLibraryIndex] = useState<Map<string, BookStatus>>(new Map());
+
   const backgroundUrl = results.length > 0 ? (results[0]?.coverUrl ?? null) : null;
+
+  // Load user's library on mount to detect already-saved books
+  useEffect(() => {
+    void fetch("/api/books")
+      .then((res) => res.ok ? res.json() : [])
+      .then((books: LibraryBookEntry[]) => {
+        const index = new Map<string, BookStatus>();
+        for (const book of books) {
+          if (book.isbn13) {
+            index.set(book.isbn13, book.status);
+          }
+        }
+        setLibraryIndex(index);
+      })
+      .catch(() => {
+        // Non-critical — search still works without library data
+      });
+  }, []);
+
+  function getSavedStatus(book: NormalizedBook): BookStatus | null {
+    if (book.isbn) {
+      return libraryIndex.get(book.isbn) ?? null;
+    }
+    return null;
+  }
 
   async function handleSearch(searchQuery: string) {
     const trimmed = searchQuery.trim();
@@ -103,6 +137,10 @@ export default function SearchPage() {
     const original = results.find((r) => r.externalId === displayBook.id);
     if (!original) return;
     await saveBookToLibrary(original);
+    // Update local library index so the card updates without a reload
+    if (original.isbn) {
+      setLibraryIndex((prev) => new Map(prev).set(original.isbn!, "WISHLIST"));
+    }
   }
 
   return (
@@ -270,6 +308,7 @@ export default function SearchPage() {
                   variant="search"
                   book={toDisplayBook(book)}
                   index={index}
+                  savedStatus={getSavedStatus(book)}
                   onSave={handleSave}
                 />
               ))}
