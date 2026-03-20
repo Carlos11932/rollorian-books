@@ -1,24 +1,26 @@
 import Link from "next/link";
 import type { Book, BookStatus } from "@/lib/types/book";
 import { prisma } from "@/lib/prisma";
-import { BookRailSection } from "@/features/shared/ui/book-rail-section";
-import { StatPill } from "@/features/shared/components/stat-pill";
 import { EmptyState } from "@/features/shared/components/empty-state";
 import { Button } from "@/features/shared/components/button";
-import { HeroBanner } from "@/features/books/components/hero-banner";
-import { BrowseCardWrapper } from "@/features/books/components/browse-card-wrapper";
 import { serializeBook, type SerializableBook } from "@/features/books/types";
 
-const STATUS_RAIL_CONFIG: Array<{
+const STATUS_CONFIG: Array<{
   status: BookStatus;
   title: string;
-  eyebrow: string;
 }> = [
-  { status: "READING", title: "Currently Reading", eyebrow: "In progress" },
-  { status: "READ", title: "Finished", eyebrow: "Completed" },
-  { status: "TO_READ", title: "To Read", eyebrow: "Up next" },
-  { status: "WISHLIST", title: "Wishlist", eyebrow: "Want to read" },
+  { status: "READING", title: "Currently Reading" },
+  { status: "READ", title: "Finished" },
+  { status: "TO_READ", title: "To Read" },
+  { status: "WISHLIST", title: "Wishlist" },
 ];
+
+const STATUS_BADGE_LABEL: Record<BookStatus, string> = {
+  READING: "Currently Reading",
+  READ: "Finished",
+  TO_READ: "To Read",
+  WISHLIST: "Wishlist",
+};
 
 export default async function Home() {
   const books: Book[] = await prisma.book.findMany({
@@ -41,7 +43,10 @@ export default async function Home() {
     );
   }
 
-  // Group books by status (serialized for client components)
+  const serializedBooks: SerializableBook[] = books.map((book: Book) =>
+    serializeBook(book)
+  );
+
   const byStatus: Record<BookStatus, SerializableBook[]> = {
     READING: [],
     READ: [],
@@ -49,53 +54,91 @@ export default async function Home() {
     WISHLIST: [],
   };
 
-  const serializedBooks: SerializableBook[] = books.map((book: Book) => serializeBook(book));
-
   for (const book of serializedBooks) {
     byStatus[book.status].push(book);
   }
 
-  // Featured book: first READING, or first overall
-  const featuredBook =
-    byStatus.READING[0] ?? serializedBooks[0] ?? null;
-
-  // Stats
-  const totalBooks = books.length;
-  const readingCount = byStatus.READING.length;
-  const readCount = byStatus.READ.length;
-  const wishlistCount = byStatus.WISHLIST.length;
+  const featuredBook = byStatus.READING[0] ?? serializedBooks[0] ?? null;
 
   return (
-    <>
-      {/* Hero */}
-      <HeroBanner book={featuredBook} />
+    <div className="relative min-h-screen">
 
-      {/* Stats row */}
-      <div className="flex flex-wrap gap-2" role="region" aria-label="Library statistics">
-        <StatPill value={totalBooks} label="total books" />
-        <StatPill value={readingCount} label="reading" />
-        <StatPill value={readCount} label="read" />
-        <StatPill value={wishlistCount} label="on wishlist" />
+      {/* ── Full-page blurred background wallpaper ── */}
+      {featuredBook?.coverUrl ? (
+        <div
+          aria-hidden="true"
+          className="fixed inset-0 z-0 pointer-events-none"
+          style={{
+            backgroundImage: `url(${featuredBook.coverUrl})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            filter: 'blur(80px) brightness(0.25) saturate(1.5)',
+            transform: 'scale(1.2)',
+          }}
+        />
+      ) : (
+        <div className="fixed inset-0 z-0 bg-surface pointer-events-none" aria-hidden="true" />
+      )}
+      {/* Subtle dark overlay so text stays readable */}
+      <div className="fixed inset-0 z-0 bg-surface/50 pointer-events-none" aria-hidden="true" />
+
+      {/* ── Collections — on top of same background ── */}
+      <div className="relative z-10 px-12 md:px-20 space-y-16 pb-24 pt-8">
+        {STATUS_CONFIG.map(({ status, title }) => {
+          const sectionBooks = byStatus[status];
+          if (sectionBooks.length === 0) return null;
+
+          return (
+            <section key={status}>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold tracking-tight text-on-surface flex items-center gap-3">
+                  {title}
+                  {status === 'READING' && (
+                    <span
+                      className="material-symbols-outlined text-secondary text-sm"
+                      style={{ fontVariationSettings: "'FILL' 1" }}
+                    >
+                      auto_stories
+                    </span>
+                  )}
+                </h2>
+                <Link href="/library" className="text-primary text-sm font-semibold hover:underline">
+                  View All
+                </Link>
+              </div>
+              <div className="flex gap-6 overflow-x-auto hide-scrollbar pb-4 -mx-4 px-4">
+                {sectionBooks.map((book: SerializableBook) => {
+                  const authorLine = book.authors.length > 0 ? book.authors.join(', ') : 'Unknown author';
+                  const year = book.publishedDate ? new Date(book.publishedDate).getFullYear() : null;
+                  return (
+                    <Link
+                      key={book.id}
+                      href={`/books/${book.id}`}
+                      className="flex-none w-48 md:w-56 group cursor-pointer"
+                    >
+                      <div className="relative aspect-[2/3] rounded-lg overflow-hidden bg-surface-container-low transition-all duration-300 group-hover:scale-105 group-hover:shadow-[0_20px_40px_rgba(0,17,12,0.8)]">
+                        {book.coverUrl ? (
+                          <img className="w-full h-full object-cover" src={book.coverUrl} alt={book.title} />
+                        ) : (
+                          <div className="w-full h-full bg-surface-container flex items-center justify-center">
+                            <span className="material-symbols-outlined text-tertiary text-4xl">menu_book</span>
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-surface-container-lowest/80 via-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-4">
+                          <span className="text-secondary text-xs font-bold mb-1">{STATUS_BADGE_LABEL[book.status]}</span>
+                        </div>
+                      </div>
+                      <h3 className="mt-4 text-on-surface font-bold text-sm group-hover:text-primary transition-colors">{book.title}</h3>
+                      <p className="text-tertiary text-xs">{authorLine}{year ? ` • ${year}` : ''}</p>
+                    </Link>
+                  );
+                })}
+              </div>
+            </section>
+          );
+        })}
       </div>
 
-      {/* Book rails by status */}
-      {STATUS_RAIL_CONFIG.map(({ status, title, eyebrow }) => {
-        const railBooks = byStatus[status];
-        if (railBooks.length === 0) return null;
-
-        return (
-          <BookRailSection
-            key={status}
-            title={title}
-            eyebrow={eyebrow}
-            count={railBooks.length}
-          >
-            {railBooks.map((book: SerializableBook, index: number) => (
-              <BrowseCardWrapper key={book.id} book={book} index={index} />
-            ))}
-          </BookRailSection>
-        );
-      })}
-    </>
+    </div>
   );
 }

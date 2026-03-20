@@ -1,37 +1,34 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { cn } from "@/lib/cn";
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
+import { cn } from '@/lib/cn';
 
-const NAV_ITEMS = [
-  { href: "/", label: "Home" },
-  { href: "/search", label: "Search" },
-  { href: "/library", label: "Library" },
-] as const;
+const navItems = [
+  { href: '/', label: 'Home', icon: 'home' },
+  { href: '/search', label: 'Search', icon: 'search' },
+  { href: '/library', label: 'Library', icon: 'local_library' },
+];
 
 export function NavLinks() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex gap-3 flex-wrap justify-end" aria-label="Primary">
-      {NAV_ITEMS.map(({ href, label }) => {
-        const isActive =
-          href === "/" ? pathname === "/" : pathname.startsWith(href);
-
+    <nav className="flex-1 flex flex-col gap-2">
+      {navItems.map(({ href, label, icon }) => {
+        const isActive = pathname === href;
         return (
           <Link
             key={href}
             href={href}
-            aria-current={isActive ? "page" : undefined}
             className={cn(
-              "rounded-full border px-4 py-2.5 text-sm font-bold transition-all duration-200",
-              "focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent",
+              'flex items-center gap-3 py-3 px-6 font-body text-sm font-medium transition-all duration-200',
               isActive
-                ? "bg-gradient-to-br from-accent to-accent-strong border-transparent text-white"
-                : "border-white/22 bg-white/6 text-muted hover:text-text hover:-translate-y-px",
+                ? 'bg-surface-variant text-primary rounded-r-full translate-x-1'
+                : 'text-tertiary hover:text-primary hover:bg-surface-container-low'
             )}
           >
+            <span className="material-symbols-outlined text-[20px]">{icon}</span>
             {label}
           </Link>
         );

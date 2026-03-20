@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, type ChangeEvent } from "react";
 import type { BookStatus } from "@/lib/types/book";
 import { cn } from "@/lib/cn";
@@ -32,6 +33,7 @@ interface BrowseVariantProps {
 
 interface SearchVariantProps {
   variant: "search";
+  savedStatus?: BookStatus | null;
   onSave?: (book: SerializableBook) => Promise<void>;
 }
 
@@ -116,13 +118,19 @@ function BrowseCard({
 function SearchCard({
   book,
   index = 0,
+  savedStatus,
   onSave,
 }: BaseBookCardProps & SearchVariantProps) {
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
   const authorLine = book.authors.length > 0 ? book.authors.join(", ") : "Unknown author";
 
-  async function handleSave() {
-    if (saveState !== "idle" || !onSave) return;
+  const isAlreadySaved = savedStatus != null;
+  const isSaved = isAlreadySaved || saveState === "saved";
+
+  async function handleSave(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (saveState !== "idle" || !onSave || isAlreadySaved) return;
     setSaveState("saving");
     try {
       await onSave(book);
@@ -133,11 +141,13 @@ function SearchCard({
   }
 
   return (
-    <article
+    <Link
+      href={`/books/${book.id}`}
       className={cn(
-        "group relative rounded-[var(--radius-lg)] border border-line bg-surface overflow-hidden",
+        "group relative block rounded-[var(--radius-lg)] border border-line bg-surface overflow-hidden",
         "transition-all duration-250 ease-out",
         "hover:scale-105 hover:z-10 hover:shadow-lg hover:border-white/28",
+        "focus:outline-none focus:ring-2 focus:ring-primary/50",
       )}
       style={{
         animationName: "fade-slide-up",
@@ -148,7 +158,7 @@ function SearchCard({
         width: "160px",
         minWidth: "160px",
       }}
-      aria-label={`${book.title} by ${authorLine}`}
+      aria-label={`${book.title} by ${authorLine}${isSaved ? ` — ${savedStatus ?? "Saved"}` : ""}`}
     >
       <BookCover
         coverUrl={book.coverUrl}
@@ -169,24 +179,35 @@ function SearchCard({
           <p className="text-xs text-muted truncate">{authorLine}</p>
         </div>
 
-        <Button
-          variant={saveState === "saved" ? "secondary" : "primary"}
-          size="sm"
-          loading={saveState === "saving"}
-          disabled={saveState === "saved"}
-          onClick={handleSave}
-          className="w-full text-xs"
-        >
-          {saveState === "saved" ? "Saved" : "Save to library"}
-        </Button>
-      </div>
+        {/* Status badge if already in library */}
+        {isAlreadySaved && savedStatus != null && (
+          <Badge status={savedStatus} className="text-[10px] px-2 py-0.5 self-start" />
+        )}
 
-      <CardOverlay
-        bookId={book.id}
-        title={book.title}
-        authors={book.authors}
-      />
-    </article>
+        {/* Save button — only visible when not yet saved */}
+        {!isAlreadySaved && (
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saveState !== "idle"}
+            className={cn(
+              "w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold",
+              "border transition-colors duration-150",
+              "focus:outline-none focus:ring-2 focus:ring-primary/50",
+              saveState === "saved"
+                ? "bg-white/10 text-white/50 border-white/10 cursor-default"
+                : "bg-primary/15 text-primary border-primary/30 hover:bg-primary/25",
+              saveState === "saving" && "opacity-60 cursor-not-allowed",
+            )}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>
+              {saveState === "saved" ? "bookmark" : "bookmark_add"}
+            </span>
+            {saveState === "saving" ? "Guardando…" : saveState === "saved" ? "Guardado" : "Guardar"}
+          </button>
+        )}
+      </div>
+    </Link>
   );
 }
 

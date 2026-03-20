@@ -39,31 +39,25 @@ export function BookRailSection({
   }
 
   return (
-    <section
-      className={cn(
-        "rounded-[var(--radius-xl)] border border-line bg-gradient-to-b from-[rgba(19,27,41,0.88)] to-[rgba(8,12,20,0.88)] backdrop-blur-[16px] p-6 grid gap-4",
-        className,
-      )}
-      style={{ backdropFilter: "blur(16px)" }}
-    >
+    <section className={cn("space-y-6", className)}>
       {/* Section heading */}
-      <header className="flex items-end justify-between gap-4">
+      <div className="flex items-center justify-between">
         <div className="grid gap-0.5">
           {eyebrow && (
-            <p className="text-xs font-bold uppercase tracking-widest text-muted">
+            <p className="text-xs font-bold uppercase tracking-widest text-tertiary">
               {eyebrow}
             </p>
           )}
-          <h2 className="text-2xl font-bold text-text" style={{ fontFamily: "var(--font-display)" }}>
+          <h2 className="text-2xl font-bold tracking-tight text-on-surface">
             {title}
           </h2>
         </div>
         {count !== undefined && (
-          <span className="text-sm text-muted tabular-nums shrink-0">
+          <span className="text-sm text-tertiary tabular-nums shrink-0">
             {count} {count === 1 ? "book" : "books"}
           </span>
         )}
-      </header>
+      </div>
 
       {/* Rail or empty state */}
       {hasChildren ? (
@@ -71,7 +65,7 @@ export function BookRailSection({
           {/* Left fade edge */}
           <div
             className={cn(
-              "absolute left-0 top-0 bottom-0 w-12 z-10 pointer-events-none transition-opacity duration-200 bg-gradient-to-r from-[rgba(8,12,20,0.9)] to-transparent",
+              "absolute left-0 top-0 bottom-0 w-12 z-10 pointer-events-none transition-opacity duration-200 bg-gradient-to-r from-surface to-transparent",
               hasOverflowStart ? "opacity-100" : "opacity-0",
             )}
             aria-hidden="true"
@@ -79,7 +73,7 @@ export function BookRailSection({
           {/* Right fade edge */}
           <div
             className={cn(
-              "absolute right-0 top-0 bottom-0 w-12 z-10 pointer-events-none transition-opacity duration-200 bg-gradient-to-l from-[rgba(8,12,20,0.9)] to-transparent",
+              "absolute right-0 top-0 bottom-0 w-12 z-10 pointer-events-none transition-opacity duration-200 bg-gradient-to-l from-surface to-transparent",
               hasOverflowEnd ? "opacity-100" : "opacity-0",
             )}
             aria-hidden="true"
@@ -89,12 +83,8 @@ export function BookRailSection({
           <div
             ref={railRef}
             onScroll={handleScroll}
-            className="flex gap-4 overflow-x-auto scroll-smooth pb-2"
-            style={{
-              scrollSnapType: "x mandatory",
-              scrollbarWidth: "none",
-              msOverflowStyle: "none",
-            }}
+            className="flex gap-6 overflow-x-auto hide-scrollbar pb-4"
+            style={{ scrollbarWidth: "none" }}
           >
             {children}
           </div>
