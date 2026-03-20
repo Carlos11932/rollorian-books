@@ -63,7 +63,7 @@ export default async function Home() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative h-[870px] w-full flex items-end overflow-hidden">
+      <section className="relative h-[60vh] min-h-[400px] w-full flex items-end overflow-hidden">
         {/* Background image + gradients */}
         <div className="absolute inset-0 z-0">
           {featuredBook?.coverUrl ? (
@@ -76,8 +76,8 @@ export default async function Home() {
           ) : (
             <div className="w-full h-full bg-surface-container" />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/60 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-r from-surface via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/60 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-r from-surface via-transparent to-transparent pointer-events-none" />
         </div>
 
         {/* Hero content */}
