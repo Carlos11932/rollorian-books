@@ -73,10 +73,6 @@
 }
 
 @layer base {
-  html {
-    @apply dark;
-  }
-
   body {
     @apply bg-surface text-on-surface font-body antialiased;
     @apply selection:bg-primary/30 selection:text-primary;
