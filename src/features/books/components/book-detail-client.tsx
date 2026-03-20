@@ -5,14 +5,8 @@ import { useRouter } from "next/navigation";
 import { cn } from "@/lib/cn";
 import { Button } from "@/features/shared/components/button";
 import type { SerializableBook } from "../types";
-import type { BookStatus } from "@/features/shared/components/badge";
-
-const STATUS_OPTIONS: { value: BookStatus; label: string }[] = [
-  { value: "WISHLIST", label: "Wishlist" },
-  { value: "TO_READ", label: "To Read" },
-  { value: "READING", label: "Reading" },
-  { value: "READ", label: "Read" },
-];
+import type { BookStatus } from "@/lib/types/book";
+import { BOOK_STATUS_OPTIONS } from "@/lib/types/book";
 
 const RATING_LABELS: Record<number, string> = {
   1: "Poor",
@@ -46,7 +40,7 @@ type DeleteState = (typeof DELETE_STATE)[keyof typeof DELETE_STATE];
 export function BookDetailClient({ book }: BookDetailClientProps) {
   const router = useRouter();
 
-  const [status, setStatus] = useState<BookStatus>(book.status as BookStatus);
+  const [status, setStatus] = useState<BookStatus>(book.status);
   const [rating, setRating] = useState<number | null>(book.rating ?? null);
   const [hoverRating, setHoverRating] = useState<number | null>(null);
   const [notes, setNotes] = useState(book.notes ?? "");
@@ -139,7 +133,7 @@ export function BookDetailClient({ book }: BookDetailClientProps) {
               "transition-colors duration-150",
             )}
           >
-            {STATUS_OPTIONS.map((opt) => (
+            {BOOK_STATUS_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value} className="bg-bg text-text">
                 {opt.label}
               </option>

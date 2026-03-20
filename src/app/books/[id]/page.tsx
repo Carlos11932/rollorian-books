@@ -1,24 +1,19 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import type { Book } from "@/lib/types/book";
+import { cache } from "react";
+import type { Book, BookStatus } from "@/lib/types/book";
 import { prisma } from "@/lib/prisma";
 import { fetchBookById } from "@/lib/google-books/client";
-import { serializeBook } from "@/features/books/types";
-import { Badge } from "@/features/shared/components/badge";
 import { BookCover } from "@/features/books/components/book-cover";
 import { BookDetailClient } from "@/features/books/components/book-detail-client";
 import { GoogleBookSaveClient } from "@/features/books/components/google-book-save-client";
-import type { BookStatus } from "@/features/shared/components/badge";
+import { serializeBook } from "@/features/books/types";
 import type { GoogleBooksVolume } from "@/lib/google-books/types";
 import { stripHtml } from "@/lib/utils/text";
-import Link from "next/link";
 
 interface BookDetailPageProps {
   params: Promise<{ id: string }>;
 }
-
-// ---------------------------------------------------------------------------
-// Helpers to resolve the book from multiple sources
-// ---------------------------------------------------------------------------
 
 type LocalBook = Book;
 
@@ -38,11 +33,9 @@ interface GoogleBookView {
   genres: string[];
 }
 
-type ResolvedBook =
-  | { source: "local"; book: LocalBook }
-  | GoogleBookView;
+type ResolvedBook = { source: "local"; book: LocalBook } | GoogleBookView;
 
-async function resolveBook(id: string): Promise<ResolvedBook | null> {
+const resolveBook = cache(async function resolveBook(id: string): Promise<ResolvedBook | null> {
   try {
     const local: Book | null = await prisma.book.findUnique({ where: { id } });
     if (local) {
@@ -62,13 +55,13 @@ async function resolveBook(id: string): Promise<ResolvedBook | null> {
   }
 
   return null;
-}
+});
 
 function selectIdentifier(
   identifiers: { type: string; identifier: string }[] | undefined,
   type: string,
 ): string | null {
-  return identifiers?.find((i: { type: string; identifier: string }) => i.type === type)?.identifier ?? null;
+  return identifiers?.find((identifier) => identifier.type === type)?.identifier ?? null;
 }
 
 function googleVolumeToView(volume: GoogleBooksVolume): GoogleBookView {
@@ -92,10 +85,6 @@ function googleVolumeToView(volume: GoogleBooksVolume): GoogleBookView {
   };
 }
 
-// ---------------------------------------------------------------------------
-// Metadata
-// ---------------------------------------------------------------------------
-
 export async function generateMetadata({ params }: BookDetailPageProps) {
   const { id } = await params;
   const resolved = await resolveBook(id);
@@ -116,10 +105,6 @@ export async function generateMetadata({ params }: BookDetailPageProps) {
   };
 }
 
-// ---------------------------------------------------------------------------
-// Page
-// ---------------------------------------------------------------------------
-
 export default async function BookDetailPage({ params }: BookDetailPageProps) {
   const { id } = await params;
   const resolved = await resolveBook(id);
@@ -134,10 +119,6 @@ export default async function BookDetailPage({ params }: BookDetailPageProps) {
 
   return <GoogleBookDetail view={resolved} />;
 }
-
-// ---------------------------------------------------------------------------
-// Status badge colour map (spec-driven)
-// ---------------------------------------------------------------------------
 
 function StatusBadge({ status }: { status: BookStatus }) {
   const colorMap: Record<BookStatus, string> = {
@@ -163,36 +144,21 @@ function StatusBadge({ status }: { status: BookStatus }) {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Star rating display (read-only, for the hero section)
-// ---------------------------------------------------------------------------
-
 function StarRating({ rating }: { rating: number | null }) {
   if (rating === null) {
-    return (
-      <span className="text-xs text-on-surface/40 uppercase tracking-wide">
-        Not rated
-      </span>
-    );
+    return <span className="text-xs text-on-surface/40 uppercase tracking-wide">Not rated</span>;
   }
 
   return (
     <span aria-label={`Rating: ${rating} out of 5`} className="flex items-center gap-0.5">
       {[1, 2, 3, 4, 5].map((star) => (
-        <span
-          key={star}
-          className={star <= rating ? "text-secondary text-lg" : "text-on-surface/20 text-lg"}
-        >
+        <span key={star} className={star <= rating ? "text-secondary text-lg" : "text-on-surface/20 text-lg"}>
           ★
         </span>
       ))}
     </span>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Blurred cover background
-// ---------------------------------------------------------------------------
 
 function BlurredCoverBackground({ coverUrl }: { coverUrl: string | null }) {
   if (!coverUrl) return null;
@@ -225,10 +191,6 @@ function BlurredCoverBackground({ coverUrl }: { coverUrl: string | null }) {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Local (library) book detail
-// ---------------------------------------------------------------------------
-
 function LocalBookDetail({ book }: { book: LocalBook }) {
   const serialized = serializeBook(book);
   const authorLine = book.authors.length > 0 ? book.authors.join(", ") : "Unknown author";
@@ -236,19 +198,10 @@ function LocalBookDetail({ book }: { book: LocalBook }) {
 
   return (
     <>
-      {/* Blurred background */}
       <BlurredCoverBackground coverUrl={book.coverUrl} />
+      <div aria-hidden="true" className="bg-surface/50" style={{ position: "fixed", inset: 0, zIndex: 1 }} />
 
-      {/* Fixed surface overlay */}
-      <div
-        aria-hidden="true"
-        className="bg-surface/50"
-        style={{ position: "fixed", inset: 0, zIndex: 1 }}
-      />
-
-      {/* Main content */}
       <div style={{ position: "relative", zIndex: 2 }} className="grid gap-6 pb-12">
-        {/* Back link */}
         <div>
           <Link
             href="/library"
@@ -259,14 +212,12 @@ function LocalBookDetail({ book }: { book: LocalBook }) {
           </Link>
         </div>
 
-        {/* Hero card */}
         <section
           className="rounded-[var(--radius-xl)] border border-outline-variant/30 p-6 md:p-8"
           style={{ backdropFilter: "blur(20px)", background: "rgba(0,23,17,0.6)" }}
           aria-label="Book detail"
         >
           <div className="flex flex-col md:flex-row gap-8">
-            {/* Cover */}
             <div className="shrink-0 flex justify-center md:justify-start">
               <BookCover
                 coverUrl={book.coverUrl}
@@ -278,9 +229,7 @@ function LocalBookDetail({ book }: { book: LocalBook }) {
               />
             </div>
 
-            {/* Info */}
             <div className="flex flex-col gap-5 min-w-0 flex-1">
-              {/* Title + author + year */}
               <div className="grid gap-2">
                 <h1
                   className="text-3xl md:text-4xl font-bold text-on-surface leading-tight"
@@ -289,28 +238,21 @@ function LocalBookDetail({ book }: { book: LocalBook }) {
                   {book.title}
                 </h1>
                 {book.subtitle && (
-                  <p
-                    className="text-lg text-on-surface/60 leading-snug"
-                    style={{ fontFamily: "var(--font-headline)" }}
-                  >
+                  <p className="text-lg text-on-surface/60 leading-snug" style={{ fontFamily: "var(--font-headline)" }}>
                     {book.subtitle}
                   </p>
                 )}
                 <p className="text-base text-on-surface/60">
                   {authorLine}
-                  {yearLine && (
-                    <span className="text-on-surface/40"> · {yearLine}</span>
-                  )}
+                  {yearLine && <span className="text-on-surface/40"> · {yearLine}</span>}
                 </p>
               </div>
 
-              {/* Status + rating row */}
               <div className="flex flex-wrap items-center gap-3">
-                <StatusBadge status={book.status as BookStatus} />
+                <StatusBadge status={book.status} />
                 <StarRating rating={book.rating} />
               </div>
 
-              {/* Description */}
               {book.description && (
                 <p className="text-sm text-on-surface/70 leading-relaxed line-clamp-5">
                   {stripHtml(book.description)}
@@ -320,7 +262,6 @@ function LocalBookDetail({ book }: { book: LocalBook }) {
           </div>
         </section>
 
-        {/* Metadata card */}
         <MetadataCard
           publisher={book.publisher}
           publishedDate={book.publishedDate}
@@ -330,21 +271,13 @@ function LocalBookDetail({ book }: { book: LocalBook }) {
           genres={book.genres}
         />
 
-        {/* Notes card */}
-        {book.notes && (
-          <NotesCard notes={book.notes} />
-        )}
+        {book.notes && <NotesCard notes={book.notes} />}
 
-        {/* Manage section */}
         <BookDetailClient book={serialized} />
       </div>
     </>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Google Books (external) detail — not yet saved to library
-// ---------------------------------------------------------------------------
 
 function GoogleBookDetail({ view }: { view: GoogleBookView }) {
   const authorLine = view.authors.length > 0 ? view.authors.join(", ") : "Unknown author";
@@ -366,19 +299,10 @@ function GoogleBookDetail({ view }: { view: GoogleBookView }) {
 
   return (
     <>
-      {/* Blurred background */}
       <BlurredCoverBackground coverUrl={view.coverUrl} />
+      <div aria-hidden="true" className="bg-surface/50" style={{ position: "fixed", inset: 0, zIndex: 1 }} />
 
-      {/* Fixed surface overlay */}
-      <div
-        aria-hidden="true"
-        className="bg-surface/50"
-        style={{ position: "fixed", inset: 0, zIndex: 1 }}
-      />
-
-      {/* Main content */}
       <div style={{ position: "relative", zIndex: 2 }} className="grid gap-6 pb-12">
-        {/* Back link */}
         <div>
           <Link
             href="/search"
@@ -389,14 +313,12 @@ function GoogleBookDetail({ view }: { view: GoogleBookView }) {
           </Link>
         </div>
 
-        {/* Hero card */}
         <section
           className="rounded-[var(--radius-xl)] border border-outline-variant/30 p-6 md:p-8"
           style={{ backdropFilter: "blur(20px)", background: "rgba(0,23,17,0.6)" }}
           aria-label="Book detail"
         >
           <div className="flex flex-col md:flex-row gap-8">
-            {/* Cover */}
             <div className="shrink-0 flex justify-center md:justify-start">
               <BookCover
                 coverUrl={view.coverUrl}
@@ -408,14 +330,9 @@ function GoogleBookDetail({ view }: { view: GoogleBookView }) {
               />
             </div>
 
-            {/* Info */}
             <div className="flex flex-col gap-5 min-w-0 flex-1">
-              {/* Google Books label */}
-              <p className="text-xs font-bold uppercase tracking-widest text-primary">
-                Google Books preview
-              </p>
+              <p className="text-xs font-bold uppercase tracking-widest text-primary">Google Books preview</p>
 
-              {/* Title + author + year */}
               <div className="grid gap-2">
                 <h1
                   className="text-3xl md:text-4xl font-bold text-on-surface leading-tight"
@@ -424,32 +341,23 @@ function GoogleBookDetail({ view }: { view: GoogleBookView }) {
                   {view.title}
                 </h1>
                 {view.subtitle && (
-                  <p
-                    className="text-lg text-on-surface/60 leading-snug"
-                    style={{ fontFamily: "var(--font-headline)" }}
-                  >
+                  <p className="text-lg text-on-surface/60 leading-snug" style={{ fontFamily: "var(--font-headline)" }}>
                     {view.subtitle}
                   </p>
                 )}
                 <p className="text-base text-on-surface/60">
                   {authorLine}
-                  {yearLine && (
-                    <span className="text-on-surface/40"> · {yearLine}</span>
-                  )}
+                  {yearLine && <span className="text-on-surface/40"> · {yearLine}</span>}
                 </p>
               </div>
 
-              {/* Description */}
               {view.description && (
-                <p className="text-sm text-on-surface/70 leading-relaxed line-clamp-5">
-                  {view.description}
-                </p>
+                <p className="text-sm text-on-surface/70 leading-relaxed line-clamp-5">{view.description}</p>
               )}
             </div>
           </div>
         </section>
 
-        {/* Metadata card */}
         <MetadataCard
           publisher={view.publisher}
           publishedDate={view.publishedDate}
@@ -459,16 +367,11 @@ function GoogleBookDetail({ view }: { view: GoogleBookView }) {
           genres={view.genres}
         />
 
-        {/* Save to library */}
         <GoogleBookSaveClient payload={savePayload} />
       </div>
     </>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Metadata card (glassmorphism)
-// ---------------------------------------------------------------------------
 
 interface MetadataCardProps {
   publisher: string | null;
@@ -479,16 +382,8 @@ interface MetadataCardProps {
   genres: string[];
 }
 
-function MetadataCard({
-  publisher,
-  publishedDate,
-  pageCount,
-  isbn10,
-  isbn13,
-  genres,
-}: MetadataCardProps) {
-  const hasContent =
-    publisher ?? publishedDate ?? pageCount ?? isbn13 ?? isbn10 ?? genres.length > 0;
+function MetadataCard({ publisher, publishedDate, pageCount, isbn10, isbn13, genres }: MetadataCardProps) {
+  const hasContent = publisher ?? publishedDate ?? pageCount ?? isbn13 ?? isbn10 ?? genres.length > 0;
 
   if (!hasContent) return null;
 
@@ -534,7 +429,7 @@ function MetadataCard({
           <div className="col-span-2">
             <dt className="text-xs font-bold uppercase tracking-wide text-on-surface/40">Genres</dt>
             <dd className="mt-1.5 flex flex-wrap gap-1.5">
-              {genres.map((genre: string) => (
+              {genres.map((genre) => (
                 <span
                   key={genre}
                   className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs border border-outline-variant/30 bg-white/5 text-on-surface/60"
@@ -549,10 +444,6 @@ function MetadataCard({
     </section>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Notes card (glassmorphism)
-// ---------------------------------------------------------------------------
 
 function NotesCard({ notes }: { notes: string }) {
   return (

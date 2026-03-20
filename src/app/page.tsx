@@ -44,7 +44,7 @@ export default async function Home() {
   }
 
   const serializedBooks: SerializableBook[] = books.map((book: Book) =>
-    serializeBook(book)
+    serializeBook(book),
   );
 
   const byStatus: Record<BookStatus, SerializableBook[]> = {
@@ -62,27 +62,23 @@ export default async function Home() {
 
   return (
     <div className="relative min-h-screen">
-
-      {/* ── Full-page blurred background wallpaper ── */}
       {featuredBook?.coverUrl ? (
         <div
           aria-hidden="true"
           className="fixed inset-0 z-0 pointer-events-none"
           style={{
             backgroundImage: `url(${featuredBook.coverUrl})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            filter: 'blur(80px) brightness(0.25) saturate(1.5)',
-            transform: 'scale(1.2)',
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            filter: "blur(80px) brightness(0.25) saturate(1.5)",
+            transform: "scale(1.2)",
           }}
         />
       ) : (
         <div className="fixed inset-0 z-0 bg-surface pointer-events-none" aria-hidden="true" />
       )}
-      {/* Subtle dark overlay so text stays readable */}
       <div className="fixed inset-0 z-0 bg-surface/50 pointer-events-none" aria-hidden="true" />
 
-      {/* ── Collections — on top of same background ── */}
       <div className="relative z-10 px-12 md:px-20 space-y-16 pb-24 pt-8">
         {STATUS_CONFIG.map(({ status, title }) => {
           const sectionBooks = byStatus[status];
@@ -93,7 +89,7 @@ export default async function Home() {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold tracking-tight text-on-surface flex items-center gap-3">
                   {title}
-                  {status === 'READING' && (
+                  {status === "READING" && (
                     <span
                       className="material-symbols-outlined text-secondary text-sm"
                       style={{ fontVariationSettings: "'FILL' 1" }}
@@ -108,8 +104,9 @@ export default async function Home() {
               </div>
               <div className="flex gap-6 overflow-x-auto hide-scrollbar pb-4 -mx-4 px-4">
                 {sectionBooks.map((book: SerializableBook) => {
-                  const authorLine = book.authors.length > 0 ? book.authors.join(', ') : 'Unknown author';
+                  const authorLine = book.authors.length > 0 ? book.authors.join(", ") : "Unknown author";
                   const year = book.publishedDate ? new Date(book.publishedDate).getFullYear() : null;
+
                   return (
                     <Link
                       key={book.id}
@@ -129,7 +126,7 @@ export default async function Home() {
                         </div>
                       </div>
                       <h3 className="mt-4 text-on-surface font-bold text-sm group-hover:text-primary transition-colors">{book.title}</h3>
-                      <p className="text-tertiary text-xs">{authorLine}{year ? ` • ${year}` : ''}</p>
+                      <p className="text-tertiary text-xs">{authorLine}{year ? ` • ${year}` : ""}</p>
                     </Link>
                   );
                 })}
@@ -138,7 +135,6 @@ export default async function Home() {
           );
         })}
       </div>
-
     </div>
   );
 }
