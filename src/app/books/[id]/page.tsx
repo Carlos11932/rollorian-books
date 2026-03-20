@@ -9,6 +9,7 @@ import { BookDetailClient } from "@/features/books/components/book-detail-client
 import { GoogleBookSaveClient } from "@/features/books/components/google-book-save-client";
 import type { BookStatus } from "@/features/shared/components/badge";
 import type { GoogleBooksVolume } from "@/lib/google-books/types";
+import { stripHtml } from "@/lib/utils/text";
 import Link from "next/link";
 
 interface BookDetailPageProps {
@@ -80,7 +81,7 @@ function googleVolumeToView(volume: GoogleBooksVolume): GoogleBookView {
     title: info.title ?? "Untitled",
     subtitle: info.subtitle ?? null,
     authors: Array.isArray(info.authors) ? info.authors : [],
-    description: info.description ?? null,
+    description: stripHtml(info.description),
     coverUrl: info.imageLinks?.thumbnail?.replace("http://", "https://") ?? null,
     publisher: info.publisher ?? null,
     publishedDate: info.publishedDate ?? null,
@@ -312,7 +313,7 @@ function LocalBookDetail({ book }: { book: LocalBook }) {
               {/* Description */}
               {book.description && (
                 <p className="text-sm text-on-surface/70 leading-relaxed line-clamp-5">
-                  {book.description}
+                  {stripHtml(book.description)}
                 </p>
               )}
             </div>
