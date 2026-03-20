@@ -1,7 +1,7 @@
 import type { NormalizedBook } from "./types";
 
-const RESULT_LIMIT = 10;
-export const PROVIDER_LIMIT = 20;
+const RESULT_LIMIT = 40;
+export const PROVIDER_LIMIT = 40;
 
 function sanitizeQuery(rawQuery: string): string {
   return String(rawQuery || "")
@@ -12,7 +12,7 @@ function sanitizeQuery(rawQuery: string): string {
 function normalizeText(value: string): string {
   return String(value || "")
     .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[̀-ͯ]/g, "")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
