@@ -62,64 +62,76 @@ export default async function Home() {
 
   return (
     <div className="min-h-screen">
-      {/* Hero Section — split layout */}
+      {/* Hero Section */}
       {featuredBook && (
-        <section className="relative w-full bg-surface overflow-hidden">
-          <div className="flex flex-col md:flex-row items-center min-h-[420px] md:min-h-[480px]">
+        <section className="relative w-full overflow-hidden min-h-[420px] flex flex-col items-center justify-center py-12 px-6">
 
-            {/* Left: text content */}
-            <div className="flex-1 px-12 md:px-20 py-16 flex flex-col justify-center relative z-10">
-              <div className="flex items-center gap-3 mb-4">
-                <span className="bg-secondary/20 text-secondary border border-secondary/30 px-3 py-1 rounded-full text-xs font-bold tracking-widest uppercase">
-                  Currently Reading
-                </span>
+          {/* Background: blurred cover image — creates atmospheric color from the book */}
+          {featuredBook.coverUrl && (
+            <div
+              className="absolute inset-0 z-0"
+              style={{
+                backgroundImage: `url(${featuredBook.coverUrl})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                filter: 'blur(60px) brightness(0.35) saturate(1.4)',
+                transform: 'scale(1.1)',
+              }}
+            />
+          )}
+          {/* Fallback background if no cover */}
+          {!featuredBook.coverUrl && (
+            <div className="absolute inset-0 z-0 bg-surface-container" />
+          )}
+
+          {/* Dark vignette overlay for readability */}
+          <div className="absolute inset-0 z-0 bg-surface/40 pointer-events-none" />
+
+          {/* Content */}
+          <div className="relative z-10 flex flex-col items-center text-center max-w-xl">
+
+            {/* Status badge */}
+            <span className="bg-secondary/20 text-secondary border border-secondary/30 px-3 py-1 rounded-full text-xs font-bold tracking-widest uppercase mb-6">
+              Currently Reading
+            </span>
+
+            {/* Book cover — centered, portrait aspect, sharp */}
+            {featuredBook.coverUrl ? (
+              <img
+                src={featuredBook.coverUrl}
+                alt={featuredBook.title}
+                className="h-56 md:h-72 w-auto object-contain rounded-lg shadow-[0_24px_64px_rgba(0,0,0,0.7)] mb-6"
+              />
+            ) : (
+              <div className="h-56 md:h-72 aspect-[2/3] rounded-lg bg-surface-container-high flex items-center justify-center shadow-[0_24px_64px_rgba(0,0,0,0.7)] mb-6">
+                <span className="material-symbols-outlined text-5xl text-tertiary/40">menu_book</span>
               </div>
-              <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-on-surface mb-4 leading-none">
-                {featuredBook.title}
-              </h1>
-              {featuredBook.authors?.length > 0 && (
-                <p className="text-tertiary text-base mb-4 font-medium">
-                  {featuredBook.authors.join(', ')}
-                </p>
-              )}
-              {featuredBook.description && (
-                <p className="text-tertiary/80 text-sm md:text-base max-w-md mb-8 leading-relaxed font-light line-clamp-3">
-                  {featuredBook.description}
-                </p>
-              )}
-              <div className="flex flex-wrap gap-4">
-                <Link
-                  href={`/books/${featuredBook.id}`}
-                  className="bg-gradient-to-br from-primary to-primary-container text-on-primary px-6 py-3 rounded-lg font-bold text-sm flex items-center gap-2 hover:scale-105 transition-transform"
-                >
-                  <span className="material-symbols-outlined text-base">auto_stories</span>
-                  View Details
-                </Link>
-              </div>
-            </div>
+            )}
 
-            {/* Right: book cover */}
-            <div className="relative flex-shrink-0 flex items-center justify-end pr-12 md:pr-20 py-12 md:py-16">
-              {/* Gradient fade — blends cover into background on the left */}
-              <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-surface to-transparent z-10 pointer-events-none" />
+            {/* Title */}
+            <h1 className="text-3xl md:text-4xl font-black tracking-tighter text-on-surface mb-2 leading-tight">
+              {featuredBook.title}
+            </h1>
 
-              {featuredBook.coverUrl ? (
-                <img
-                  src={featuredBook.coverUrl}
-                  alt={featuredBook.title}
-                  className="relative z-0 h-64 md:h-80 w-auto object-contain rounded-lg shadow-[0_20px_60px_rgba(0,0,0,0.6)]"
-                />
-              ) : (
-                <div className="relative z-0 h-64 md:h-80 aspect-[2/3] rounded-lg bg-surface-container-high flex items-center justify-center shadow-[0_20px_60px_rgba(0,0,0,0.6)]">
-                  <span className="material-symbols-outlined text-5xl text-tertiary/40">menu_book</span>
-                </div>
-              )}
-            </div>
+            {/* Author */}
+            {featuredBook.authors?.length > 0 && (
+              <p className="text-tertiary text-sm mb-6 font-medium">
+                {featuredBook.authors.join(', ')}
+              </p>
+            )}
 
+            {/* CTA */}
+            <Link
+              href={`/books/${featuredBook.id}`}
+              className="bg-gradient-to-br from-primary to-primary-container text-on-primary px-6 py-3 rounded-lg font-bold text-sm flex items-center gap-2 hover:scale-105 transition-transform"
+            >
+              <span className="material-symbols-outlined text-base">auto_stories</span>
+              View Details
+            </Link>
           </div>
 
-          {/* Bottom gradient — blends into collections below */}
-          <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-surface to-transparent pointer-events-none" />
+          {/* Bottom fade into content below */}
+          <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-surface to-transparent pointer-events-none z-10" />
         </section>
       )}
 
