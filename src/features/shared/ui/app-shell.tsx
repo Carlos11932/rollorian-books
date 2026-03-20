@@ -19,7 +19,6 @@ interface AppShellProps {
 
 export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
-  const isHome = pathname === '/';
 
   return (
     <>
@@ -90,16 +89,6 @@ export function AppShell({ children }: AppShellProps) {
           );
         })}
       </nav>
-
-      {/* FAB — home page only */}
-      {isHome && (
-        <button
-          aria-label="Add new item"
-          className="fixed bottom-24 right-8 lg:bottom-12 lg:right-12 w-16 h-16 bg-secondary text-on-secondary rounded-full flex items-center justify-center shadow-lg z-40 transition-transform hover:scale-105"
-        >
-          <span className="material-symbols-outlined text-[28px]">auto_fix_high</span>
-        </button>
-      )}
     </>
   );
 }
