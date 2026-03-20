@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, type FormEvent } from "react";
+import Link from "next/link";
 import type { NormalizedBook } from "@/lib/google-books/types";
 import type { SerializableBook } from "@/features/books/types";
 import type { BookStatus } from "@/lib/types/book";
@@ -59,6 +60,43 @@ interface LibraryBookEntry {
   status: BookStatus;
 }
 
+// ── Genre bento data ────────────────────────────────────────────────────────
+
+const GENRES = [
+  {
+    label: "Historia",
+    icon: "history_edu",
+    span: "md:col-span-2 md:row-span-2",
+    labelTag: "Anthology",
+  },
+  {
+    label: "Romance",
+    icon: "favorite",
+    span: "md:col-span-1 md:row-span-1",
+    labelTag: null,
+  },
+  {
+    label: "Ciencia Ficción",
+    icon: "rocket_launch",
+    span: "md:col-span-1 md:row-span-1",
+    labelTag: null,
+  },
+  {
+    label: "Filosofía",
+    icon: "psychology",
+    span: "md:col-span-1 md:row-span-1",
+    labelTag: null,
+  },
+  {
+    label: "Misterio",
+    icon: "search",
+    span: "md:col-span-1 md:row-span-1",
+    labelTag: null,
+  },
+];
+
+const QUICK_FILTERS = ["Novela", "Historia", "Ciencia Ficción", "Romance", "Filosofía"];
+
 // ── Component ───────────────────────────────────────────────────────────────
 
 export default function SearchPage() {
@@ -71,13 +109,12 @@ export default function SearchPage() {
 
   // Library books indexed by isbn13 for fast lookup
   const [libraryIndex, setLibraryIndex] = useState<Map<string, BookStatus>>(new Map());
+  const [librarySuggestions, setLibrarySuggestions] = useState<SerializableBook[]>([]);
 
-  const backgroundUrl = results.length > 0 ? (results[0]?.coverUrl ?? null) : null;
-
-  // Load user's library on mount to detect already-saved books
+  // Load user's library on mount to detect already-saved books and show suggestions
   useEffect(() => {
     void fetch("/api/books")
-      .then((res) => res.ok ? res.json() : [])
+      .then((res) => (res.ok ? res.json() : []))
       .then((books: LibraryBookEntry[]) => {
         const index = new Map<string, BookStatus>();
         for (const book of books) {
@@ -86,6 +123,8 @@ export default function SearchPage() {
           }
         }
         setLibraryIndex(index);
+        // Use all fetched books as suggestions (they are already SerializableBook-compatible)
+        setLibrarySuggestions(books as unknown as SerializableBook[]);
       })
       .catch(() => {
         // Non-critical — search still works without library data
@@ -133,190 +172,264 @@ export default function SearchPage() {
     void handleSearch(inputValue);
   }
 
+  function handleQuickFilter(genre: string) {
+    setInputValue(genre);
+    void handleSearch(genre);
+  }
+
   async function handleSave(displayBook: SerializableBook): Promise<void> {
     const original = results.find((r) => r.externalId === displayBook.id);
     if (!original) return;
     await saveBookToLibrary(original);
-    // Update local library index so the card updates without a reload
     if (original.isbn) {
       setLibraryIndex((prev) => new Map(prev).set(original.isbn!, "WISHLIST"));
     }
   }
 
   return (
-    <div className="relative min-h-screen">
+    <main className="lg:ml-64 pt-24 px-6 md:px-12 pb-24">
 
-      {/* ── Blurred background wallpaper ── */}
-      {backgroundUrl != null ? (
-        <div
-          aria-hidden="true"
-          className="fixed inset-0 z-0 pointer-events-none"
-          style={{
-            backgroundImage: `url(${backgroundUrl})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            filter: "blur(80px) brightness(0.25) saturate(1.5)",
-            transform: "scale(1.2)",
-          }}
-        />
-      ) : (
-        <div className="fixed inset-0 z-0 bg-surface pointer-events-none" aria-hidden="true" />
-      )}
+      {/* ── Centered header — always visible ── */}
+      <div className="text-center mb-8">
+        <h1 className="text-3xl md:text-5xl font-bold text-on-surface tracking-tight mb-8 font-headline">
+          Explore the Archive
+        </h1>
 
-      {/* Dark overlay */}
-      <div className="fixed inset-0 z-0 bg-surface/50 pointer-events-none" aria-hidden="true" />
-
-      {/* ── Page content ── */}
-      <div className="relative z-10 px-6 md:px-12 lg:px-20 pb-24 pt-12">
-
-        {/* Header */}
-        <div className="text-center mb-10">
-          <h1
-            className="text-4xl md:text-5xl font-bold text-on-surface tracking-tight"
-            style={{ fontFamily: "var(--font-headline)" }}
-          >
-            Buscar libros
-          </h1>
-        </div>
-
-        {/* ── Search input ── */}
+        {/* Search input */}
         <form
           onSubmit={handleSubmit}
           role="search"
-          className="flex flex-col items-center gap-4 w-full max-w-2xl mx-auto mb-12"
+          className="relative w-full max-w-2xl mx-auto"
         >
           <label htmlFor="search-input" className="sr-only">
             Busca por título, autor o ISBN
           </label>
 
-          <div className="relative w-full">
-            {/* Search icon */}
-            <span
-              aria-hidden="true"
-              className="absolute left-5 top-1/2 -translate-y-1/2 pointer-events-none text-white/40"
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: "22px" }}>
-                search
-              </span>
-            </span>
-
-            <input
-              id="search-input"
-              name="query"
-              type="search"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Busca por título, autor o ISBN"
-              autoComplete="off"
-              spellCheck={false}
-              disabled={isLoading}
-              className={[
-                "w-full pl-14 pr-5 py-4 rounded-2xl",
-                "bg-white/5 backdrop-blur-md border border-white/10",
-                "text-on-surface placeholder:text-white/40 text-base",
-                "focus:outline-none focus:border-primary focus:bg-white/8",
-                "disabled:opacity-50 disabled:cursor-not-allowed",
-                "transition-colors duration-150",
-              ].join(" ")}
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={!inputValue.trim() || isLoading}
-            className={[
-              "px-8 py-3 rounded-xl font-semibold text-sm",
-              "bg-primary text-on-primary",
-              "hover:bg-primary-fixed-dim transition-colors duration-150",
-              "disabled:opacity-40 disabled:cursor-not-allowed",
-              "focus:outline-none focus:ring-2 focus:ring-primary/50",
-            ].join(" ")}
+          {/* Search icon — left */}
+          <span
+            aria-hidden="true"
+            className="absolute inset-y-0 left-6 flex items-center pointer-events-none"
           >
-            {isLoading ? "Buscando..." : "Buscar"}
-          </button>
-        </form>
-
-        {/* ── Error state ── */}
-        {error != null && (
-          <div
-            role="alert"
-            className="max-w-2xl mx-auto mb-8 rounded-xl border border-error/30 bg-error/10 px-4 py-3 text-sm text-error"
-          >
-            {error}
-          </div>
-        )}
-
-        {/* ── Initial state ── */}
-        {!hasSearched && !isLoading && (
-          <div className="flex flex-col items-center gap-4 mt-16 text-center text-white/40">
-            <span className="material-symbols-outlined" style={{ fontSize: "64px" }}>
+            <span className="material-symbols-outlined text-primary" style={{ fontSize: "22px" }}>
               search
             </span>
-            <p className="text-lg font-medium">Busca tu próxima lectura</p>
-            <p className="text-sm text-white/30 max-w-xs">
-              Explora millones de libros por título, autor o ISBN
-            </p>
-          </div>
-        )}
+          </span>
 
-        {/* ── Loading skeletons ── */}
-        {isLoading && (
-          <div
-            className="grid gap-5"
-            style={{ gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))" }}
-            aria-busy="true"
-            aria-label="Cargando resultados"
+          <input
+            id="search-input"
+            name="query"
+            type="search"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            placeholder="Busca por título, autor o ISBN"
+            autoComplete="off"
+            spellCheck={false}
+            disabled={isLoading}
+            className="w-full bg-surface-container-lowest border-none text-on-surface placeholder:text-outline text-lg py-5 pl-16 pr-16 rounded-full shadow-2xl focus:ring-2 focus:ring-primary/20 outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+          />
+
+          {/* Mic button — right (visual only) */}
+          <span
+            aria-hidden="true"
+            className="absolute inset-y-0 right-4 flex items-center pointer-events-none"
           >
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="grid gap-2">
-                <Skeleton variant="card" className="h-[220px]" />
-                <Skeleton variant="text" className="h-4 w-3/4" />
-                <Skeleton variant="text" className="h-3 w-1/2" />
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* ── No results ── */}
-        {hasSearched && !isLoading && results.length === 0 && error == null && (
-          <div className="flex flex-col items-center gap-4 mt-16 text-center">
-            <span className="material-symbols-outlined text-white/30" style={{ fontSize: "64px" }}>
-              menu_book
+            <span className="material-symbols-outlined text-outline" style={{ fontSize: "22px" }}>
+              mic
             </span>
-            <p className="text-lg font-medium text-white/60">
-              No hemos encontrado nada para &ldquo;{query}&rdquo;
-            </p>
-            <p className="text-sm text-white/30">
-              Prueba con otro título, autor o ISBN
-            </p>
-          </div>
-        )}
+          </span>
+        </form>
 
-        {/* ── Results grid ── */}
-        {hasSearched && !isLoading && results.length > 0 && (
-          <section aria-label="Resultados de búsqueda" aria-live="polite">
-            <p className="text-sm text-white/50 mb-6 font-medium">
-              {results.length} {results.length === 1 ? "resultado" : "resultados"} para &ldquo;{query}&rdquo;
-            </p>
-            <div
-              className="grid gap-5"
-              style={{ gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))" }}
+        {/* Quick filter pills */}
+        <div className="flex flex-wrap justify-center gap-3 mt-8">
+          {QUICK_FILTERS.map((genre) => (
+            <button
+              key={genre}
+              type="button"
+              onClick={() => handleQuickFilter(genre)}
+              className="px-5 py-2 bg-surface-container-high text-on-surface-variant rounded-full text-sm font-medium hover:bg-surface-bright cursor-pointer transition-colors duration-150"
             >
-              {results.map((book, index) => (
-                <BookCard
-                  key={book.externalId}
-                  variant="search"
-                  book={toDisplayBook(book)}
-                  index={index}
-                  savedStatus={getSavedStatus(book)}
-                  onSave={handleSave}
-                />
+              {genre}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Error state ── */}
+      {error != null && (
+        <div
+          role="alert"
+          className="max-w-2xl mx-auto mb-8 rounded-xl border border-error/30 bg-error/10 px-4 py-3 text-sm text-error"
+        >
+          {error}
+        </div>
+      )}
+
+      {/* ── Default state (no active search) ── */}
+      {!hasSearched && !isLoading && (
+        <>
+          {/* Bento grid of genres */}
+          <section className="mb-16" aria-label="Géneros">
+            <div className="grid grid-cols-1 md:grid-cols-4 grid-rows-2 gap-4 h-auto md:h-[450px]">
+              {GENRES.map((genre) => (
+                <button
+                  key={genre.label}
+                  type="button"
+                  onClick={() => handleQuickFilter(genre.label)}
+                  className={[
+                    genre.span,
+                    "rounded-xl overflow-hidden relative group cursor-pointer bg-surface-container-low text-left",
+                  ].join(" ")}
+                >
+                  {/* Background icon — decorative */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span
+                      className="material-symbols-outlined text-primary/20"
+                      style={{ fontSize: "96px" }}
+                    >
+                      {genre.icon}
+                    </span>
+                  </div>
+
+                  {/* Gradient overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-surface to-transparent" />
+
+                  {/* Text content */}
+                  <div className="absolute bottom-0 p-6">
+                    {genre.labelTag != null && (
+                      <span className="block text-xs font-semibold text-secondary uppercase tracking-widest mb-1">
+                        {genre.labelTag}
+                      </span>
+                    )}
+                    <span className="text-xl font-bold text-primary font-headline">
+                      {genre.label}
+                    </span>
+                  </div>
+                </button>
               ))}
             </div>
           </section>
-        )}
 
-      </div>
-    </div>
+          {/* Archived Suggestions */}
+          {librarySuggestions.length > 0 && (
+            <section aria-label="Archived Suggestions">
+              <h2 className="text-xl md:text-2xl font-bold font-headline tracking-tight mb-8">
+                Archived Suggestions
+              </h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+                {librarySuggestions.map((book, index) => (
+                  <Link
+                    key={book.id}
+                    href={`/books/${book.id}`}
+                    className="group relative block rounded-lg overflow-hidden cursor-pointer"
+                    aria-label={`${book.title}${book.authors.length > 0 ? ` — ${book.authors.join(", ")}` : ""}`}
+                  >
+                    {/* Portrait cover */}
+                    <div className="aspect-[2/3] rounded-lg overflow-hidden bg-surface-container-high relative">
+                      {book.coverUrl != null ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={book.coverUrl}
+                          alt={book.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 shadow-xl"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <span
+                            className="material-symbols-outlined text-on-surface-variant/40"
+                            style={{ fontSize: "48px" }}
+                          >
+                            menu_book
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Bookmark button */}
+                      <button
+                        type="button"
+                        tabIndex={-1}
+                        aria-hidden="true"
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150 bg-surface-container-highest/90 p-2 rounded-full text-secondary"
+                      >
+                        <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>
+                          bookmark
+                        </span>
+                      </button>
+                    </div>
+
+                    {/* Book info */}
+                    <div className="pt-2 px-1">
+                      <p
+                        className="text-on-surface font-bold text-sm truncate mb-1"
+                        title={book.title}
+                      >
+                        {book.title}
+                      </p>
+                      <p className="text-on-surface-variant text-xs truncate">
+                        {book.authors.length > 0 ? book.authors.join(", ") : "Autor desconocido"}
+                      </p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
+        </>
+      )}
+
+      {/* ── Loading skeletons ── */}
+      {isLoading && (
+        <div
+          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6"
+          aria-busy="true"
+          aria-label="Cargando resultados"
+        >
+          {Array.from({ length: 12 }).map((_, i) => (
+            <div key={i} className="grid gap-2">
+              <Skeleton variant="card" className="aspect-[2/3] rounded-lg" />
+              <Skeleton variant="text" className="h-4 w-3/4" />
+              <Skeleton variant="text" className="h-3 w-1/2" />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── No results ── */}
+      {hasSearched && !isLoading && results.length === 0 && error == null && (
+        <div className="flex flex-col items-center gap-4 mt-16 text-center">
+          <span
+            className="material-symbols-outlined text-on-surface-variant/40"
+            style={{ fontSize: "64px" }}
+          >
+            menu_book
+          </span>
+          <p className="text-lg font-medium text-on-surface-variant">
+            No encontramos nada para &ldquo;{query}&rdquo;
+          </p>
+          <p className="text-sm text-outline">Prueba con otro título, autor o ISBN</p>
+        </div>
+      )}
+
+      {/* ── Results grid ── */}
+      {hasSearched && !isLoading && results.length > 0 && (
+        <section aria-label="Resultados de búsqueda" aria-live="polite">
+          <p className="text-tertiary text-sm mb-6">
+            {results.length} {results.length === 1 ? "resultado" : "resultados"} para &laquo;{query}&raquo;
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+            {results.map((book, index) => (
+              <BookCard
+                key={book.externalId}
+                variant="search"
+                book={toDisplayBook(book)}
+                index={index}
+                savedStatus={getSavedStatus(book)}
+                onSave={handleSave}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+    </main>
   );
 }
