@@ -3,7 +3,7 @@ import "server-only";
 import type { GoogleBooksVolume } from "./types";
 
 const GOOGLE_BOOKS_URL = "https://www.googleapis.com/books/v1/volumes";
-const DEFAULT_SEARCH_LIMIT = 10;
+const DEFAULT_SEARCH_LIMIT = 40;
 
 interface FetchBooksOptions {
   maxResults?: number;
