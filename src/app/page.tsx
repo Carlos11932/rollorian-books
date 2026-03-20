@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { Book, BookStatus } from "@/lib/types/book";
 import { prisma } from "@/lib/prisma";
@@ -115,7 +116,13 @@ export default async function Home() {
                     >
                       <div className="relative aspect-[2/3] rounded-lg overflow-hidden bg-surface-container-low transition-all duration-300 group-hover:scale-105 group-hover:shadow-[0_20px_40px_rgba(0,17,12,0.8)]">
                         {book.coverUrl ? (
-                          <img className="w-full h-full object-cover" src={book.coverUrl} alt={book.title} />
+                          <Image
+                            src={book.coverUrl}
+                            alt={book.title}
+                            fill
+                            sizes="(max-width: 768px) 192px, 224px"
+                            className="object-cover"
+                          />
                         ) : (
                           <div className="w-full h-full bg-surface-container flex items-center justify-center">
                             <span className="material-symbols-outlined text-tertiary text-4xl">menu_book</span>

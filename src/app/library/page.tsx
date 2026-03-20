@@ -146,7 +146,7 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
       >
         <div className="grid gap-1">
           <p className="text-xs font-bold uppercase tracking-widest text-muted">Library</p>
-          <h1 className="text-3xl font-bold text-text" style={{ fontFamily: "var(--font-display)" }}>
+          <h1 className="text-3xl font-bold text-text" style={{ fontFamily: "var(--font-headline)" }}>
             Your Archive
           </h1>
           <p className="text-sm text-muted leading-relaxed max-w-lg">

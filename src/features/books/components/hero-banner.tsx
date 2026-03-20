@@ -21,7 +21,7 @@ export function HeroBanner({ book }: HeroBannerProps) {
           </p>
           <h1
             className="text-4xl font-bold text-text"
-            style={{ fontFamily: "var(--font-display)" }}
+            style={{ fontFamily: "var(--font-headline)" }}
           >
             Your archive awaits
           </h1>
@@ -88,7 +88,7 @@ export function HeroBanner({ book }: HeroBannerProps) {
 
           <h1
             className="text-4xl md:text-5xl font-bold text-text leading-tight"
-            style={{ fontFamily: "var(--font-display)" }}
+            style={{ fontFamily: "var(--font-headline)" }}
           >
             {book.title}
           </h1>

@@ -20,7 +20,7 @@ interface BookCoverProps {
 export function BookCover({
   coverUrl,
   title,
-  tone = "cool",
+  tone = COVER_TONE.cool,
   className,
   priority = false,
   sizes = "(max-width: 768px) 118px, 118px",
@@ -29,8 +29,8 @@ export function BookCover({
     <div
       className={cn(
         "relative overflow-hidden rounded-[var(--radius-md)] border border-line",
-        tone === "cool" && "bg-gradient-to-b from-[#30465d] to-[#1a2736]",
-        tone === "warm" && "bg-gradient-to-b from-[#6a2a2c] to-[#23151b]",
+        tone === COVER_TONE.cool && "bg-gradient-to-b from-[#30465d] to-[#1a2736]",
+        tone === COVER_TONE.warm && "bg-gradient-to-b from-[#6a2a2c] to-[#23151b]",
         className,
       )}
     >
@@ -46,7 +46,7 @@ export function BookCover({
       ) : (
         <div
           className="absolute inset-0 grid place-items-center p-3 text-center text-text/60 text-xs leading-snug"
-          style={{ fontFamily: "var(--font-display)" }}
+          style={{ fontFamily: "var(--font-headline)" }}
           aria-label={`No cover image for ${title}`}
         >
           {title}

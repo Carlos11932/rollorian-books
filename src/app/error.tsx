@@ -20,7 +20,7 @@ export default function Error({ error, reset }: ErrorProps) {
         </p>
         <h2
           className="text-4xl font-bold text-text"
-          style={{ fontFamily: "var(--font-display)" }}
+          style={{ fontFamily: "var(--font-headline)" }}
         >
           Something went wrong
         </h2>

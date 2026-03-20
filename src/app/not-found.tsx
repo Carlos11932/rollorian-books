@@ -7,7 +7,7 @@ export default function NotFound() {
         <p className="text-xs font-bold uppercase tracking-widest text-accent">
           404
         </p>
-        <h1 className="text-5xl font-bold text-text" style={{ fontFamily: "var(--font-display)" }}>
+        <h1 className="text-5xl font-bold text-text" style={{ fontFamily: "var(--font-headline)" }}>
           Page not found
         </h1>
         <p className="text-muted text-base max-w-sm">

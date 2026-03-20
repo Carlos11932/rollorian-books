@@ -20,7 +20,7 @@ export function CardOverlay({ bookId, title, authors, showLink = true }: CardOve
     >
       <p
         className="text-[1.05rem] font-bold text-text mb-1 whitespace-nowrap overflow-hidden text-ellipsis"
-        style={{ fontFamily: "var(--font-display)" }}
+        style={{ fontFamily: "var(--font-headline)" }}
       >
         {title}
       </p>

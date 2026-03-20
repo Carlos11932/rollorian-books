@@ -316,7 +316,7 @@ export default function SearchPage() {
                 Archived Suggestions
               </h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
-                {librarySuggestions.map((book, index) => (
+                {librarySuggestions.map((book) => (
                   <Link
                     key={book.id}
                     href={`/books/${book.id}`}

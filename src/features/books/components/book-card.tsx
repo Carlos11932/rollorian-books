@@ -74,7 +74,7 @@ function BrowseCard({
         <Badge status={book.status} className="text-[10px] px-2 py-0.5" />
         <h3
           className="text-[0.78rem] font-bold text-text leading-tight line-clamp-2"
-          style={{ fontFamily: "var(--font-display)" }}
+          style={{ fontFamily: "var(--font-headline)" }}
         >
           {book.title}
         </h3>
@@ -150,7 +150,7 @@ function SearchCard({
         <div className="grid gap-0.5">
           <h3
             className="text-sm font-bold text-text leading-tight line-clamp-2"
-            style={{ fontFamily: "var(--font-display)" }}
+            style={{ fontFamily: "var(--font-headline)" }}
           >
             {book.title}
           </h3>
@@ -236,7 +236,7 @@ function LibraryCard({
           <Badge status={book.status} />
           <h3
             className="text-base font-bold text-text leading-tight line-clamp-2"
-            style={{ fontFamily: "var(--font-display)" }}
+            style={{ fontFamily: "var(--font-headline)" }}
           >
             {book.title}
           </h3>
