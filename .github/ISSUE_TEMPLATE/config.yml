@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Existing backlog
+    url: https://github.com/Carlos11932/rollorian-books/issues
+    about: Check whether the idea or bug is already tracked before opening a new ticket.

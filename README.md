@@ -1,5 +1,17 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## GitHub issue enrichment
+
+This repo now includes a GitHub-native issue intake and enrichment flow based on:
+
+- GitHub Issue Forms
+- GitHub Actions
+- GitHub Models
+
+Use the `Quick intake` issue form for short mobile-friendly submissions. The workflow expands the issue into a clearer review ticket while keeping the original raw intake inside the final issue.
+
+See `docs/github-issue-enrichment.md` for setup, trigger behavior, labels, and the GitHub settings required for it to work.
+
 ## Getting Started
 
 First, run the development server:
