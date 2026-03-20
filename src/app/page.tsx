@@ -82,44 +82,8 @@ export default async function Home() {
       {/* Subtle dark overlay so text stays readable */}
       <div className="fixed inset-0 z-0 bg-surface/50 pointer-events-none" aria-hidden="true" />
 
-      {/* ── Hero section ── */}
-      {featuredBook && (
-        <section className="relative z-10 h-[65vh] min-h-[400px] flex items-end overflow-hidden">
-          {/* Bottom gradient — fades hero into content */}
-          <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-surface/80 to-transparent pointer-events-none" />
-
-          <div className="relative px-12 md:px-20 pb-16 max-w-3xl">
-            <div className="flex items-center gap-3 mb-4">
-              <span className="bg-secondary/20 text-secondary border border-secondary/30 px-3 py-1 rounded-full text-xs font-bold tracking-widest uppercase">
-                Currently Reading
-              </span>
-            </div>
-            <h1 className="text-5xl md:text-7xl font-black tracking-tighter text-on-surface mb-4 leading-none">
-              {featuredBook.title}
-            </h1>
-            {featuredBook.authors?.length > 0 && (
-              <p className="text-tertiary text-base mb-3 font-medium">
-                {featuredBook.authors.join(', ')}
-              </p>
-            )}
-            {featuredBook.description && (
-              <p className="text-tertiary/70 text-sm md:text-base max-w-lg mb-8 leading-relaxed font-light line-clamp-2">
-                {featuredBook.description}
-              </p>
-            )}
-            <Link
-              href={`/books/${featuredBook.id}`}
-              className="bg-gradient-to-br from-primary to-primary-container text-on-primary px-8 py-4 rounded-lg font-bold flex items-center gap-3 hover:scale-105 transition-transform inline-flex"
-            >
-              <span className="material-symbols-outlined">auto_stories</span>
-              View Details
-            </Link>
-          </div>
-        </section>
-      )}
-
       {/* ── Collections — on top of same background ── */}
-      <div className="relative z-10 px-12 md:px-20 space-y-16 pb-24 mt-4">
+      <div className="relative z-10 px-12 md:px-20 space-y-16 pb-24 pt-8">
         {STATUS_CONFIG.map(({ status, title }) => {
           const sectionBooks = byStatus[status];
           if (sectionBooks.length === 0) return null;
