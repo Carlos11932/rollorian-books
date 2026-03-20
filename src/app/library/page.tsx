@@ -1,13 +1,11 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import type { BookStatus as PrismaBookStatus } from "@/lib/types/book";
 import { prisma } from "@/lib/prisma";
-import { BookRailSection } from "@/features/shared/ui/book-rail-section";
 import { LibraryBookCard } from "@/features/books/components/library-book-card";
 import { StatusTabs } from "@/features/books/components/status-tabs";
-import { EmptyState } from "@/features/shared/components/empty-state";
 import type { StatusTabValue, StatusCounts } from "@/features/books/components/status-tabs";
 import type { BookStatus } from "@/features/shared/components/badge";
-import LibraryLoading from "./loading";
 
 /** Explicit shape for books fetched with the select clause below. */
 interface LibraryBookRow {
@@ -20,12 +18,6 @@ interface LibraryBookRow {
   notes: string | null;
   publisher: string | null;
   publishedDate: string | null;
-}
-
-/** Explicit shape for groupBy status counts. */
-interface StatusCountRow {
-  status: PrismaBookStatus;
-  _count: { id: number };
 }
 
 const BOOK_STATUS = {
@@ -42,18 +34,12 @@ const STATUS_ORDERED: BookStatus[] = [
   BOOK_STATUS.READ,
 ];
 
-const STATUS_EYEBROW: Record<BookStatus, string> = {
+const STATUS_TAB_LABELS: Record<StatusTabValue, string> = {
+  all: "Todos",
   WISHLIST: "Wishlist",
-  TO_READ: "Up next",
-  READING: "In progress",
-  READ: "Completed",
-};
-
-const STATUS_EMPTY_COPY: Record<BookStatus, string> = {
-  WISHLIST: "Prospects worth keeping visible until they earn a stronger commitment.",
-  TO_READ: "Confirmed next reads waiting for their turn.",
-  READING: "Books currently in motion.",
-  READ: "Completed titles with notes and history preserved.",
+  TO_READ: "Por Leer",
+  READING: "Leyendo",
+  READ: "Leídos",
 };
 
 function isValidStatus(value: string): value is BookStatus {
@@ -75,7 +61,7 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
   const statusParam = typeof params.status === "string" ? params.status : undefined;
   const activeStatus = resolveActiveStatus(statusParam);
 
-  // Fetch all books; if status is active fetch only that status
+  // Fetch books filtered by status if active
   const books: LibraryBookRow[] = await prisma.book.findMany({
     where: activeStatus !== "all" ? { status: activeStatus } : undefined,
     orderBy: { createdAt: "desc" },
@@ -92,27 +78,24 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
     },
   });
 
-  // Compute counts for the tab badges
-  // When filtered: only count matching books; for "all" we need counts per status
+  // Compute counts for tab badges
   let counts: StatusCounts;
 
   if (activeStatus === "all") {
-    const grouped = books.reduce<Record<BookStatus, number>>(
-      (acc: Record<BookStatus, number>, book: LibraryBookRow) => {
+    counts = books.reduce<StatusCounts>(
+      (acc, book) => {
         acc[book.status as BookStatus] = (acc[book.status as BookStatus] ?? 0) + 1;
         return acc;
       },
       { WISHLIST: 0, TO_READ: 0, READING: 0, READ: 0 },
     );
-    counts = grouped;
   } else {
-    // For filtered view, query counts for all statuses separately
     const allCounts = await prisma.book.groupBy({
       by: ["status"],
       _count: { id: true },
     });
     counts = allCounts.reduce<StatusCounts>(
-      (acc: StatusCounts, row: { status: PrismaBookStatus; _count: { id: number } }) => {
+      (acc, row) => {
         acc[row.status as BookStatus] = row._count.id;
         return acc;
       },
@@ -120,101 +103,161 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
     );
   }
 
+  const totalBooks = Object.values(counts).reduce((a, b) => a + b, 0);
+
+  // Background image: first book of the active tab, or first book overall
+  const backdropBook =
+    activeStatus !== "all"
+      ? (books.find((b) => b.coverUrl !== null) ?? null)
+      : (books.find((b) => b.coverUrl !== null) ?? null);
+
+  const backdropUrl = backdropBook?.coverUrl ?? null;
+
+  // For rendering: group by status when "all" tab is active
+  const booksByStatus: Record<BookStatus, LibraryBookRow[]> =
+    activeStatus === "all"
+      ? STATUS_ORDERED.reduce<Record<BookStatus, LibraryBookRow[]>>(
+          (acc, status) => {
+            acc[status] = books.filter((b) => b.status === status);
+            return acc;
+          },
+          { READING: [], TO_READ: [], WISHLIST: [], READ: [] },
+        )
+      : { READING: [], TO_READ: [], WISHLIST: [], READ: [] };
+
   const isEmpty = books.length === 0;
 
   return (
-    <div className="grid gap-6">
-      {/* Page header */}
-      <div className="rounded-[var(--radius-xl)] border border-line bg-gradient-to-b from-[rgba(19,27,41,0.88)] to-[rgba(8,12,20,0.88)] backdrop-blur-[16px] p-6 grid gap-4"
-        style={{ backdropFilter: "blur(16px)" }}>
-        <div className="grid gap-1">
-          <p className="text-xs font-bold uppercase tracking-widest text-muted">Library</p>
-          <h1
-            className="text-3xl font-bold text-text"
-            style={{ fontFamily: "var(--font-display)" }}
-          >
-            Your Archive
-          </h1>
-          <p className="text-sm text-muted leading-relaxed max-w-lg">
-            Your archive, split into rails that match reading intent. Filter by
-            status or keep everything visible and scroll each shelf.
-          </p>
+    <div className="relative min-h-screen">
+
+      {/* ── Blurred background wallpaper ── */}
+      {backdropUrl ? (
+        <div
+          aria-hidden="true"
+          className="fixed inset-0 z-0 pointer-events-none"
+          style={{
+            backgroundImage: `url(${backdropUrl})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            filter: "blur(80px) brightness(0.25) saturate(1.5)",
+            transform: "scale(1.2)",
+          }}
+        />
+      ) : (
+        <div className="fixed inset-0 z-0 bg-surface pointer-events-none" aria-hidden="true" />
+      )}
+      {/* Dark overlay for readability */}
+      <div className="fixed inset-0 z-[1] bg-surface/50 pointer-events-none" aria-hidden="true" />
+
+      {/* ── Main content ── */}
+      <div className="relative z-[2] px-6 md:px-12 lg:px-20 pt-10 pb-24 space-y-8">
+
+        {/* Header */}
+        <div className="flex items-end justify-between">
+          <div>
+            <h1
+              className="text-4xl font-bold text-on-surface tracking-tight"
+              style={{ fontFamily: "var(--font-headline)" }}
+            >
+              Mi Biblioteca
+            </h1>
+          </div>
+          <span className="text-on-surface/50 text-sm font-semibold tabular-nums">
+            {totalBooks} {totalBooks === 1 ? "libro" : "libros"}
+          </span>
         </div>
 
-        {/* Status tabs — needs client interactivity */}
-        <Suspense fallback={<div className="flex gap-2 h-9" />}>
+        {/* Status tabs */}
+        <Suspense fallback={<div className="flex gap-2 h-10" />}>
           <StatusTabs activeStatus={activeStatus} counts={counts} />
         </Suspense>
-      </div>
 
-      {/* Content */}
-      {isEmpty ? (
-        <EmptyState
-          title={
-            activeStatus === "all"
-              ? "Your library is empty"
-              : `No ${activeStatus === "TO_READ" ? "To Read" : activeStatus.charAt(0) + activeStatus.slice(1).toLowerCase()} books`
-          }
-          description={
-            activeStatus === "all"
-              ? "Search the catalog, save a title, and the rails will start filling by status."
-              : "Try another status or save something from Search."
-          }
-        />
-      ) : activeStatus !== "all" ? (
-        /* Single filtered list */
-        <BookRailSection
-          title={STATUS_EYEBROW[activeStatus as BookStatus]}
-          eyebrow={activeStatus === "TO_READ" ? "To Read" : activeStatus.charAt(0) + activeStatus.slice(1).toLowerCase()}
-          count={books.length}
-          emptyCopy="No books match this filter."
-        >
-          {books.map((book: LibraryBookRow) => (
-            <div key={book.id} className="shrink-0 w-[clamp(260px,32vw,340px)]" style={{ scrollSnapAlign: "start" }}>
-              <LibraryBookCard book={{
-                ...book,
-                status: book.status as BookStatus,
-                coverUrl: book.coverUrl ?? null,
-                rating: book.rating ?? null,
-                notes: book.notes ?? null,
-                publisher: book.publisher ?? null,
-                publishedDate: book.publishedDate ?? null,
-              }} />
+        {/* Content */}
+        {isEmpty ? (
+          /* Empty state */
+          <div className="flex flex-col items-center justify-center py-32 gap-6 text-center">
+            <span
+              className="material-symbols-outlined text-on-surface/30 text-7xl"
+              style={{ fontVariationSettings: "'FILL' 0, 'wght' 100, 'GRAD' 0, 'opsz' 48" }}
+              aria-hidden="true"
+            >
+              menu_book
+            </span>
+            <div className="space-y-2">
+              <p className="text-on-surface font-bold text-lg">
+                {activeStatus === "all"
+                  ? "Tu biblioteca está vacía"
+                  : `No hay libros en ${STATUS_TAB_LABELS[activeStatus]}`}
+              </p>
+              <p className="text-on-surface/50 text-sm max-w-xs mx-auto leading-relaxed">
+                {activeStatus === "all"
+                  ? "Busca libros y guárdalos aquí para empezar a construir tu colección."
+                  : "Prueba otro estado o busca algo nuevo para añadir."}
+              </p>
             </div>
-          ))}
-        </BookRailSection>
-      ) : (
-        /* All statuses — one rail per status that has books */
-        <div className="grid gap-4">
-          {STATUS_ORDERED.map((status: BookStatus) => {
-            const statusBooks = books.filter((b: LibraryBookRow) => b.status === status);
-            return (
-              <BookRailSection
-                key={status}
-                title={STATUS_EYEBROW[status]}
-                eyebrow={status === "TO_READ" ? "To Read" : status === "READ" ? "Read" : status.charAt(0) + status.slice(1).toLowerCase()}
-                count={statusBooks.length}
-                emptyTitle={`No ${status === "TO_READ" ? "To Read" : status.toLowerCase()} books`}
-                emptyCopy={STATUS_EMPTY_COPY[status]}
+            <Link
+              href="/search"
+              className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-bold text-on-primary transition-all duration-200 hover:brightness-110 hover:scale-[1.02]"
+            >
+              <span
+                className="material-symbols-outlined text-base"
+                style={{ fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20" }}
+                aria-hidden="true"
               >
-                {statusBooks.map((book: LibraryBookRow) => (
-                  <div key={book.id} className="shrink-0 w-[clamp(260px,32vw,340px)]" style={{ scrollSnapAlign: "start" }}>
-                    <LibraryBookCard book={{
-                      ...book,
-                      status: book.status as BookStatus,
-                      coverUrl: book.coverUrl ?? null,
-                      rating: book.rating ?? null,
-                      notes: book.notes ?? null,
-                      publisher: book.publisher ?? null,
-                      publishedDate: book.publishedDate ?? null,
-                    }} />
-                  </div>
-                ))}
-              </BookRailSection>
-            );
-          })}
-        </div>
-      )}
+                search
+              </span>
+              Buscar libros
+            </Link>
+          </div>
+        ) : activeStatus !== "all" ? (
+          /* Single filtered grid */
+          <BookGrid books={books} />
+        ) : (
+          /* All statuses — one section per status */
+          <div className="space-y-14">
+            {STATUS_ORDERED.map((status) => {
+              const sectionBooks = booksByStatus[status];
+              if (sectionBooks.length === 0) return null;
+              return (
+                <section key={status}>
+                  <h2
+                    className="text-lg font-bold text-on-surface/70 mb-5 uppercase tracking-widest text-xs"
+                    style={{ fontFamily: "var(--font-headline)" }}
+                  >
+                    {STATUS_TAB_LABELS[status]}
+                    <span className="ml-2 text-on-surface/30 font-normal normal-case tracking-normal text-sm">
+                      {sectionBooks.length}
+                    </span>
+                  </h2>
+                  <BookGrid books={sectionBooks} />
+                </section>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Responsive grid of LibraryBookCards */
+function BookGrid({ books }: { books: LibraryBookRow[] }) {
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3">
+      {books.map((book) => (
+        <LibraryBookCard
+          key={book.id}
+          book={{
+            ...book,
+            status: book.status as BookStatus,
+            coverUrl: book.coverUrl ?? null,
+            rating: book.rating ?? null,
+            notes: book.notes ?? null,
+            publisher: book.publisher ?? null,
+            publishedDate: book.publishedDate ?? null,
+          }}
+        />
+      ))}
     </div>
   );
 }
