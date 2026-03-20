@@ -1,46 +1,62 @@
-import Link from "next/link";
-import { NavLinks } from "./nav-links";
+'use client';
+
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
+import { cn } from '@/lib/cn';
+
+const navItems = [
+  { href: '/', label: 'Home' },
+  { href: '/search', label: 'Search' },
+  { href: '/library', label: 'Library' },
+];
 
 export function SiteHeader() {
-  return (
-    <header
-      className="flex justify-between gap-4 items-start px-[clamp(1.2rem,2.8vw,2rem)] py-[clamp(1rem,2vw,1.4rem)] rounded-[var(--radius-xl)] border border-line bg-gradient-to-b from-[rgba(19,27,41,0.88)] to-[rgba(8,12,20,0.88)] backdrop-blur-[16px] shadow-[var(--shadow-default)]"
-      style={{ backdropFilter: "blur(16px)" }}
-    >
-      {/* Brand */}
-      <div className="grid gap-3 max-w-[42rem]">
-        <Link
-          href="/"
-          className="inline-flex gap-3 items-center group focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent rounded-sm"
-          aria-label="Rollorian — Home"
-        >
-          <span
-            className="grid place-items-center w-[3.35rem] h-[3.35rem] rounded-[1rem] text-white text-[1.6rem] font-bold shadow-[inset_0_1px_0_rgba(255,255,255,0.16)]"
-            style={{
-              fontFamily: "var(--font-display)",
-              background: "linear-gradient(160deg, var(--color-accent) 0%, var(--color-accent-strong) 100%)",
-            }}
-            aria-hidden="true"
-          >
-            R
-          </span>
-          <span>
-            <span className="block text-[0.7rem] font-bold uppercase tracking-widest text-muted">
-              Rollorian Archive
-            </span>
-            <strong className="block text-[1.45rem] text-text leading-tight">
-              Book Archive
-            </strong>
-          </span>
-        </Link>
-        <p className="text-sm text-muted leading-relaxed hidden md:block">
-          A personal screening room for your reading life. Search globally,
-          curate locally.
-        </p>
-      </div>
+  const pathname = usePathname();
 
-      {/* Navigation */}
-      <NavLinks />
-    </header>
+  return (
+    <nav className="fixed top-0 w-full z-50 bg-[#001711]/80 backdrop-blur-xl bg-gradient-to-b from-[#001711] to-transparent">
+      <div className="flex justify-between items-center w-full px-8 md:px-16 py-4">
+        {/* Left: Logo + desktop nav */}
+        <div className="flex items-center gap-12">
+          <span className="text-xl font-bold tracking-tighter text-primary font-headline">
+            The Private Curator
+          </span>
+          <div className="hidden md:flex gap-8 items-center">
+            {navItems.map(({ href, label }) => {
+              const isActive = pathname === href;
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  className={cn(
+                    'text-sm font-medium transition-colors',
+                    isActive
+                      ? 'text-primary border-b-2 border-secondary pb-1'
+                      : 'text-tertiary hover:text-primary'
+                  )}
+                >
+                  {label}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Right: search icon + profile avatar */}
+        <div className="flex items-center gap-6">
+          <button
+            aria-label="Search"
+            className="material-symbols-outlined text-primary hover:bg-surface-variant/50 p-2 rounded-full transition-colors"
+          >
+            search
+          </button>
+          <div className="w-8 h-8 rounded-full overflow-hidden border border-primary/20 bg-surface-container flex items-center justify-center">
+            <span className="material-symbols-outlined text-primary text-xl leading-none">
+              account_circle
+            </span>
+          </div>
+        </div>
+      </div>
+    </nav>
   );
 }
