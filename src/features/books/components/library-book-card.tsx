@@ -5,15 +5,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { BookCover } from "./book-cover";
 import { Badge } from "@/features/shared/components/badge";
-import type { BookStatus } from "@/features/shared/components/badge";
+import type { BookStatus } from "@/lib/types/book";
+import { BOOK_STATUS_OPTIONS } from "@/lib/types/book";
 import { cn } from "@/lib/cn";
-
-const STATUS_OPTIONS: { value: BookStatus; label: string }[] = [
-  { value: "WISHLIST", label: "Wishlist" },
-  { value: "TO_READ", label: "To Read" },
-  { value: "READING", label: "Reading" },
-  { value: "READ", label: "Read" },
-];
 
 interface LibraryBook {
   id: string;
@@ -115,7 +109,7 @@ export function LibraryBookCard({ book }: LibraryBookCardProps) {
           <Link
             href={`/books/${book.id}`}
             className="block truncate text-base font-bold text-text hover:text-accent-strong transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent rounded-sm"
-            style={{ fontFamily: "var(--font-display)" }}
+              style={{ fontFamily: "var(--font-headline)" }}
           >
             {book.title}
           </Link>
@@ -160,7 +154,7 @@ export function LibraryBookCard({ book }: LibraryBookCardProps) {
               isStatusLoading && "opacity-60 cursor-wait",
             )}
           >
-            {STATUS_OPTIONS.map((opt) => (
+            {BOOK_STATUS_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value} className="bg-bg text-text">
                 {opt.label}
               </option>

@@ -1,6 +1,5 @@
-"use client";
-
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import Link from "next/link";
+import { BOOK_STATUS_LABELS } from "@/lib/types/book";
 import { cn } from "@/lib/cn";
 
 const STATUS_TAB = {
@@ -15,10 +14,7 @@ type StatusTabValue = (typeof STATUS_TAB)[keyof typeof STATUS_TAB];
 
 const TAB_LABELS: Record<StatusTabValue, string> = {
   all: "All",
-  WISHLIST: "Wishlist",
-  TO_READ: "To Read",
-  READING: "Reading",
-  READ: "Read",
+  ...BOOK_STATUS_LABELS,
 };
 
 interface StatusCounts {
@@ -31,6 +27,8 @@ interface StatusCounts {
 interface StatusTabsProps {
   activeStatus: StatusTabValue;
   counts: StatusCounts;
+  basePath?: string;
+  hrefs?: Record<StatusTabValue, string>;
 }
 
 const ALL_TABS: StatusTabValue[] = [
@@ -46,24 +44,19 @@ function getTabCount(tab: StatusTabValue, counts: StatusCounts): number | null {
   return counts[tab as keyof StatusCounts];
 }
 
-export function StatusTabs({ activeStatus, counts }: StatusTabsProps) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+function getTabHref(
+  tab: StatusTabValue,
+  basePath: string,
+  hrefs?: Record<StatusTabValue, string>,
+): string {
+  if (hrefs?.[tab]) return hrefs[tab];
+  if (tab === STATUS_TAB.ALL) return basePath;
+  return `${basePath}?status=${tab}`;
+}
 
-  function handleTabClick(tab: StatusTabValue) {
-    const params = new URLSearchParams(searchParams.toString());
-    if (tab === STATUS_TAB.ALL) {
-      params.delete("status");
-    } else {
-      params.set("status", tab);
-    }
-    const query = params.toString();
-    router.push(`${pathname}${query ? `?${query}` : ""}`);
-  }
-
+export function StatusTabs({ activeStatus, counts, basePath = "/library", hrefs }: StatusTabsProps) {
   return (
-    <div
+    <nav
       role="tablist"
       aria-label="Library statuses"
       className="flex flex-wrap gap-2"
@@ -73,12 +66,11 @@ export function StatusTabs({ activeStatus, counts }: StatusTabsProps) {
         const count = getTabCount(tab, counts);
 
         return (
-          <button
+          <Link
             key={tab}
+            href={getTabHref(tab, basePath, hrefs)}
             role="tab"
             aria-selected={isActive}
-            type="button"
-            onClick={() => handleTabClick(tab)}
             className={cn(
               "inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold transition-all duration-200",
               "focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent",
@@ -100,10 +92,10 @@ export function StatusTabs({ activeStatus, counts }: StatusTabsProps) {
                 {count}
               </span>
             )}
-          </button>
+          </Link>
         );
       })}
-    </div>
+    </nav>
   );
 }
 

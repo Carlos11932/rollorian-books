@@ -1,20 +1,6 @@
 import { cn } from "@/lib/cn";
-
-const BOOK_STATUS = {
-  READING: "READING",
-  READ: "READ",
-  TO_READ: "TO_READ",
-  WISHLIST: "WISHLIST",
-} as const;
-
-type BookStatus = (typeof BOOK_STATUS)[keyof typeof BOOK_STATUS];
-
-const STATUS_LABEL: Record<BookStatus, string> = {
-  READING: "Reading",
-  READ: "Read",
-  TO_READ: "To Read",
-  WISHLIST: "Wishlist",
-};
+import type { BookStatus } from "@/lib/types/book";
+import { BOOK_STATUS_LABELS } from "@/lib/types/book";
 
 interface BadgeProps {
   status: BookStatus;
@@ -33,9 +19,7 @@ export function Badge({ status, className }: BadgeProps) {
         className,
       )}
     >
-      {STATUS_LABEL[status]}
+      {BOOK_STATUS_LABELS[status]}
     </span>
   );
 }
-
-export type { BookStatus };

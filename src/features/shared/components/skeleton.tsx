@@ -16,7 +16,7 @@ interface SkeletonProps {
 }
 
 export function Skeleton({
-  variant = "text",
+  variant = SKELETON_VARIANT.text,
   className,
 }: SkeletonProps) {
   return (
@@ -24,9 +24,9 @@ export function Skeleton({
       aria-hidden="true"
       className={cn(
         "animate-pulse bg-white/8 rounded",
-        variant === "text" && "h-4 w-full rounded",
-        variant === "card" && "h-40 w-full rounded-[var(--radius-md)]",
-        variant === "circle" && "h-10 w-10 rounded-full",
+        variant === SKELETON_VARIANT.text && "h-4 w-full rounded",
+        variant === SKELETON_VARIANT.card && "h-40 w-full rounded-[var(--radius-md)]",
+        variant === SKELETON_VARIANT.circle && "h-10 w-10 rounded-full",
         className,
       )}
     />

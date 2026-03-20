@@ -65,7 +65,7 @@ export function GoogleBookSaveClient({ payload }: GoogleBookSaveClientProps) {
         </p>
         <h2
           className="text-2xl font-bold text-text"
-          style={{ fontFamily: "var(--font-display)" }}
+          style={{ fontFamily: "var(--font-headline)" }}
         >
           Want to track this book?
         </h2>

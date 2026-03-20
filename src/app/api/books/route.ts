@@ -1,17 +1,12 @@
 import "server-only";
 
 import type { NextRequest } from "next/server";
-import type { Book } from "@/lib/types/book";
+import type { Book, BookStatus } from "@/lib/types/book";
+import { BOOK_STATUS_VALUES } from "@/lib/types/book";
 import { prisma } from "@/lib/prisma";
 import { createBookSchema } from "@/lib/schemas/book";
-import type { BookStatus } from "@/lib/schemas/book";
 
-const VALID_STATUSES = new Set<string>([
-  "WISHLIST",
-  "TO_READ",
-  "READING",
-  "READ",
-]);
+const VALID_STATUSES = new Set<string>(BOOK_STATUS_VALUES);
 
 function isBookStatus(value: string): value is BookStatus {
   return VALID_STATUSES.has(value);

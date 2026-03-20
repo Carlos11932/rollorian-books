@@ -1,8 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useState, type ChangeEvent } from "react";
+import Link from "next/link";
 import type { BookStatus } from "@/lib/types/book";
+import { BOOK_STATUS_VALUES, BOOK_STATUS_LABELS } from "@/lib/types/book";
 import { cn } from "@/lib/cn";
 import { Badge } from "@/features/shared/components/badge";
 import { Button } from "@/features/shared/components/button";
@@ -10,25 +11,10 @@ import { BookCover } from "./book-cover";
 import { CardOverlay } from "./card-overlay";
 import type { SerializableBook } from "../types";
 
-const BOOK_STATUS_OPTIONS: BookStatus[] = [
-  "WISHLIST",
-  "TO_READ",
-  "READING",
-  "READ",
-];
-
-const STATUS_LABEL: Record<BookStatus, string> = {
-  READING: "Reading",
-  READ: "Read",
-  TO_READ: "To Read",
-  WISHLIST: "Wishlist",
-};
-
 // --- Discriminated union for variant-specific props ---
 
 interface BrowseVariantProps {
   variant: "browse";
-  onOpen?: (id: string) => void;
 }
 
 interface SearchVariantProps {
@@ -57,21 +43,13 @@ type BookCardProps = BaseBookCardProps & VariantProps;
 function BrowseCard({
   book,
   index = 0,
-  onOpen,
 }: BaseBookCardProps & BrowseVariantProps) {
   const authorLine = book.authors.length > 0 ? book.authors.join(", ") : "Unknown author";
 
-  function handleOpen() {
-    onOpen?.(book.id);
-  }
-
   return (
-    <article
-      className={cn(
-        "group relative rounded-[var(--radius-md)] border border-line bg-surface overflow-hidden",
-        "transition-all duration-250 ease-out cursor-pointer",
-        "hover:scale-105 hover:z-10 hover:shadow-lg hover:border-white/28",
-      )}
+    <Link
+      href={`/books/${book.id}`}
+      className="group relative block rounded-[var(--radius-md)] border border-line bg-surface overflow-hidden transition-all duration-250 ease-out hover:scale-105 hover:z-10 hover:shadow-lg hover:border-white/28 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
       style={{
         animationName: "fade-slide-up",
         animationDuration: "350ms",
@@ -82,7 +60,6 @@ function BrowseCard({
         minWidth: "118px",
         scrollSnapAlign: "start",
       }}
-      onClick={handleOpen}
       aria-label={`${book.title} by ${authorLine}`}
     >
       <BookCover
@@ -97,7 +74,7 @@ function BrowseCard({
         <Badge status={book.status} className="text-[10px] px-2 py-0.5" />
         <h3
           className="text-[0.78rem] font-bold text-text leading-tight line-clamp-2"
-          style={{ fontFamily: "var(--font-display)" }}
+          style={{ fontFamily: "var(--font-headline)" }}
         >
           {book.title}
         </h3>
@@ -108,8 +85,9 @@ function BrowseCard({
         bookId={book.id}
         title={book.title}
         authors={book.authors}
+        showLink={false}
       />
-    </article>
+    </Link>
   );
 }
 
@@ -172,7 +150,7 @@ function SearchCard({
         <div className="grid gap-0.5">
           <h3
             className="text-sm font-bold text-text leading-tight line-clamp-2"
-            style={{ fontFamily: "var(--font-display)" }}
+            style={{ fontFamily: "var(--font-headline)" }}
           >
             {book.title}
           </h3>
@@ -258,7 +236,7 @@ function LibraryCard({
           <Badge status={book.status} />
           <h3
             className="text-base font-bold text-text leading-tight line-clamp-2"
-            style={{ fontFamily: "var(--font-display)" }}
+            style={{ fontFamily: "var(--font-headline)" }}
           >
             {book.title}
           </h3>
@@ -278,9 +256,9 @@ function LibraryCard({
               onChange={handleStatusChange}
               className="rounded-[var(--radius-sm)] border border-line bg-surface-soft text-text text-xs px-2 py-1.5 focus:outline-none focus:border-accent/50"
             >
-              {BOOK_STATUS_OPTIONS.map((s) => (
+              {BOOK_STATUS_VALUES.map((s) => (
                 <option key={s} value={s}>
-                  {STATUS_LABEL[s]}
+                  {BOOK_STATUS_LABELS[s]}
                 </option>
               ))}
             </select>

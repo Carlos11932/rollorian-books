@@ -1,18 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/cn";
 import { Button } from "@/features/shared/components/button";
 import type { SerializableBook } from "../types";
-import type { BookStatus } from "@/features/shared/components/badge";
-
-const STATUS_OPTIONS: { value: BookStatus; label: string }[] = [
-  { value: "WISHLIST", label: "Wishlist" },
-  { value: "TO_READ", label: "To Read" },
-  { value: "READING", label: "Reading" },
-  { value: "READ", label: "Read" },
-];
+import type { BookStatus } from "@/lib/types/book";
+import { BOOK_STATUS_OPTIONS } from "@/lib/types/book";
 
 const RATING_LABELS: Record<number, string> = {
   1: "Poor",
@@ -45,17 +39,31 @@ type DeleteState = (typeof DELETE_STATE)[keyof typeof DELETE_STATE];
 
 export function BookDetailClient({ book }: BookDetailClientProps) {
   const router = useRouter();
+  const saveStateResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const [status, setStatus] = useState<BookStatus>(book.status as BookStatus);
+  const [status, setStatus] = useState<BookStatus>(book.status);
   const [rating, setRating] = useState<number | null>(book.rating ?? null);
   const [hoverRating, setHoverRating] = useState<number | null>(null);
   const [notes, setNotes] = useState(book.notes ?? "");
-  const [saveState, setSaveState] = useState<SaveState>("idle");
-  const [deleteState, setDeleteState] = useState<DeleteState>("idle");
+  const [saveState, setSaveState] = useState<SaveState>(SAVE_STATE.idle);
+  const [deleteState, setDeleteState] = useState<DeleteState>(DELETE_STATE.idle);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  useEffect(() => {
+    return () => {
+      if (saveStateResetRef.current !== null) {
+        clearTimeout(saveStateResetRef.current);
+      }
+    };
+  }, []);
+
   async function handleSave() {
-    setSaveState("saving");
+    if (saveStateResetRef.current !== null) {
+      clearTimeout(saveStateResetRef.current);
+      saveStateResetRef.current = null;
+    }
+
+    setSaveState(SAVE_STATE.saving);
     setErrorMessage(null);
 
     try {
@@ -74,19 +82,22 @@ export function BookDetailClient({ book }: BookDetailClientProps) {
         throw new Error((data as { error?: string }).error ?? "Failed to save changes");
       }
 
-      setSaveState("saved");
+      setSaveState(SAVE_STATE.saved);
       router.refresh();
 
       // Reset to idle after short delay
-      setTimeout(() => setSaveState("idle"), 2000);
+      saveStateResetRef.current = setTimeout(() => {
+        setSaveState(SAVE_STATE.idle);
+        saveStateResetRef.current = null;
+      }, 2000);
     } catch (err) {
-      setSaveState("error");
+      setSaveState(SAVE_STATE.error);
       setErrorMessage(err instanceof Error ? err.message : "An unexpected error occurred");
     }
   }
 
   async function handleDelete() {
-    setDeleteState("deleting");
+    setDeleteState(DELETE_STATE.deleting);
 
     try {
       const res = await fetch(`/api/books/${book.id}`, { method: "DELETE" });
@@ -98,14 +109,14 @@ export function BookDetailClient({ book }: BookDetailClientProps) {
 
       router.push("/library");
     } catch (err) {
-      setDeleteState("idle");
+      setDeleteState(DELETE_STATE.idle);
       setErrorMessage(err instanceof Error ? err.message : "Failed to delete book");
     }
   }
 
   const displayRating = hoverRating ?? rating;
-  const isSaving = saveState === "saving";
-  const isDeleting = deleteState === "deleting";
+  const isSaving = saveState === SAVE_STATE.saving;
+  const isDeleting = deleteState === DELETE_STATE.deleting;
 
   return (
     <section
@@ -117,7 +128,7 @@ export function BookDetailClient({ book }: BookDetailClientProps) {
         <p className="text-xs font-bold uppercase tracking-widest text-muted">Manage</p>
         <h2
           className="text-2xl font-bold text-text"
-          style={{ fontFamily: "var(--font-display)" }}
+          style={{ fontFamily: "var(--font-headline)" }}
         >
           Update reading state
         </h2>
@@ -139,7 +150,7 @@ export function BookDetailClient({ book }: BookDetailClientProps) {
               "transition-colors duration-150",
             )}
           >
-            {STATUS_OPTIONS.map((opt) => (
+            {BOOK_STATUS_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value} className="bg-bg text-text">
                 {opt.label}
               </option>
@@ -230,10 +241,10 @@ export function BookDetailClient({ book }: BookDetailClientProps) {
             disabled={isSaving || isDeleting}
             onClick={handleSave}
           >
-            {saveState === "saved" ? "Saved" : isSaving ? "Saving..." : "Save changes"}
+            {saveState === SAVE_STATE.saved ? "Saved" : isSaving ? "Saving..." : "Save changes"}
           </Button>
 
-          {deleteState === "confirming" ? (
+          {deleteState === DELETE_STATE.confirming ? (
             <div className="flex gap-2">
               <Button
                 variant="ghost"
@@ -249,7 +260,7 @@ export function BookDetailClient({ book }: BookDetailClientProps) {
                 variant="ghost"
                 size="md"
                 disabled={isDeleting}
-                onClick={() => setDeleteState("idle")}
+                onClick={() => setDeleteState(DELETE_STATE.idle)}
               >
                 Cancel
               </Button>
@@ -259,7 +270,7 @@ export function BookDetailClient({ book }: BookDetailClientProps) {
               variant="ghost"
               size="md"
               disabled={isSaving || isDeleting}
-              onClick={() => setDeleteState("confirming")}
+              onClick={() => setDeleteState(DELETE_STATE.confirming)}
               className="text-muted hover:text-danger hover:border-danger/30"
             >
               Remove book
