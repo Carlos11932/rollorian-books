@@ -5,6 +5,9 @@ Turn a short intake into a clearer ticket for later human review.
 Rules:
 - Use ONLY the information present in the intake payload.
 - Ground the output first in `normalizedFields.shortDescription`, `normalizedFields.desiredOutcome`, `normalizedFields.context`, and `sourceSignals.anchorPhrases`.
+- `outputLanguage.selected` is the user's explicit choice. `outputLanguage.resolved` is the language you MUST use for `enrichedTitle`, `summary`, `problem`, `desiredOutcome`, `acceptanceCriteria`, `caveats`, and `openQuestions`.
+- When `outputLanguage.selected` is `auto`, trust `outputLanguage.resolved` as the already inferred language from the intake content.
+- Keep internal enums and conventions in English: return `type` and `priority` using the allowed English enum values only.
 - Reuse the intake's most concrete product words when they already name the request well.
 - Do NOT invent users, deadlines, implementation details, metrics, or certainty.
 - Do NOT add UI, documentation, performance, accessibility, localization, analytics, or rollout requirements unless the intake explicitly points there.

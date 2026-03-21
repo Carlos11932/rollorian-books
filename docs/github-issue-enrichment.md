@@ -10,8 +10,8 @@ This repository includes a GitHub-native intake flow for turning very short issu
 4. `.github/scripts/enrich-issue.mjs` reads the issue, loads `.github/issue-enrichment/prompt.md`, and sends the intake to GitHub Models.
 5. The script validates the JSON response against the shape documented in `.github/issue-enrichment/schema.json`.
 6. The issue is updated in place with:
-   - an enriched title
-   - a clearer body with a compact snapshot table, concise narrative sections, a checkbox-style acceptance checklist, and grouped caveats/open questions
+   - an enriched title written in the selected output language (`Auto`, `Spanish`, or `English`)
+   - a clearer body with a compact snapshot table, concise narrative sections, a checkbox-style acceptance checklist, and grouped caveats/open questions in the selected or inferred language
    - preserved raw intake content
    - managed labels such as `triage:enriched`, `type:*`, and optional `priority:*`
 
@@ -40,6 +40,13 @@ The workflow auto-creates these labels if they do not exist yet:
 - `edited`: re-runs only while the issue still has `triage:raw`, or when `triage:rerun` is present.
 - `labeled`: re-runs when the added label is `triage:rerun`.
 - `github-actions[bot]` events are ignored to avoid edit/label loops.
+
+## Output language
+
+- `Auto`: the script infers Spanish vs English from the intake content and passes the resolved language to the model.
+- `Spanish`: the enriched title and issue body are written in Spanish.
+- `English`: the enriched title and issue body are written in English.
+- Labels and internal workflow conventions stay in English regardless of the selected output language.
 
 ## Manual re-run
 

@@ -3,7 +3,7 @@
   "issue": {
     "number": 42,
     "title": "[Intake] add a better empty state for library",
-    "body": "### What is this?\n\nFeature or idea\n\n### Short description\n\nWhen the library is empty the page feels dead on mobile. It should guide people toward search or importing books.\n\n### Desired outcome\n\nA first-time user should know what to do next.\n\n### Context or link\n\n/library\n",
+    "body": "### What is this?\n\nFeature or idea\n\n### Short description\n\nWhen the library is empty the page feels dead on mobile. It should guide people toward search or importing books.\n\n### Desired outcome\n\nA first-time user should know what to do next.\n\n### Output language\n\nAuto\n\n### Context or link\n\n/library\n",
     "labels": [
       {
         "name": "triage:raw"
