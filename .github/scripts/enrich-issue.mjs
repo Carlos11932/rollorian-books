@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { pathToFileURL } from "node:url";
 
 const MANAGED_MARKER = "<!-- issue-enrichment:managed -->";
 const RAW_START_MARKER = "<!-- issue-enrichment:raw:start -->";
@@ -398,21 +399,44 @@ async function githubRequest(path, { method = "GET", body } = {}) {
 
   if (!response.ok) {
     const message = parsed?.message || raw || `${response.status} ${response.statusText}`;
-    throw new Error(`GitHub API request failed (${method} ${path}): ${message}`);
+    const error = new Error(`GitHub API request failed (${method} ${path}): ${message}`);
+    error.status = response.status;
+    error.details = parsed;
+    throw error;
   }
 
   return parsed;
 }
 
+function getMissingRepositoryLabels(existingLabelNames) {
+  const existing = new Set(existingLabelNames);
+  return REPOSITORY_LABEL_DEFINITIONS.filter((label) => !existing.has(label.name));
+}
+
+function isLabelAlreadyExistsError(error) {
+  const alreadyExists = error?.details?.errors?.some(
+    (detail) => detail?.code === "already_exists" && (!detail?.resource || detail.resource === "Label")
+  );
+
+  return alreadyExists || String(error?.message).includes("already_exists");
+}
+
+async function fetchRepositoryLabelNames(repository) {
+  const labels = await githubRequest(`/repos/${repository}/labels?per_page=100`);
+  return labels.map((label) => label.name);
+}
+
 async function ensureRepositoryLabels(repository) {
-  for (const label of REPOSITORY_LABEL_DEFINITIONS) {
+  const existingLabelNames = await fetchRepositoryLabelNames(repository);
+
+  for (const label of getMissingRepositoryLabels(existingLabelNames)) {
     try {
       await githubRequest(`/repos/${repository}/labels`, {
         method: "POST",
         body: label,
       });
     } catch (error) {
-      if (!String(error.message).includes("already_exists")) {
+      if (!isLabelAlreadyExistsError(error)) {
         throw error;
       }
     }
@@ -567,7 +591,15 @@ async function main() {
   console.log(`Enriched issue #${issueNumber} with labels: ${nextLabels.join(", ")}`);
 }
 
-main().catch((error) => {
-  console.error(error instanceof Error ? error.message : error);
-  process.exitCode = 1;
-});
+const isDirectExecution = process.argv[1]
+  ? import.meta.url === pathToFileURL(process.argv[1]).href
+  : false;
+
+if (isDirectExecution) {
+  main().catch((error) => {
+    console.error(error instanceof Error ? error.message : error);
+    process.exitCode = 1;
+  });
+}
+
+export { getMissingRepositoryLabels, isLabelAlreadyExistsError };
