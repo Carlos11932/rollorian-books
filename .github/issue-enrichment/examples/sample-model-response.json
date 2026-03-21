@@ -1,0 +1,19 @@
+{
+  "enrichedTitle": "Improve the empty-library state for first-time mobile users",
+  "summary": "The library page should better guide first-time users when they have no saved books. The current empty state feels inactive and does not clearly suggest what to do next.",
+  "problem": "When the library is empty, especially on mobile, the page provides little direction. That increases the chance that a new user leaves without discovering search or another path to populate their library.",
+  "desiredOutcome": "Present a clearer empty state that explains the situation and points the user toward the most useful next actions, such as searching for books or importing them.",
+  "acceptanceCriteria": [
+    "The empty-library view clearly explains that no books are saved yet.",
+    "The view offers at least one obvious next action for adding or finding books.",
+    "The guidance remains easy to understand on a mobile-sized screen."
+  ],
+  "type": "feature",
+  "priority": "medium",
+  "caveats": [
+    "The intake does not specify whether search, import, or both should be promoted first."
+  ],
+  "openQuestions": [
+    "Should the primary call to action go to search, import, or another onboarding step?"
+  ]
+}

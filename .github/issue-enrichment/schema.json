@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Issue enrichment output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "enrichedTitle",
+    "summary",
+    "problem",
+    "desiredOutcome",
+    "acceptanceCriteria",
+    "type",
+    "priority",
+    "caveats",
+    "openQuestions"
+  ],
+  "properties": {
+    "enrichedTitle": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 120
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 20,
+      "maxLength": 500
+    },
+    "problem": {
+      "type": "string",
+      "minLength": 20,
+      "maxLength": 800
+    },
+    "desiredOutcome": {
+      "type": "string",
+      "minLength": 20,
+      "maxLength": 800
+    },
+    "acceptanceCriteria": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 5,
+      "items": {
+        "type": "string",
+        "minLength": 8,
+        "maxLength": 220
+      }
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "feature",
+        "bug",
+        "content",
+        "research",
+        "chore",
+        "needs-review"
+      ]
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "high",
+        "medium",
+        "low",
+        "unspecified"
+      ]
+    },
+    "caveats": {
+      "type": "array",
+      "maxItems": 5,
+      "items": {
+        "type": "string",
+        "minLength": 8,
+        "maxLength": 240
+      }
+    },
+    "openQuestions": {
+      "type": "array",
+      "maxItems": 5,
+      "items": {
+        "type": "string",
+        "minLength": 8,
+        "maxLength": 240
+      }
+    }
+  }
+}

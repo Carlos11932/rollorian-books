@@ -1,0 +1,46 @@
+name: Quick intake
+description: Capture a short idea, bug, or research lead in under a minute.
+title: "[Intake] "
+labels: ["triage:raw"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Keep it short. The workflow will expand this into a reviewable ticket.
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What is this?
+      options:
+        - Feature or idea
+        - Bug or problem
+        - Content or data
+        - Research question
+        - Other
+      default: 0
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Short description
+      description: 2-4 lines is enough.
+      placeholder: What happened, what do you want, or what should we explore?
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: Optional.
+      placeholder: What would a good result look like?
+    validations:
+      required: false
+  - type: input
+    id: context
+    attributes:
+      label: Context or link
+      description: Optional.
+      placeholder: Screen, page, user report, URL, or related issue.
+    validations:
+      required: false
