@@ -186,11 +186,32 @@ function formatBulletList(items, emptyMessage) {
   return items.map((item) => `- ${item}`).join("\n");
 }
 
+function formatChecklist(items, emptyMessage) {
+  if (!items.length) {
+    return `- [ ] ${emptyMessage}`;
+  }
+
+  return items.map((item) => `- [ ] ${item}`).join("\n");
+}
+
+function formatLabelValue(value) {
+  return value
+    .split("-")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
 function buildIssueBody(rawIntake, enrichment) {
   const rawBody = rawIntake.body.trim() || "_No original body was provided._";
 
   return [
     MANAGED_MARKER,
+    "## 🧾 Snapshot",
+    "| Field | Value |",
+    "| --- | --- |",
+    `| Type | ${formatLabelValue(enrichment.type)} |`,
+    `| Priority | ${formatLabelValue(enrichment.priority)} |`,
+    "",
     "## Summary",
     enrichment.summary,
     "",
@@ -200,13 +221,14 @@ function buildIssueBody(rawIntake, enrichment) {
     "## Desired Outcome",
     enrichment.desiredOutcome,
     "",
-    "## Acceptance Criteria",
-    formatBulletList(enrichment.acceptanceCriteria, "Review criteria were not generated."),
+    "## ✅ Acceptance Checklist",
+    formatChecklist(enrichment.acceptanceCriteria, "Review criteria were not generated."),
     "",
-    "## Caveats",
+    "## 📝 Notes & Questions",
+    "### Caveats",
     formatBulletList(enrichment.caveats, "The source intake is sparse and should be reviewed before planning work."),
     "",
-    "## Open Questions",
+    "### Open Questions",
     formatBulletList(enrichment.openQuestions, "No open questions were detected from the intake, but human review is still recommended."),
     "",
     "## Original Intake",

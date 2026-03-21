@@ -11,7 +11,7 @@ This repository includes a GitHub-native intake flow for turning very short issu
 5. The script validates the JSON response against the shape documented in `.github/issue-enrichment/schema.json`.
 6. The issue is updated in place with:
    - an enriched title
-   - a clearer body with summary, problem, desired outcome, acceptance criteria, caveats, and open questions
+   - a clearer body with a compact snapshot table, concise narrative sections, a checkbox-style acceptance checklist, and grouped caveats/open questions
    - preserved raw intake content
    - managed labels such as `triage:enriched`, `type:*`, and optional `priority:*`
 
@@ -72,6 +72,41 @@ node .github/scripts/enrich-issue.mjs
 ```
 
 This prints the title/body/labels payload that would be sent back to GitHub.
+
+The generated body now uses this structure:
+
+```md
+## 🧾 Snapshot
+| Field | Value |
+| --- | --- |
+| Type | Feature |
+| Priority | Medium |
+
+## Summary
+One short paragraph.
+
+## Problem / Opportunity
+One short paragraph.
+
+## Desired Outcome
+One short paragraph.
+
+## ✅ Acceptance Checklist
+- [ ] Reviewable outcome
+- [ ] Reviewable outcome
+
+## 📝 Notes & Questions
+### Caveats
+- Constraint or ambiguity
+
+### Open Questions
+- Follow-up needed from humans
+
+## Original Intake
+...
+```
+
+The only decorative elements are two small section emojis and the checklist format. The layout stays compact enough for mobile review.
 
 ## Caveats
 
