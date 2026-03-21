@@ -2,9 +2,15 @@ import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 
 const MANAGED_MARKER = "<!-- issue-enrichment:managed -->";
+const RAW_TITLE_START_MARKER = "<!-- issue-enrichment:raw-title:start -->";
+const RAW_TITLE_END_MARKER = "<!-- issue-enrichment:raw-title:end -->";
 const RAW_START_MARKER = "<!-- issue-enrichment:raw:start -->";
 const RAW_END_MARKER = "<!-- issue-enrichment:raw:end -->";
-const RAW_TITLE_PREFIX = "**Original title:** ";
+const OUTPUT_LANGUAGES = {
+  auto: "auto",
+  english: "english",
+  spanish: "spanish",
+};
 
 const LABELS = {
   raw: "triage:raw",
@@ -50,7 +56,118 @@ const NORMALIZED_SECTION_KEYS = {
   "what is this?": "kind",
   "short description": "shortDescription",
   "desired outcome": "desiredOutcome",
+  "output language": "outputLanguage",
   "context or link": "context",
+};
+
+const LANGUAGE_COPY = {
+  english: {
+    snapshotHeading: "## 🧾 Snapshot",
+    tableHeader: "| Field | Value |",
+    typeLabel: "Type",
+    priorityLabel: "Priority",
+    summaryHeading: "## Summary",
+    problemHeading: "## Problem / Opportunity",
+    desiredOutcomeHeading: "## Desired Outcome",
+    acceptanceHeading: "## ✅ Acceptance Checklist",
+    notesHeading: "## 📝 Notes & Questions",
+    caveatsHeading: "### Caveats",
+    openQuestionsHeading: "### Open Questions",
+    originalIntakeHeading: "## Original Intake",
+    originalTitleLabel: "Original title",
+    noOriginalBody: "_No original body was provided._",
+    acceptanceFallback: "Review criteria were not generated.",
+    caveatsFallback: "The source intake is sparse and should be reviewed before planning work.",
+    openQuestionsFallback: "No open questions were detected from the intake, but human review is still recommended.",
+    footer:
+      "This issue was expanded automatically from a short intake. Edit the issue while it still has `triage:raw`, or add `triage:rerun` to regenerate it.",
+    typeValues: {
+      feature: "Feature",
+      bug: "Bug",
+      content: "Content",
+      research: "Research",
+      chore: "Chore",
+      "needs-review": "Needs Review",
+    },
+    priorityValues: {
+      high: "High",
+      medium: "Medium",
+      low: "Low",
+      unspecified: "Unspecified",
+    },
+  },
+  spanish: {
+    snapshotHeading: "## 🧾 Resumen rapido",
+    tableHeader: "| Campo | Valor |",
+    typeLabel: "Tipo",
+    priorityLabel: "Prioridad",
+    summaryHeading: "## Resumen",
+    problemHeading: "## Problema / Oportunidad",
+    desiredOutcomeHeading: "## Resultado esperado",
+    acceptanceHeading: "## ✅ Checklist de aceptacion",
+    notesHeading: "## 📝 Notas y preguntas",
+    caveatsHeading: "### Consideraciones",
+    openQuestionsHeading: "### Preguntas abiertas",
+    originalIntakeHeading: "## Intake original",
+    originalTitleLabel: "Titulo original",
+    noOriginalBody: "_No se proporciono un cuerpo original._",
+    acceptanceFallback: "No se generaron criterios de revision.",
+    caveatsFallback: "El intake original es escaso y conviene revisarlo antes de planificar trabajo.",
+    openQuestionsFallback: "No se detectaron preguntas abiertas en el intake, pero sigue siendo recomendable una revision humana.",
+    footer:
+      "Este issue se amplio automaticamente a partir de un intake breve. Editalo mientras siga teniendo `triage:raw`, o anade `triage:rerun` para regenerarlo.",
+    typeValues: {
+      feature: "Funcionalidad",
+      bug: "Error",
+      content: "Contenido",
+      research: "Investigacion",
+      chore: "Mantenimiento",
+      "needs-review": "Necesita revision",
+    },
+    priorityValues: {
+      high: "Alta",
+      medium: "Media",
+      low: "Baja",
+      unspecified: "Sin especificar",
+    },
+  },
+};
+
+const LANGUAGE_DETECTION = {
+  spanish: [
+    " el ",
+    " la ",
+    " los ",
+    " las ",
+    " para ",
+    " con ",
+    " cuando ",
+    " que ",
+    " una ",
+    " un ",
+    " no ",
+    " deberia ",
+    " deberia",
+    " mejorar ",
+    " busqueda ",
+    " biblioteca ",
+    " pagina ",
+  ],
+  english: [
+    " the ",
+    " and ",
+    " for ",
+    " with ",
+    " when ",
+    " should ",
+    " improve ",
+    " search ",
+    " library ",
+    " page ",
+    " user ",
+    " users ",
+    " empty ",
+  ],
 };
 
 function getRequiredEnv(name) {
@@ -80,14 +197,21 @@ function hasLabel(issue, labelName) {
 
 function extractRawIntake(issue) {
   const body = issue.body ?? "";
-  const rawTitleMatch = body.match(/^\*\*Original title:\*\*\s*(.+)$/m);
+  const rawTitleMarkerMatch = body.match(
+    /<!-- issue-enrichment:raw-title:start -->\n([\s\S]*?)\n<!-- issue-enrichment:raw-title:end -->/
+  );
+  const rawTitleMatch = body.match(/^\*\*(?:Original title|Titulo original|T\xedtulo original):\*\*\s*(.+)$/m);
   const rawBodyMatch = body.match(
     /<!-- issue-enrichment:raw:start -->\n([\s\S]*?)\n<!-- issue-enrichment:raw:end -->/
   );
 
-  const preservedTitle = rawTitleMatch?.[1]?.trim();
+  const preservedTitle = rawTitleMarkerMatch?.[1]?.trim() || rawTitleMatch?.[1]?.trim();
   const preservedBody = rawBodyMatch?.[1] ?? "";
-  const normalizedBody = preservedBody.trim() === "_No original body was provided._" ? "" : preservedBody.trim();
+  const trimmedBody = preservedBody.trim();
+  const normalizedBody =
+    trimmedBody === "_No original body was provided._" || trimmedBody === "_No se proporciono un cuerpo original._"
+      ? ""
+      : trimmedBody;
 
   return {
     title: preservedTitle || issue.title,
@@ -142,6 +266,7 @@ function normalizeFormSections(sections) {
     kind: "",
     shortDescription: "",
     desiredOutcome: "",
+    outputLanguage: OUTPUT_LANGUAGES.auto,
     context: "",
     extraSections: {},
   };
@@ -156,7 +281,7 @@ function normalizeFormSections(sections) {
     const normalizedKey = NORMALIZED_SECTION_KEYS[heading.trim().toLowerCase()];
 
     if (normalizedKey) {
-      normalized[normalizedKey] = normalizedValue;
+      normalized[normalizedKey] = normalizedKey === "outputLanguage" ? normalizeOutputLanguage(normalizedValue) : normalizedValue;
       continue;
     }
 
@@ -164,6 +289,20 @@ function normalizeFormSections(sections) {
   }
 
   return normalized;
+}
+
+function normalizeOutputLanguage(value) {
+  const normalized = value.trim().toLowerCase();
+
+  if (normalized === "spanish") {
+    return OUTPUT_LANGUAGES.spanish;
+  }
+
+  if (normalized === "english") {
+    return OUTPUT_LANGUAGES.english;
+  }
+
+  return OUTPUT_LANGUAGES.auto;
 }
 
 function stripIntakePrefix(title) {
@@ -233,9 +372,48 @@ function buildSourceSignals(rawIntake, normalizedFields) {
   };
 }
 
+function buildLanguageSample(rawIntake, normalizedFields) {
+  return [
+    stripIntakePrefix(rawIntake.title),
+    normalizedFields.shortDescription,
+    normalizedFields.desiredOutcome,
+    normalizedFields.context,
+    ...Object.values(normalizedFields.extraSections),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+function scoreLanguage(sample, markers) {
+  return markers.reduce((score, marker) => score + (sample.includes(marker) ? 1 : 0), 0);
+}
+
+function inferOutputLanguage(rawIntake, normalizedFields) {
+  const sample = ` ${buildLanguageSample(rawIntake, normalizedFields)} `;
+
+  if (/[\u00c0-\u017f]/.test(sample) || /[¿¡ñ]/.test(sample)) {
+    return OUTPUT_LANGUAGES.spanish;
+  }
+
+  const spanishScore = scoreLanguage(sample, LANGUAGE_DETECTION.spanish);
+  const englishScore = scoreLanguage(sample, LANGUAGE_DETECTION.english);
+
+  if (spanishScore > englishScore) {
+    return OUTPUT_LANGUAGES.spanish;
+  }
+
+  return OUTPUT_LANGUAGES.english;
+}
+
 function buildModelPayload(issue, rawIntake) {
   const sections = parseFormSections(rawIntake.body);
   const normalizedFields = normalizeFormSections(sections);
+  const selectedOutputLanguage = normalizedFields.outputLanguage;
+  const resolvedOutputLanguage =
+    selectedOutputLanguage === OUTPUT_LANGUAGES.auto
+      ? inferOutputLanguage(rawIntake, normalizedFields)
+      : selectedOutputLanguage;
 
   return {
     repository: process.env.GITHUB_REPOSITORY,
@@ -247,6 +425,10 @@ function buildModelPayload(issue, rawIntake) {
     parsedSections: sections,
     normalizedFields,
     sourceSignals: buildSourceSignals(rawIntake, normalizedFields),
+    outputLanguage: {
+      selected: selectedOutputLanguage,
+      resolved: resolvedOutputLanguage,
+    },
   };
 }
 
@@ -310,52 +492,53 @@ function formatChecklist(items, emptyMessage) {
   return items.map((item) => `- [ ] ${item}`).join("\n");
 }
 
-function formatLabelValue(value) {
-  return value
-    .split("-")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
+function formatLabelValue(value, language, kind) {
+  return LANGUAGE_COPY[language][kind][value] ?? value;
 }
 
-function buildIssueBody(rawIntake, enrichment) {
-  const rawBody = rawIntake.body.trim() || "_No original body was provided._";
+function buildIssueBody(rawIntake, enrichment, language) {
+  const copy = LANGUAGE_COPY[language] ?? LANGUAGE_COPY.english;
+  const rawBody = rawIntake.body.trim() || copy.noOriginalBody;
 
   return [
     MANAGED_MARKER,
-    "## 🧾 Snapshot",
-    "| Field | Value |",
+    copy.snapshotHeading,
+    copy.tableHeader,
     "| --- | --- |",
-    `| Type | ${formatLabelValue(enrichment.type)} |`,
-    `| Priority | ${formatLabelValue(enrichment.priority)} |`,
+    `| ${copy.typeLabel} | ${formatLabelValue(enrichment.type, language, "typeValues")} |`,
+    `| ${copy.priorityLabel} | ${formatLabelValue(enrichment.priority, language, "priorityValues")} |`,
     "",
-    "## Summary",
+    copy.summaryHeading,
     enrichment.summary,
     "",
-    "## Problem / Opportunity",
+    copy.problemHeading,
     enrichment.problem,
     "",
-    "## Desired Outcome",
+    copy.desiredOutcomeHeading,
     enrichment.desiredOutcome,
     "",
-    "## ✅ Acceptance Checklist",
-    formatChecklist(enrichment.acceptanceCriteria, "Review criteria were not generated."),
+    copy.acceptanceHeading,
+    formatChecklist(enrichment.acceptanceCriteria, copy.acceptanceFallback),
     "",
-    "## 📝 Notes & Questions",
-    "### Caveats",
-    formatBulletList(enrichment.caveats, "The source intake is sparse and should be reviewed before planning work."),
+    copy.notesHeading,
+    copy.caveatsHeading,
+    formatBulletList(enrichment.caveats, copy.caveatsFallback),
     "",
-    "### Open Questions",
-    formatBulletList(enrichment.openQuestions, "No open questions were detected from the intake, but human review is still recommended."),
+    copy.openQuestionsHeading,
+    formatBulletList(enrichment.openQuestions, copy.openQuestionsFallback),
     "",
-    "## Original Intake",
-    `${RAW_TITLE_PREFIX}${rawIntake.title}`,
+    copy.originalIntakeHeading,
+    RAW_TITLE_START_MARKER,
+    rawIntake.title,
+    RAW_TITLE_END_MARKER,
+    `**${copy.originalTitleLabel}:** ${rawIntake.title}`,
     "",
     RAW_START_MARKER,
     rawBody,
     RAW_END_MARKER,
     "",
     "---",
-    "This issue was expanded automatically from a short intake. Edit the issue while it still has `triage:raw`, or add `triage:rerun` to regenerate it.",
+    copy.footer,
   ].join("\n");
 }
 
@@ -574,7 +757,7 @@ async function main() {
   const modelPayload = buildModelPayload(issue, rawIntake);
   const enrichment = await requestEnrichment(modelPayload);
   const nextTitle = enrichment.enrichedTitle;
-  const nextBody = buildIssueBody(rawIntake, enrichment);
+  const nextBody = buildIssueBody(rawIntake, enrichment, modelPayload.outputLanguage.resolved);
   const nextLabels = buildNextLabels(getLabelNames(issue), enrichment);
   const updatePayload = {
     title: nextTitle,

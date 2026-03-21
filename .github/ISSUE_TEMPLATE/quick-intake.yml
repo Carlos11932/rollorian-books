@@ -36,6 +36,18 @@ body:
       placeholder: What would a good result look like?
     validations:
       required: false
+  - type: dropdown
+    id: output_language
+    attributes:
+      label: Output language
+      description: Choose the language for the enriched issue. Auto infers it from your intake.
+      options:
+        - Auto
+        - Spanish
+        - English
+      default: 0
+    validations:
+      required: true
   - type: input
     id: context
     attributes:
