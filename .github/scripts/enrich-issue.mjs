@@ -44,6 +44,13 @@ const REPOSITORY_LABEL_DEFINITIONS = [
 const ALLOWED_TYPES = new Set(Object.keys(TYPE_LABELS));
 const ALLOWED_PRIORITIES = new Set(["high", "medium", "low", "unspecified"]);
 const MANAGED_LABEL_PREFIXES = ["triage:", "type:", "priority:"];
+const EMPTY_FIELD_VALUES = new Set(["_No response_", "_No original body was provided._"]);
+const NORMALIZED_SECTION_KEYS = {
+  "what is this?": "kind",
+  "short description": "shortDescription",
+  "desired outcome": "desiredOutcome",
+  "context or link": "context",
+};
 
 function getRequiredEnv(name) {
   const value = process.env[name];
@@ -120,8 +127,114 @@ function parseFormSections(markdown) {
   return sections;
 }
 
+function normalizeOptionalText(value) {
+  if (typeof value !== "string") {
+    return "";
+  }
+
+  const trimmed = value.trim();
+  return EMPTY_FIELD_VALUES.has(trimmed) ? "" : trimmed;
+}
+
+function normalizeFormSections(sections) {
+  const normalized = {
+    kind: "",
+    shortDescription: "",
+    desiredOutcome: "",
+    context: "",
+    extraSections: {},
+  };
+
+  for (const [heading, value] of Object.entries(sections)) {
+    const normalizedValue = normalizeOptionalText(value);
+
+    if (!normalizedValue) {
+      continue;
+    }
+
+    const normalizedKey = NORMALIZED_SECTION_KEYS[heading.trim().toLowerCase()];
+
+    if (normalizedKey) {
+      normalized[normalizedKey] = normalizedValue;
+      continue;
+    }
+
+    normalized.extraSections[heading] = normalizedValue;
+  }
+
+  return normalized;
+}
+
+function stripIntakePrefix(title) {
+  return title.replace(/^\[intake\]\s*/i, "").trim();
+}
+
+function splitPhraseCandidates(text) {
+  return text
+    .split(/[\n,;|]+/)
+    .map((part) => part.replace(/^[\-:*\s]+|[\-:*\s]+$/g, "").trim())
+    .filter(Boolean);
+}
+
+function extractAnchorPhrases(rawIntake, normalizedFields) {
+  const candidates = [
+    normalizedFields.shortDescription,
+    normalizedFields.desiredOutcome,
+    normalizedFields.context,
+    stripIntakePrefix(rawIntake.title),
+  ];
+
+  const unique = new Set();
+
+  for (const candidate of candidates) {
+    const normalizedCandidate = normalizeOptionalText(candidate);
+
+    if (!normalizedCandidate) {
+      continue;
+    }
+
+    for (const phrase of splitPhraseCandidates(normalizedCandidate)) {
+      if (phrase.length < 3 || phrase.length > 80) {
+        continue;
+      }
+
+      unique.add(phrase);
+    }
+  }
+
+  return [...unique].slice(0, 6);
+}
+
+function buildSourceSignals(rawIntake, normalizedFields) {
+  const populatedFields = [
+    normalizedFields.kind,
+    normalizedFields.shortDescription,
+    normalizedFields.desiredOutcome,
+    normalizedFields.context,
+  ].filter(Boolean);
+  const shortDescriptionWordCount = normalizedFields.shortDescription
+    ? normalizedFields.shortDescription.split(/\s+/).filter(Boolean).length
+    : 0;
+  const detailLevel =
+    populatedFields.length <= 2 && shortDescriptionWordCount <= 4
+      ? "minimal"
+      : populatedFields.length <= 3
+        ? "moderate"
+        : "detailed";
+
+  return {
+    detailLevel,
+    populatedFieldCount: populatedFields.length,
+    hasDesiredOutcome: Boolean(normalizedFields.desiredOutcome),
+    hasContext: Boolean(normalizedFields.context),
+    titleWithoutPrefix: stripIntakePrefix(rawIntake.title),
+    anchorPhrases: extractAnchorPhrases(rawIntake, normalizedFields),
+  };
+}
+
 function buildModelPayload(issue, rawIntake) {
   const sections = parseFormSections(rawIntake.body);
+  const normalizedFields = normalizeFormSections(sections);
 
   return {
     repository: process.env.GITHUB_REPOSITORY,
@@ -131,6 +244,8 @@ function buildModelPayload(issue, rawIntake) {
     rawTitle: rawIntake.title,
     rawBody: rawIntake.body,
     parsedSections: sections,
+    normalizedFields,
+    sourceSignals: buildSourceSignals(rawIntake, normalizedFields),
   };
 }
 
