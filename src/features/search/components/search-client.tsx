@@ -53,7 +53,7 @@ export function SearchClient() {
   }
 
   return (
-    <main className="lg:ml-64 pt-24 px-6 md:px-12 pb-24">
+    <div className="lg:ml-64 pt-24 px-6 md:px-12 pb-24">
 
       {/* ── Centered header — always visible ── */}
       <div className="text-center mb-8">
@@ -192,6 +192,6 @@ export function SearchClient() {
         </section>
       )}
 
-    </main>
+    </div>
   );
 }
