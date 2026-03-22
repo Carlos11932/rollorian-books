@@ -139,7 +139,7 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
   const isEmpty = books.length === 0;
 
   return (
-    <div className="grid gap-6 px-6 md:px-12 pt-8 pb-24">
+    <div className="grid gap-6 px-12 md:px-20 pt-8 pb-24">
       <div
         className="rounded-[var(--radius-xl)] border border-line bg-gradient-to-b from-[rgba(19,27,41,0.88)] to-[rgba(8,12,20,0.88)] p-6 grid gap-4"
         style={{ backdropFilter: "blur(16px)" }}
