@@ -3,22 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/features/shared/components/button";
+import { createBook } from "@/features/books/services/books-api";
+import type { CreateBookPayload } from "@/features/books/types";
 
 interface GoogleBookSaveClientProps {
   /** The book data to POST when saving to the library. */
-  payload: {
-    title: string;
-    authors: string[];
-    subtitle?: string;
-    description?: string;
-    coverUrl?: string;
-    publisher?: string;
-    publishedDate?: string;
-    pageCount?: number;
-    isbn10?: string;
-    isbn13?: string;
-    genres: string[];
-  };
+  payload: Omit<CreateBookPayload, "status">;
 }
 
 export function GoogleBookSaveClient({ payload }: GoogleBookSaveClientProps) {
@@ -31,18 +21,7 @@ export function GoogleBookSaveClient({ payload }: GoogleBookSaveClientProps) {
     setErrorMessage(null);
 
     try {
-      const res = await fetch("/api/books", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...payload, status: "WISHLIST" }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error((data as { error?: string }).error ?? "Failed to save book");
-      }
-
-      const created = (await res.json()) as { id: string };
+      const created = await createBook({ ...payload, status: "WISHLIST", genres: payload.genres ?? [] });
       setState("saved");
 
       // Redirect to the real library detail page

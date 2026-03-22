@@ -1,4 +1,4 @@
-import type { Book } from "@/lib/types/book";
+import type { Book, BookStatus } from "@/lib/types/book";
 
 /**
  * Serializable version of the Prisma Book model.
@@ -18,4 +18,29 @@ export function serializeBook(book: Book): SerializableBook {
     createdAt: book.createdAt.toISOString(),
     updatedAt: book.updatedAt.toISOString(),
   };
+}
+
+// ── API Payload Types ──────────────────────────────────────────────────────
+
+/** Payload sent to POST /api/books when saving a new book to the library. */
+export interface CreateBookPayload {
+  title: string;
+  authors: string[];
+  coverUrl?: string;
+  publishedDate?: string;
+  isbn13?: string;
+  status: BookStatus;
+  genres: string[];
+  subtitle?: string;
+  description?: string;
+  publisher?: string;
+  pageCount?: number;
+  isbn10?: string;
+}
+
+/** Payload sent to PATCH /api/books/[id] for partial book updates. */
+export interface UpdateBookPayload {
+  status?: BookStatus;
+  rating?: number | null;
+  notes?: string | null;
 }

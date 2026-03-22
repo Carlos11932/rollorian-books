@@ -1,80 +1,30 @@
 "use client";
 
-import type { NormalizedBook } from "@/lib/google-books/types";
 import { BookCard } from "@/features/books/components/book-card";
 import { Skeleton } from "@/features/shared/components/skeleton";
 import { EmptyState } from "@/features/shared/components/empty-state";
 import type { SerializableBook } from "@/features/books/types";
+import type { BookStatus } from "@/lib/types/book";
 
 interface SearchResultsGridProps {
-  results: NormalizedBook[];
+  books: SerializableBook[];
   isLoading?: boolean;
   hasSearched?: boolean;
-}
-
-/**
- * Maps a NormalizedBook to a partial SerializableBook suitable for display.
- * The "fake" id is the externalId — it's never used for DB lookups here.
- */
-function toDisplayBook(book: NormalizedBook): SerializableBook {
-  return {
-    id: book.externalId,
-    title: book.title,
-    subtitle: null,
-    authors: book.authors,
-    description: null,
-    coverUrl: book.coverUrl ?? null,
-    publisher: null,
-    publishedDate: book.publishedYear != null ? String(book.publishedYear) : null,
-    pageCount: null,
-    isbn10: null,
-    isbn13: book.isbn ?? null,
-    status: "WISHLIST",
-    rating: null,
-    notes: null,
-    genres: [],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-}
-
-async function saveBookToLibrary(book: NormalizedBook): Promise<void> {
-  const payload = {
-    title: book.title,
-    authors: book.authors,
-    coverUrl: book.coverUrl ?? undefined,
-    publishedDate: book.publishedYear != null ? String(book.publishedYear) : undefined,
-    isbn13: book.isbn ?? undefined,
-    status: "WISHLIST" as const,
-    genres: [],
-  };
-
-  const res = await fetch("/api/books", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error((data as { error?: string }).error ?? "Failed to save book");
-  }
+  /** Look up whether a book is already saved by its display book id. */
+  getSavedStatus?: (book: SerializableBook) => BookStatus | null;
+  /** Save a book to the library. */
+  onSave?: (book: SerializableBook) => Promise<void>;
 }
 
 const SKELETON_WIDTHS = [160, 160, 160, 160, 160, 160, 160, 160] as const;
 
 export function SearchResultsGrid({
-  results,
+  books,
   isLoading = false,
   hasSearched = false,
+  getSavedStatus,
+  onSave,
 }: SearchResultsGridProps) {
-  async function handleSave(displayBook: SerializableBook): Promise<void> {
-    // Find the original NormalizedBook to save correctly
-    const original = results.find((r) => r.externalId === displayBook.id);
-    if (!original) return;
-    await saveBookToLibrary(original);
-  }
-
   if (isLoading) {
     return (
       <div
@@ -109,7 +59,7 @@ export function SearchResultsGrid({
     );
   }
 
-  if (results.length === 0) {
+  if (books.length === 0) {
     return (
       <EmptyState
         icon="📚"
@@ -123,15 +73,16 @@ export function SearchResultsGrid({
     <div
       className="grid gap-4"
       style={{ gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))" }}
-      aria-label={`${results.length} search results`}
+      aria-label={`${books.length} search results`}
     >
-      {results.map((book, index) => (
+      {books.map((book, index) => (
         <BookCard
-          key={book.externalId}
+          key={book.id}
           variant="search"
-          book={toDisplayBook(book)}
+          book={book}
           index={index}
-          onSave={handleSave}
+          savedStatus={getSavedStatus?.(book) ?? null}
+          onSave={onSave}
         />
       ))}
     </div>

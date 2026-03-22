@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { BookCover } from "./book-cover";
 import { Badge } from "@/features/shared/components/badge";
+import { useUpdateBook } from "@/features/books/hooks/use-update-book";
+import { useDeleteBook } from "@/features/books/hooks/use-delete-book";
 import type { BookStatus } from "@/lib/types/book";
 import { BOOK_STATUS_OPTIONS } from "@/lib/types/book";
 import { cn } from "@/lib/cn";
@@ -28,50 +30,36 @@ interface LibraryBookCardProps {
 export function LibraryBookCard({ book }: LibraryBookCardProps) {
   const router = useRouter();
   const [status, setStatus] = useState<BookStatus>(book.status);
-  const [isStatusLoading, setIsStatusLoading] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const { update, saveState } = useUpdateBook();
+  const {
+    deleteState,
+    requestDelete,
+    confirmDelete,
+    cancelDelete,
+  } = useDeleteBook(book.id);
+
+  const isStatusLoading = saveState === "saving";
+  const isDeleting = deleteState === "deleting";
 
   const authorLine =
     book.authors.length > 0 ? book.authors.join(", ") : "Unknown author";
 
   async function handleStatusChange(newStatus: BookStatus) {
     if (newStatus === status) return;
-    setIsStatusLoading(true);
     setStatus(newStatus);
 
     try {
-      const res = await fetch(`/api/books/${book.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
-      });
-
-      if (!res.ok) {
-        setStatus(book.status);
-      } else {
-        router.refresh();
-      }
+      await update(book.id, { status: newStatus });
+      router.refresh();
     } catch {
       setStatus(book.status);
-    } finally {
-      setIsStatusLoading(false);
     }
   }
 
   async function handleDelete() {
-    setIsDeleting(true);
-    try {
-      const res = await fetch(`/api/books/${book.id}`, { method: "DELETE" });
-      if (res.ok) {
-        router.refresh();
-      }
-    } catch {
-      // silent — refresh will show current state
-    } finally {
-      setIsDeleting(false);
-      setShowDeleteConfirm(false);
-    }
+    await confirmDelete();
+    router.refresh();
   }
 
   return (
@@ -170,7 +158,7 @@ export function LibraryBookCard({ book }: LibraryBookCardProps) {
         </div>
 
         {/* Delete controls */}
-        {showDeleteConfirm ? (
+        {deleteState === "confirming" ? (
           <div className="flex gap-1.5">
             <button
               type="button"
@@ -188,7 +176,7 @@ export function LibraryBookCard({ book }: LibraryBookCardProps) {
             </button>
             <button
               type="button"
-              onClick={() => setShowDeleteConfirm(false)}
+              onClick={cancelDelete}
               aria-label="Cancel delete"
               className="rounded-full border border-line bg-white/6 px-2.5 py-1 text-xs font-bold text-muted hover:text-text transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
             >
@@ -198,7 +186,7 @@ export function LibraryBookCard({ book }: LibraryBookCardProps) {
         ) : (
           <button
             type="button"
-            onClick={() => setShowDeleteConfirm(true)}
+            onClick={requestDelete}
             aria-label={`Delete ${book.title}`}
             className="rounded-full border border-transparent bg-transparent px-2.5 py-1 text-xs font-bold text-muted/50 hover:border-danger/30 hover:text-danger hover:bg-danger/8 transition-all duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
           >
