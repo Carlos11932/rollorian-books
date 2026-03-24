@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { NextRequest } from "next/server";
+import { revalidatePath } from "next/cache";
 import { type Book, type BookStatus, BOOK_STATUS_VALUES } from "@/lib/types/book";
 import { prisma } from "@/lib/prisma";
 import { createBookSchema } from "@/lib/schemas/book";
@@ -65,6 +66,9 @@ export async function POST(request: NextRequest): Promise<Response> {
     const book: Book = await prisma.book.create({
       data: result.data,
     });
+
+    revalidatePath('/');
+    revalidatePath('/library');
 
     return Response.json(book, { status: 201 });
   } catch (error) {

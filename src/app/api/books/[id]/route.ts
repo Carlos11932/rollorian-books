@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { NextRequest } from "next/server";
+import { revalidatePath } from "next/cache";
 import type { Book } from "@/lib/types/book";
 import { prisma } from "@/lib/prisma";
 import { updateBookSchema } from "@/lib/schemas/book";
@@ -56,6 +57,10 @@ export async function PATCH(
       data: result.data,
     });
 
+    revalidatePath('/');
+    revalidatePath('/library');
+    revalidatePath(`/books/${id}`);
+
     return Response.json(book);
   } catch (error) {
     console.error("[PATCH /api/books/[id]]", error);
@@ -76,6 +81,9 @@ export async function DELETE(
     }
 
     await prisma.book.delete({ where: { id } });
+
+    revalidatePath('/');
+    revalidatePath('/library');
 
     return new Response(null, { status: 204 });
   } catch (error) {
