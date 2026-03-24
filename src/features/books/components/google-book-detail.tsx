@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from 'next-intl/server';
 import type { GoogleBookView } from "@/features/books/types";
 import { BookCover } from "@/features/books/components/book-cover";
 import { GoogleBookSaveClient } from "@/features/books/components/google-book-save-client";
@@ -9,8 +10,9 @@ interface GoogleBookDetailProps {
   view: GoogleBookView;
 }
 
-export function GoogleBookDetail({ view }: GoogleBookDetailProps) {
-  const authorLine = view.authors.length > 0 ? view.authors.join(", ") : "Unknown author";
+export async function GoogleBookDetail({ view }: GoogleBookDetailProps) {
+  const t = await getTranslations();
+  const authorLine = view.authors.length > 0 ? view.authors.join(", ") : t('common.unknownAuthor');
   const yearLine = view.publishedDate ? view.publishedDate.slice(0, 4) : null;
 
   const savePayload = {
@@ -39,7 +41,7 @@ export function GoogleBookDetail({ view }: GoogleBookDetailProps) {
             className="inline-flex items-center gap-1.5 text-sm text-on-surface/50 hover:text-on-surface transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary rounded-sm"
           >
             <span aria-hidden="true">←</span>
-            Back to search
+            {t('book.backToSearch')}
           </Link>
         </div>
 
@@ -61,7 +63,7 @@ export function GoogleBookDetail({ view }: GoogleBookDetailProps) {
             </div>
 
             <div className="flex flex-col gap-5 min-w-0 flex-1">
-              <p className="text-xs font-bold uppercase tracking-widest text-primary">Google Books preview</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-primary">{t('book.googlePreview')}</p>
 
               <div className="grid gap-2">
                 <h1

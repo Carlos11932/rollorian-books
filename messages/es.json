@@ -63,7 +63,15 @@
     "tryAnother": "Prueba con otro título...",
     "resultsLabel": "Resultados de búsqueda",
     "resultsCount": "{count} resultado(s) para \"{query}\"",
-    "archivedSuggestions": "Sugerencias del Archivo"
+    "archivedSuggestions": "Sugerencias del Archivo",
+    "genres": {
+      "novel": "Novela",
+      "history": "Historia",
+      "scifi": "Ciencia Ficción",
+      "romance": "Romance",
+      "philosophy": "Filosofía",
+      "mystery": "Misterio"
+    }
   },
   "book": {
     "status": {

@@ -2,7 +2,8 @@
 
 import { useState, type ChangeEvent } from "react";
 import Link from "next/link";
-import { type BookStatus, BOOK_STATUS_VALUES, BOOK_STATUS_LABELS } from "@/lib/types/book";
+import { useTranslations } from 'next-intl';
+import { type BookStatus, BOOK_STATUS_VALUES } from "@/lib/types/book";
 import { cn } from "@/lib/cn";
 import { Badge } from "@/features/shared/components/badge";
 import { Button } from "@/features/shared/components/button";
@@ -43,7 +44,8 @@ function BrowseCard({
   book,
   index = 0,
 }: BaseBookCardProps & BrowseVariantProps) {
-  const authorLine = book.authors.length > 0 ? book.authors.join(", ") : "Unknown author";
+  const t = useTranslations('common');
+  const authorLine = book.authors.length > 0 ? book.authors.join(", ") : t('unknownAuthor');
 
   return (
     <Link
@@ -98,8 +100,9 @@ function SearchCard({
   savedStatus,
   onSave,
 }: BaseBookCardProps & SearchVariantProps) {
+  const t = useTranslations('common');
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
-  const authorLine = book.authors.length > 0 ? book.authors.join(", ") : "Unknown author";
+  const authorLine = book.authors.length > 0 ? book.authors.join(", ") : t('unknownAuthor');
 
   const isAlreadySaved = savedStatus != null;
   const isSaved = isAlreadySaved || saveState === "saved";
@@ -180,7 +183,7 @@ function SearchCard({
             <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>
               {saveState === "saved" ? "bookmark" : "bookmark_add"}
             </span>
-            {saveState === "saving" ? "Guardando…" : saveState === "saved" ? "Guardado" : "Guardar"}
+            {saveState === "saving" ? t('saving') : saveState === "saved" ? t('saved') : t('save')}
           </button>
         )}
       </div>
@@ -196,7 +199,8 @@ function LibraryCard({
   onOpen,
   onStatusChange,
 }: BaseBookCardProps & LibraryVariantProps) {
-  const authorLine = book.authors.length > 0 ? book.authors.join(", ") : "Unknown author";
+  const t = useTranslations();
+  const authorLine = book.authors.length > 0 ? book.authors.join(", ") : t('common.unknownAuthor');
 
   async function handleStatusChange(e: ChangeEvent<HTMLSelectElement>) {
     const newStatus = e.target.value as BookStatus;
@@ -248,7 +252,7 @@ function LibraryCard({
         <div className="grid gap-2 mt-auto">
           <label className="grid gap-1">
             <span className="text-xs text-muted font-medium uppercase tracking-wide">
-              Status
+              {t('book.statusLabel')}
             </span>
             <select
               defaultValue={book.status}
@@ -257,7 +261,7 @@ function LibraryCard({
             >
               {BOOK_STATUS_VALUES.map((s) => (
                 <option key={s} value={s}>
-                  {BOOK_STATUS_LABELS[s]}
+                  {t(`book.status.${s}`)}
                 </option>
               ))}
             </select>
@@ -269,7 +273,7 @@ function LibraryCard({
             onClick={handleOpen}
             className="w-full text-xs"
           >
-            Open detail
+            {t('book.openDetail')}
           </Button>
         </div>
       </div>

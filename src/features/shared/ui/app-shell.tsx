@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 import { SiteHeader } from './site-header';
 import { NavLinks } from './nav-links';
 import { MobileNav } from './mobile-nav';
@@ -7,7 +8,9 @@ interface AppShellProps {
   children: React.ReactNode;
 }
 
-export function AppShell({ children }: AppShellProps) {
+export async function AppShell({ children }: AppShellProps) {
+  const t = await getTranslations('nav');
+
   return (
     <>
       {/* Fixed top nav */}
@@ -23,10 +26,10 @@ export function AppShell({ children }: AppShellProps) {
             </div>
             <div>
               <h2 className="text-lg font-black text-primary font-headline tracking-tighter">
-                The Archive
+                {t('appName')}
               </h2>
               <p className="text-[10px] uppercase tracking-widest text-tertiary/60">
-                Private Collection
+                {t('tagline')}
               </p>
             </div>
           </div>
@@ -38,7 +41,7 @@ export function AppShell({ children }: AppShellProps) {
         {/* Sidebar footer */}
         <div className="px-6 flex flex-col gap-4">
           <button className="bg-gradient-to-br from-primary to-primary-container text-on-primary py-3 px-4 rounded-xl font-bold text-sm w-full">
-            Add New Volume
+            {t('addVolume')}
           </button>
           <div className="pt-4 flex flex-col gap-2 border-t border-outline-variant/10">
             <Link
@@ -46,7 +49,7 @@ export function AppShell({ children }: AppShellProps) {
               className="flex items-center gap-3 text-tertiary py-2 hover:text-primary text-sm transition-colors"
             >
               <span className="material-symbols-outlined text-[20px]">settings</span>
-              Settings
+              {t('settings')}
             </Link>
           </div>
         </div>

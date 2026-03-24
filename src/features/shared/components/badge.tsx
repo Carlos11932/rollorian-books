@@ -1,5 +1,8 @@
+'use client';
+
+import { useTranslations } from 'next-intl';
 import { cn } from "@/lib/cn";
-import { type BookStatus, BOOK_STATUS_LABELS } from "@/lib/types/book";
+import { type BookStatus } from "@/lib/types/book";
 
 interface BadgeProps {
   status: BookStatus;
@@ -7,6 +10,8 @@ interface BadgeProps {
 }
 
 export function Badge({ status, className }: BadgeProps) {
+  const t = useTranslations('book');
+
   return (
     <span
       className={cn(
@@ -18,7 +23,7 @@ export function Badge({ status, className }: BadgeProps) {
         className,
       )}
     >
-      {BOOK_STATUS_LABELS[status]}
+      {t(`status.${status}`)}
     </span>
   );
 }

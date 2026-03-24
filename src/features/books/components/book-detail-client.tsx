@@ -2,19 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from 'next-intl';
 import { cn } from "@/lib/cn";
 import { Button } from "@/features/shared/components/button";
 import type { SerializableBook } from "../types";
-import { type BookStatus, BOOK_STATUS_OPTIONS } from "@/lib/types/book";
+import { type BookStatus, BOOK_STATUS_VALUES } from "@/lib/types/book";
 import { updateBook, deleteBook } from "@/lib/api/books";
-
-const RATING_LABELS: Record<number, string> = {
-  1: "Poor",
-  2: "Fair",
-  3: "Good",
-  4: "Great",
-  5: "Excellent",
-};
 
 interface BookDetailClientProps {
   book: SerializableBook;
@@ -39,6 +32,7 @@ type DeleteState = (typeof DELETE_STATE)[keyof typeof DELETE_STATE];
 
 export function BookDetailClient({ book }: BookDetailClientProps) {
   const router = useRouter();
+  const t = useTranslations();
   const saveStateResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [status, setStatus] = useState<BookStatus>(book.status);
@@ -111,19 +105,19 @@ export function BookDetailClient({ book }: BookDetailClientProps) {
       aria-label="Manage book"
     >
       <div className="grid gap-1 mb-6">
-        <p className="text-xs font-bold uppercase tracking-widest text-muted">Manage</p>
+        <p className="text-xs font-bold uppercase tracking-widest text-muted">{t('book.manage')}</p>
         <h2
           className="text-2xl font-bold text-text"
           style={{ fontFamily: "var(--font-headline)" }}
         >
-          Update reading state
+          {t('book.updateState')}
         </h2>
       </div>
 
       <div className="grid gap-5 max-w-lg">
         {/* Status */}
         <label className="grid gap-1.5">
-          <span className="text-xs font-bold uppercase tracking-wide text-muted">Status</span>
+          <span className="text-xs font-bold uppercase tracking-wide text-muted">{t('book.statusLabel')}</span>
           <select
             value={status}
             disabled={isSaving || isDeleting}
@@ -136,9 +130,9 @@ export function BookDetailClient({ book }: BookDetailClientProps) {
               "transition-colors duration-150",
             )}
           >
-            {BOOK_STATUS_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value} className="bg-bg text-text">
-                {opt.label}
+            {BOOK_STATUS_VALUES.map((s) => (
+              <option key={s} value={s} className="bg-bg text-text">
+                {t(`book.status.${s}`)}
               </option>
             ))}
           </select>
@@ -147,7 +141,7 @@ export function BookDetailClient({ book }: BookDetailClientProps) {
         {/* Star rating */}
         <div className="grid gap-1.5">
           <span className="text-xs font-bold uppercase tracking-wide text-muted">
-            Rating{displayRating !== null ? ` — ${RATING_LABELS[displayRating]}` : ""}
+            {t('book.ratingLabel')}{displayRating !== null ? ` — ${t(`book.rating.${displayRating}`)}` : ""}
           </span>
           <div
             className="flex gap-1"
@@ -162,7 +156,7 @@ export function BookDetailClient({ book }: BookDetailClientProps) {
                 onClick={() => setRating(rating === star ? null : star)}
                 onMouseEnter={() => setHoverRating(star)}
                 onMouseLeave={() => setHoverRating(null)}
-                aria-label={`Rate ${star} out of 5 — ${RATING_LABELS[star]}`}
+                aria-label={`Rate ${star} out of 5 — ${t(`book.rating.${star}`)}`}
                 aria-pressed={rating === star}
                 className={cn(
                   "text-2xl transition-all duration-100 cursor-pointer",
@@ -185,7 +179,7 @@ export function BookDetailClient({ book }: BookDetailClientProps) {
                 aria-label="Clear rating"
                 className="ml-2 text-xs text-muted hover:text-text transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent rounded-sm disabled:opacity-60 self-center"
               >
-                Clear
+                {t('common.clear')}
               </button>
             )}
           </div>
@@ -193,12 +187,12 @@ export function BookDetailClient({ book }: BookDetailClientProps) {
 
         {/* Notes */}
         <label className="grid gap-1.5">
-          <span className="text-xs font-bold uppercase tracking-wide text-muted">Notes</span>
+          <span className="text-xs font-bold uppercase tracking-wide text-muted">{t('book.notesLabel')}</span>
           <textarea
             value={notes}
             disabled={isSaving || isDeleting}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Write something useful about this book."
+            placeholder={t('book.notesPlaceholder')}
             rows={4}
             aria-label="Book notes"
             className={cn(
@@ -227,7 +221,7 @@ export function BookDetailClient({ book }: BookDetailClientProps) {
             disabled={isSaving || isDeleting}
             onClick={handleSave}
           >
-            {saveState === SAVE_STATE.saved ? "Saved" : isSaving ? "Saving..." : "Save changes"}
+            {saveState === SAVE_STATE.saved ? t('book.savedChanges') : isSaving ? t('book.savingChanges') : t('book.saveChanges')}
           </Button>
 
           {deleteState === DELETE_STATE.confirming ? (
@@ -240,7 +234,7 @@ export function BookDetailClient({ book }: BookDetailClientProps) {
                 onClick={handleDelete}
                 className="border-danger/40 text-danger hover:bg-danger/10"
               >
-                {isDeleting ? "Removing..." : "Confirm remove"}
+                {isDeleting ? t('book.removing') : t('book.confirmRemove')}
               </Button>
               <Button
                 variant="ghost"
@@ -248,7 +242,7 @@ export function BookDetailClient({ book }: BookDetailClientProps) {
                 disabled={isDeleting}
                 onClick={() => setDeleteState(DELETE_STATE.idle)}
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
             </div>
           ) : (
@@ -259,7 +253,7 @@ export function BookDetailClient({ book }: BookDetailClientProps) {
               onClick={() => setDeleteState(DELETE_STATE.confirming)}
               className="text-muted hover:text-danger hover:border-danger/30"
             >
-              Remove book
+              {t('book.removeBook')}
             </Button>
           )}
         </div>

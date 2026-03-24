@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useTranslations } from 'next-intl';
 
 interface ErrorProps {
   error: Error & { digest?: string };
@@ -8,6 +9,8 @@ interface ErrorProps {
 }
 
 export default function Error({ error, reset }: ErrorProps) {
+  const t = useTranslations('errors');
+
   useEffect(() => {
     console.error(error);
   }, [error]);
@@ -22,17 +25,17 @@ export default function Error({ error, reset }: ErrorProps) {
           className="text-4xl font-bold text-text"
           style={{ fontFamily: "var(--font-headline)" }}
         >
-          Something went wrong
+          {t('errorTitle')}
         </h2>
         <p className="text-muted text-sm max-w-sm">
-          {error.message || "An unexpected error occurred. Please try again."}
+          {error.message || t('errorDescription')}
         </p>
       </div>
       <button
         onClick={reset}
         className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-accent text-white font-bold text-sm transition-transform hover:-translate-y-px focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent cursor-pointer"
       >
-        Try again
+        {t('tryAgain')}
       </button>
     </div>
   );

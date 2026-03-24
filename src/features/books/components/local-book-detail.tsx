@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from 'next-intl/server';
 import type { Book } from "@/lib/types/book";
 import { stripHtml } from "@/lib/utils/text";
 import { serializeBook } from "@/features/books/types";
@@ -14,9 +15,10 @@ interface LocalBookDetailProps {
   book: Book;
 }
 
-export function LocalBookDetail({ book }: LocalBookDetailProps) {
+export async function LocalBookDetail({ book }: LocalBookDetailProps) {
+  const t = await getTranslations();
   const serialized = serializeBook(book);
-  const authorLine = book.authors.length > 0 ? book.authors.join(", ") : "Unknown author";
+  const authorLine = book.authors.length > 0 ? book.authors.join(", ") : t('common.unknownAuthor');
   const yearLine = book.publishedDate ? book.publishedDate.slice(0, 4) : null;
 
   return (
@@ -31,7 +33,7 @@ export function LocalBookDetail({ book }: LocalBookDetailProps) {
             className="inline-flex items-center gap-1.5 text-sm text-on-surface/50 hover:text-on-surface transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary rounded-sm"
           >
             <span aria-hidden="true">←</span>
-            Back to library
+            {t('book.backToLibrary')}
           </Link>
         </div>
 

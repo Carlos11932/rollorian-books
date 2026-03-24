@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from 'next-intl';
 import { Button } from "@/features/shared/components/button";
 
 interface GoogleBookSaveClientProps {
@@ -23,6 +24,7 @@ interface GoogleBookSaveClientProps {
 
 export function GoogleBookSaveClient({ payload }: GoogleBookSaveClientProps) {
   const router = useRouter();
+  const t = useTranslations('book');
   const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -61,16 +63,16 @@ export function GoogleBookSaveClient({ payload }: GoogleBookSaveClientProps) {
     >
       <div className="grid gap-1 mb-4">
         <p className="text-xs font-bold uppercase tracking-widest text-accent">
-          Not in your library
+          {t('notInLibrary')}
         </p>
         <h2
           className="text-2xl font-bold text-text"
           style={{ fontFamily: "var(--font-headline)" }}
         >
-          Want to track this book?
+          {t('trackQuestion')}
         </h2>
         <p className="text-sm text-muted leading-relaxed">
-          Save it to your library to update its reading status, add notes, and rate it.
+          {t('trackDescription')}
         </p>
       </div>
 
@@ -87,7 +89,7 @@ export function GoogleBookSaveClient({ payload }: GoogleBookSaveClientProps) {
         disabled={state === "saving" || state === "saved"}
         onClick={handleSave}
       >
-        {state === "saved" ? "Saved — redirecting..." : state === "saving" ? "Saving..." : "Save to library"}
+        {state === "saved" ? t('savedRedirecting') : state === "saving" ? t('savingChanges') : t('saveToLibrary')}
       </Button>
     </section>
   );

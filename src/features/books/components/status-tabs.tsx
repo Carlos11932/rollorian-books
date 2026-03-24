@@ -1,5 +1,7 @@
+'use client';
+
 import Link from "next/link";
-import { BOOK_STATUS_LABELS } from "@/lib/types/book";
+import { useTranslations } from 'next-intl';
 import { cn } from "@/lib/cn";
 
 const STATUS_TAB = {
@@ -11,11 +13,6 @@ const STATUS_TAB = {
 } as const;
 
 type StatusTabValue = (typeof STATUS_TAB)[keyof typeof STATUS_TAB];
-
-const TAB_LABELS: Record<StatusTabValue, string> = {
-  all: "All",
-  ...BOOK_STATUS_LABELS,
-};
 
 interface StatusCounts {
   WISHLIST: number;
@@ -60,6 +57,13 @@ function getTabHref(
 }
 
 export function StatusTabs({ activeStatus, counts, basePath = "/library", searchParams }: StatusTabsProps) {
+  const t = useTranslations();
+
+  function getTabLabel(tab: StatusTabValue): string {
+    if (tab === STATUS_TAB.ALL) return 'All';
+    return t(`book.status.${tab}`);
+  }
+
   return (
     <nav
       role="tablist"
@@ -84,7 +88,7 @@ export function StatusTabs({ activeStatus, counts, basePath = "/library", search
                 : "bg-white/6 text-muted border border-white/12 hover:text-text hover:-translate-y-px",
             )}
           >
-            {TAB_LABELS[tab]}
+            {getTabLabel(tab)}
             {count !== null && (
               <span
                 className={cn(

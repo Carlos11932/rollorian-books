@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useTranslations } from 'next-intl';
 import { BookCover } from "./book-cover";
 import { Badge } from "@/features/shared/components/badge";
-import { type BookStatus, BOOK_STATUS_OPTIONS } from "@/lib/types/book";
+import { type BookStatus, BOOK_STATUS_VALUES } from "@/lib/types/book";
 import { cn } from "@/lib/cn";
 import { updateBook, deleteBook } from "@/lib/api/books";
 
@@ -27,13 +28,14 @@ interface LibraryBookCardProps {
 
 export function LibraryBookCard({ book }: LibraryBookCardProps) {
   const router = useRouter();
+  const t = useTranslations();
   const [status, setStatus] = useState<BookStatus>(book.status);
   const [isStatusLoading, setIsStatusLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const authorLine =
-    book.authors.length > 0 ? book.authors.join(", ") : "Unknown author";
+    book.authors.length > 0 ? book.authors.join(", ") : t('common.unknownAuthor');
 
   async function handleStatusChange(newStatus: BookStatus) {
     if (newStatus === status) return;
@@ -143,9 +145,9 @@ export function LibraryBookCard({ book }: LibraryBookCardProps) {
               isStatusLoading && "opacity-60 cursor-wait",
             )}
           >
-            {BOOK_STATUS_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value} className="bg-bg text-text">
-                {opt.label}
+            {BOOK_STATUS_VALUES.map((s) => (
+              <option key={s} value={s} className="bg-bg text-text">
+                {t(`book.status.${s}`)}
               </option>
             ))}
           </select>
@@ -173,7 +175,7 @@ export function LibraryBookCard({ book }: LibraryBookCardProps) {
                 isDeleting && "opacity-60 cursor-wait",
               )}
             >
-              {isDeleting ? "…" : "Confirm"}
+              {isDeleting ? "…" : t('common.confirm')}
             </button>
             <button
               type="button"
@@ -181,7 +183,7 @@ export function LibraryBookCard({ book }: LibraryBookCardProps) {
               aria-label="Cancel delete"
               className="rounded-full border border-line bg-white/6 px-2.5 py-1 text-xs font-bold text-muted hover:text-text transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
           </div>
         ) : (
@@ -191,7 +193,7 @@ export function LibraryBookCard({ book }: LibraryBookCardProps) {
             aria-label={`Delete ${book.title}`}
             className="rounded-full border border-transparent bg-transparent px-2.5 py-1 text-xs font-bold text-muted/50 hover:border-danger/30 hover:text-danger hover:bg-danger/8 transition-all duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
           >
-            Delete
+            {t('common.delete')}
           </button>
         )}
       </div>
