@@ -5,8 +5,7 @@ import { useRouter } from "next/navigation";
 import { cn } from "@/lib/cn";
 import { Button } from "@/features/shared/components/button";
 import type { SerializableBook } from "../types";
-import type { BookStatus } from "@/lib/types/book";
-import { BOOK_STATUS_OPTIONS } from "@/lib/types/book";
+import { type BookStatus, BOOK_STATUS_OPTIONS } from "@/lib/types/book";
 import { updateBook, deleteBook } from "@/lib/api/books";
 
 const RATING_LABELS: Record<number, string> = {

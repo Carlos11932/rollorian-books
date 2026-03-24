@@ -5,8 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { BookCover } from "./book-cover";
 import { Badge } from "@/features/shared/components/badge";
-import type { BookStatus } from "@/lib/types/book";
-import { BOOK_STATUS_OPTIONS } from "@/lib/types/book";
+import { type BookStatus, BOOK_STATUS_OPTIONS } from "@/lib/types/book";
 import { cn } from "@/lib/cn";
 import { updateBook, deleteBook } from "@/lib/api/books";
 

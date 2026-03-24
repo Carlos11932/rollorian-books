@@ -1,9 +1,7 @@
-import type { BookStatus } from "@/lib/types/book";
-import { BOOK_STATUS_LABELS, BOOK_STATUS_VALUES } from "@/lib/types/book";
+import { type BookStatus, BOOK_STATUS_LABELS, BOOK_STATUS_VALUES } from "@/lib/types/book";
 import { prisma } from "@/lib/prisma";
 import { LibraryBookCard } from "@/features/books/components/library-book-card";
-import { StatusTabs } from "@/features/books/components/status-tabs";
-import type { StatusCounts, StatusTabValue } from "@/features/books/components/status-tabs";
+import { StatusTabs, type StatusCounts, type StatusTabValue } from "@/features/books/components/status-tabs";
 import { EmptyState } from "@/features/shared/components/empty-state";
 import { BookRailSection } from "@/features/shared/ui/book-rail-section";
 

@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { BookStatus } from "@/lib/types/book";
-import type { Book } from "@/lib/types/book";
+import { BookStatus, type Book } from "@/lib/types/book";
 
 // Mock prisma BEFORE importing the route so the module initialiser never
 // tries to connect to the database.

@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
-import type { ReactNode } from "react";
+import { useState, useRef, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { EmptyState } from "../components/empty-state";
 
