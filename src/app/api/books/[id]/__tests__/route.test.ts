@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { BookStatus, type Book } from "@/lib/types/book";
 
+const { revalidatePathMock } = vi.hoisted(() => ({
+  revalidatePathMock: vi.fn(),
+}));
+
 // Mock prisma BEFORE importing the route so the module initialiser never
 // tries to connect to the database.
 vi.mock("@/lib/prisma", () => ({
@@ -13,6 +17,10 @@ vi.mock("@/lib/prisma", () => ({
       delete: vi.fn(),
     },
   },
+}));
+
+vi.mock("next/cache", () => ({
+  revalidatePath: revalidatePathMock,
 }));
 
 // Import after mocks are established.
@@ -107,6 +115,9 @@ describe("PATCH /api/books/[id]", () => {
     const json: unknown = await response.json();
     expect((json as Book).status).toBe(BookStatus.READ);
     expect(prismaMock.update).toHaveBeenCalledOnce();
+    expect(revalidatePathMock).toHaveBeenCalledWith("/");
+    expect(revalidatePathMock).toHaveBeenCalledWith("/library");
+    expect(revalidatePathMock).toHaveBeenCalledWith("/books/book-123");
   });
 
   it("returns 200 when body is empty (no-op update — all fields are optional)", async () => {
@@ -214,6 +225,9 @@ describe("DELETE /api/books/[id]", () => {
     expect(response.body).toBeNull();
     expect(prismaMock.delete).toHaveBeenCalledOnce();
     expect(prismaMock.delete).toHaveBeenCalledWith({ where: { id: "book-123" } });
+    expect(revalidatePathMock).toHaveBeenCalledWith("/");
+    expect(revalidatePathMock).toHaveBeenCalledWith("/library");
+    expect(revalidatePathMock).toHaveBeenCalledWith("/books/book-123");
   });
 
   it("returns 404 when the book does not exist", async () => {
