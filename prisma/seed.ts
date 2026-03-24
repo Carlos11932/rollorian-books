@@ -18,6 +18,10 @@ const BookStatus = {
 
 type BookStatusValue = (typeof BookStatus)[keyof typeof BookStatus];
 
+function writeInfo(message: string) {
+  process.stdout.write(`${message}\n`);
+}
+
 async function main() {
   await prisma.book.deleteMany();
 
@@ -97,7 +101,7 @@ async function main() {
     ],
   });
 
-  console.log("Seed complete: 5 books created");
+  writeInfo("Seed complete: 5 books created");
 }
 
 main()

@@ -46,9 +46,12 @@ export function SiteHeader() {
         <div className="flex items-center gap-6">
           <button
             aria-label="Search"
-            className="material-symbols-outlined text-primary hover:bg-surface-variant/50 p-2 rounded-full transition-colors"
+            type="button"
+            className="hover:bg-surface-variant/50 p-2 rounded-full transition-colors"
           >
-            search
+            <span className="material-symbols-outlined text-primary" style={{ fontSize: "22px" }}>
+              search
+            </span>
           </button>
           <div className="w-8 h-8 rounded-full overflow-hidden border border-primary/20 bg-surface-container flex items-center justify-center">
             <span className="material-symbols-outlined text-primary text-xl leading-none">

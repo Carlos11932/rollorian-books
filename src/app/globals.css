@@ -1,4 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=optional");
 @import "tailwindcss";
 
 @theme {
@@ -57,6 +56,19 @@
   --color-on-error: #690005;
   --color-on-error-container: #ffdad6;
 
+  /* Semantic aliases */
+  --color-text: var(--color-on-surface);
+  --color-muted: var(--color-on-surface-variant);
+  --color-line: var(--color-outline-variant);
+  --color-accent: var(--color-primary);
+  --color-accent-strong: var(--color-primary-fixed);
+  --color-gold: var(--color-secondary);
+  --color-success: var(--color-primary);
+  --color-danger: var(--color-error);
+  --color-bg: var(--color-background);
+  --color-surface-soft: var(--color-surface-container);
+  --color-surface-strong: var(--color-surface-container-high);
+
   /* Typography */
   --font-headline: var(--font-manrope), sans-serif;
   --font-body: var(--font-manrope), sans-serif;
@@ -65,6 +77,8 @@
 
   /* Border radius */
   --radius: 0.125rem;
+  --radius-sm: var(--radius);
+  --radius-md: var(--radius-lg);
   --radius-lg: 0.25rem;
   --radius-xl: 0.5rem;
   --radius-full: 0.75rem;

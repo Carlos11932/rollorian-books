@@ -178,7 +178,7 @@ export default function SearchPage() {
   }
 
   return (
-    <main className="lg:ml-64 pt-24 px-6 md:px-12 pb-24">
+    <div className="pt-8 px-12 md:px-20 pb-24">
 
       {/* ── Centered header — always visible ── */}
       <div className="text-center mb-8">
@@ -422,6 +422,6 @@ export default function SearchPage() {
         </section>
       )}
 
-    </main>
+    </div>
   );
 }

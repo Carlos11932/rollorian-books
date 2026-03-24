@@ -179,6 +179,10 @@ function getRequiredEnv(name) {
   return value;
 }
 
+function writeInfo(message) {
+  process.stdout.write(`${message}\n`);
+}
+
 function parseJson(text, label) {
   try {
     return JSON.parse(text);
@@ -745,7 +749,7 @@ async function main() {
   const issue = dryRun ? event.issue : await fetchCurrentIssue(repository, issueNumber);
 
   if (!shouldProcessIssue(event, issue)) {
-    console.log(`Skipping issue #${issueNumber}; trigger conditions not met.`);
+    writeInfo(`Skipping issue #${issueNumber}; trigger conditions not met.`);
     return;
   }
 
@@ -766,12 +770,12 @@ async function main() {
   };
 
   if (dryRun) {
-    console.log(JSON.stringify(updatePayload, null, 2));
+    writeInfo(JSON.stringify(updatePayload, null, 2));
     return;
   }
 
   await updateIssue(repository, issueNumber, updatePayload);
-  console.log(`Enriched issue #${issueNumber} with labels: ${nextLabels.join(", ")}`);
+  writeInfo(`Enriched issue #${issueNumber} with labels: ${nextLabels.join(", ")}`);
 }
 
 const isDirectExecution = process.argv[1]
