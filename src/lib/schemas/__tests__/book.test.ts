@@ -147,10 +147,21 @@ describe("createBookSchema", () => {
     expect(result.success).toBe(false);
   });
 
-  // NOTE: coverUrl accepts ANY string — there is no URL format validation.
-  // A non-URL string passes. This may be intentional (e.g. relative paths allowed).
-  it("accepts coverUrl as any string (no URL format enforcement)", () => {
+  it("rejects coverUrl that is not a valid URL", () => {
     const result = createBookSchema.safeParse({ ...validInput, coverUrl: "not-a-url" });
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts coverUrl as a valid absolute URL", () => {
+    const result = createBookSchema.safeParse({
+      ...validInput,
+      coverUrl: "https://books.google.com/books/content?id=123&printsec=frontcover",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts coverUrl as null (book without a cover)", () => {
+    const result = createBookSchema.safeParse({ ...validInput, coverUrl: null });
     expect(result.success).toBe(true);
   });
 });
