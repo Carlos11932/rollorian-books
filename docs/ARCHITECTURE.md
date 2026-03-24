@@ -20,6 +20,15 @@ The Prisma client is a singleton stored on `globalThis` in development to avoid 
 
 Prisma 7 with driver adapters does not reliably export model types (`Book`) from `@prisma/client` on all platforms. For this reason, the `Book` interface and `BookStatus` constant are manually defined in `src/lib/types/book.ts` and must be kept in sync with `prisma/schema.prisma`.
 
+The `Book` model has two database indices for library query performance:
+
+```prisma
+@@index([status])
+@@index([createdAt])
+```
+
+`status` is indexed because the library page filters books by status on every load. `createdAt` is indexed to support sorted listing without full-table scans.
+
 ### React 19
 
 Using the latest stable React. The React Compiler works with React 19's automatic batching and transition APIs. No `useTransition` wrappers are needed in most places since the compiler handles re-render optimization.
@@ -33,6 +42,8 @@ The `cn` utility in `src/lib/cn.ts` combines `clsx` + `tailwind-merge` for condi
 ### Zod 4
 
 Validation schemas live in `src/lib/schemas/book.ts`. Zod 4 uses the `{ error: "..." }` syntax instead of `{ message: "..." }` for custom messages.
+
+The `coverUrl` field in `createBookSchema` is validated as an absolute URL using `z.string().url(...)`. This rejects relative paths and bare strings, ensuring only well-formed URLs are persisted.
 
 ---
 
@@ -152,6 +163,8 @@ The `cache()` wrapper on `resolveBook` deduplicates the data fetch between `gene
 ### Default: Server Component
 
 Everything without `"use client"` is a Server Component. This covers all page files (`app/*/page.tsx`), layout files, and most components in `features/books/components/` and `features/shared/`.
+
+`src/features/shared/ui/app-shell.tsx` is a Server Component. It composes `SiteHeader`, `NavLinks`, and `MobileNav` — all of which have no client-side interactivity — and wraps the page `children`. No `"use client"` is needed here, which keeps the entire shell out of the JS bundle.
 
 Server Components run on the server only: they can query Prisma directly, read environment variables, and import `server-only` modules. They produce zero JavaScript bundle impact.
 
@@ -290,6 +303,7 @@ If only some of a large component needs client behavior, extract the interactive
 - **Test runner**: Vitest 4
 - **Environment**: `node` (not jsdom — the project tests pure logic, not DOM rendering)
 - **Setup**: `src/test/setup.ts` mocks `server-only` globally so modules with that guard can be imported in tests
+- **Coverage**: 140 unit tests across `src/**/__tests__/`
 
 ### Location
 
@@ -324,7 +338,7 @@ src/app/api/books/__tests__/route.test.ts
 
 ### E2E Tests (Playwright)
 
-Located in `e2e/`. Cover critical user flows against the running application:
+Located in `e2e/`. 15 tests cover critical user flows against the running application:
 
 | File | Tests | Coverage |
 |---|---|---|
@@ -353,7 +367,31 @@ npm run test:coverage # coverage report
 
 ---
 
-## 9. Environment Variables
+## 9. CI/CD
+
+### GitHub Actions (`.github/workflows/ci.yml`)
+
+Three parallel jobs run on every push to `main` and every PR:
+
+- **lint**: ESLint with `--max-warnings 0`
+- **type-check**: `prisma generate` + `tsc --noEmit`
+- **test**: `prisma generate` + Vitest unit tests
+
+E2E job runs after all three pass:
+
+- Installs Playwright + Chromium
+- Builds the app
+- Seeds the database (`prisma db seed`)
+- Runs Playwright tests
+- Uploads `playwright-report/` as an artifact on failure (7-day retention)
+
+### Vercel
+
+Automatic deployments on push to `main`. Preview deployments on PRs.
+
+---
+
+## 10. Environment Variables
 
 ```
 DATABASE_URL=          # Neon Postgres connection string (pooled)
