@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { BookStatus, type Book } from "@/lib/types/book";
 
+const { revalidatePathMock } = vi.hoisted(() => ({
+  revalidatePathMock: vi.fn(),
+}));
+
 // Mock prisma BEFORE importing the route so the module initialiser never
 // tries to connect to the database.
 vi.mock("@/lib/prisma", () => ({
@@ -13,6 +17,10 @@ vi.mock("@/lib/prisma", () => ({
       delete: vi.fn(),
     },
   },
+}));
+
+vi.mock("next/cache", () => ({
+  revalidatePath: revalidatePathMock,
 }));
 
 // Import after mocks are established.
@@ -94,6 +102,9 @@ describe("POST /api/books", () => {
     const json: unknown = await response.json();
     expect((json as { id: string }).id).toBe("book-001");
     expect(prismaMock.create).toHaveBeenCalledOnce();
+    expect(revalidatePathMock).toHaveBeenCalledWith("/");
+    expect(revalidatePathMock).toHaveBeenCalledWith("/library");
+    expect(revalidatePathMock).toHaveBeenCalledWith("/books/book-001");
   });
 
   it("returns 400 when title is missing", async () => {

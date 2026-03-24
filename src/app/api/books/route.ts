@@ -12,6 +12,12 @@ function isBookStatus(value: string): value is BookStatus {
   return VALID_STATUSES.has(value);
 }
 
+function revalidateBookCollectionPaths(bookId: string) {
+  revalidatePath("/");
+  revalidatePath("/library");
+  revalidatePath(`/books/${bookId}`);
+}
+
 export async function GET(request: NextRequest): Promise<Response> {
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -67,8 +73,7 @@ export async function POST(request: NextRequest): Promise<Response> {
       data: result.data,
     });
 
-    revalidatePath('/');
-    revalidatePath('/library');
+    revalidateBookCollectionPaths(book.id);
 
     return Response.json(book, { status: 201 });
   } catch (error) {
