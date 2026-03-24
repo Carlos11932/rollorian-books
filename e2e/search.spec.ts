@@ -11,9 +11,9 @@ test.describe('Search', () => {
   test('genre quick-filter pills are visible', async ({ page }) => {
     await page.goto('/search')
     // QUICK_FILTERS = ["Novela", "Historia", "Ciencia Ficción", "Romance", "Filosofía"]
-    await expect(page.getByRole('button', { name: 'Novela' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Historia' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Romance' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Novela', exact: true })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Historia', exact: true })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Romance', exact: true })).toBeVisible()
   })
 
   test('typing a query and submitting shows results or empty state', async ({ page }) => {
@@ -33,7 +33,7 @@ test.describe('Search', () => {
 
   test('clicking a quick-filter pill triggers a search', async ({ page }) => {
     await page.goto('/search')
-    await page.getByRole('button', { name: 'Historia' }).click()
+    await page.getByRole('button', { name: 'Historia', exact: true }).click()
 
     // The input should now have "Historia" as its value
     await expect(page.getByLabel(/Busca por título, autor o ISBN/i)).toHaveValue('Historia')

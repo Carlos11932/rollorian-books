@@ -11,12 +11,12 @@ test.describe('Library', () => {
     // StatusTabs renders a <nav role="tablist" aria-label="Library statuses">
     const tablist = page.getByRole('tablist', { name: /Library statuses/i })
     await expect(tablist).toBeVisible()
-    // The 5 tabs: All, Wishlist, To Read, Currently Reading, Completed
+    // The 5 tabs: All, Wishlist, To Read, Reading, Read
     await expect(page.getByRole('tab', { name: 'All' })).toBeVisible()
     await expect(page.getByRole('tab', { name: 'Wishlist' })).toBeVisible()
-    await expect(page.getByRole('tab', { name: /To Read/i })).toBeVisible()
-    await expect(page.getByRole('tab', { name: /Currently Reading/i })).toBeVisible()
-    await expect(page.getByRole('tab', { name: /Completed/i })).toBeVisible()
+    await expect(page.getByRole('tab', { name: 'To Read' })).toBeVisible()
+    await expect(page.getByRole('tab', { name: 'Reading' })).toBeVisible()
+    await expect(page.locator('[role="tab"][href="/library?status=READ"]')).toBeVisible()
   })
 
   test('All tab is selected by default', async ({ page }) => {
@@ -42,10 +42,10 @@ test.describe('Library', () => {
 
   test('direct navigation to status filter loads the filtered view', async ({ page }) => {
     await page.goto('/library?status=READING')
-    await expect(page.getByRole('tab', { name: /Currently Reading/i })).toHaveAttribute('aria-selected', 'true')
+    await expect(page.getByRole('tab', { name: 'Reading' })).toHaveAttribute('aria-selected', 'true')
     // The page shows an empty state or books — either is valid without seeded data
     const hasBooks = await page.locator('[class*="shrink-0"]').count() > 0
-    const hasEmpty = await page.getByRole('heading', { name: /No Currently Reading books/i }).isVisible()
+    const hasEmpty = await page.getByRole('heading', { name: /No Reading books/i }).isVisible()
     expect(hasBooks || hasEmpty).toBe(true)
   })
 })
