@@ -68,7 +68,7 @@ function makeGetRequest(searchParams = ""): Request {
 // ─── POST /api/books ──────────────────────────────────────────────────────────
 
 describe("POST /api/books", () => {
-  const prismaMock = prisma.book as {
+  const prismaMock = prisma.book as unknown as {
     create: ReturnType<typeof vi.fn>;
   };
 
@@ -160,7 +160,7 @@ describe("POST /api/books", () => {
 // ─── GET /api/books ───────────────────────────────────────────────────────────
 
 describe("GET /api/books", () => {
-  const prismaMock = prisma.book as {
+  const prismaMock = prisma.book as unknown as {
     findMany: ReturnType<typeof vi.fn>;
   };
 

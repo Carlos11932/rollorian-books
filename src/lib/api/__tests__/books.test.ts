@@ -163,7 +163,7 @@ describe("updateBook", () => {
 
     await updateBook("book-123", { status: "READ", rating: 4, notes: "Great book" });
 
-    const [, options] = vi.mocked(fetch).mock.calls[0];
+    const [, options] = vi.mocked(fetch).mock.calls[0]!;
     expect(JSON.parse((options as RequestInit).body as string)).toEqual({
       status: "READ",
       rating: 4,
