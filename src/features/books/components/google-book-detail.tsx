@@ -32,7 +32,7 @@ export function GoogleBookDetail({ view }: GoogleBookDetailProps) {
       <BlurredBackground coverUrl={view.coverUrl} />
       <div aria-hidden="true" className="bg-surface/50" style={{ position: "fixed", inset: 0, zIndex: 1 }} />
 
-      <div style={{ position: "relative", zIndex: 2 }} className="grid gap-6 pb-12">
+      <div style={{ position: "relative", zIndex: 2 }} className="grid gap-6 pt-8 pb-12">
         <div>
           <Link
             href="/search"

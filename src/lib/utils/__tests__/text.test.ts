@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { stripHtml } from "@/lib/utils/text";
+import { stripHtml, toTitleCase } from "@/lib/utils/text";
 
 describe("stripHtml", () => {
   it("returns empty string for null input", () => {
@@ -66,5 +66,47 @@ describe("stripHtml", () => {
     const input = "<p>A <b>classic</b> guide to writing clean code.</p><br/>Recommended for all developers.";
     const output = stripHtml(input);
     expect(output).toBe("A classic guide to writing clean code. Recommended for all developers.");
+  });
+});
+
+describe("toTitleCase", () => {
+  it("returns empty string for empty input", () => {
+    expect(toTitleCase("")).toBe("");
+  });
+
+  it("capitalizes a single lowercase word", () => {
+    expect(toTitleCase("fiction")).toBe("Fiction");
+  });
+
+  it("capitalizes multiple lowercase words", () => {
+    expect(toTitleCase("science fiction")).toBe("Science Fiction");
+  });
+
+  it("lowercases then title-cases all-caps input", () => {
+    expect(toTitleCase("FANTASY")).toBe("Fantasy");
+  });
+
+  it("handles single lowercase word", () => {
+    expect(toTitleCase("history")).toBe("History");
+  });
+
+  it("handles already mixed Title Case input", () => {
+    expect(toTitleCase("Already Title Case")).toBe("Already Title Case");
+  });
+
+  it("capitalizes every word in a multi-word string", () => {
+    expect(toTitleCase("the old man and the sea")).toBe("The Old Man And The Sea");
+  });
+
+  it("normalizes mixed casing", () => {
+    expect(toTitleCase("yOuNg aDuLt")).toBe("Young Adult");
+  });
+
+  it("handles single character words", () => {
+    expect(toTitleCase("a tale")).toBe("A Tale");
+  });
+
+  it("preserves already title-cased input", () => {
+    expect(toTitleCase("Historical Fiction")).toBe("Historical Fiction");
   });
 });
