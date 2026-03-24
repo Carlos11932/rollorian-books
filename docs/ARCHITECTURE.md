@@ -321,7 +321,27 @@ src/app/api/books/__tests__/route.test.ts
 
 - React components (no jsdom, no `@testing-library/react` test files present)
 - Prisma queries directly against a database (integration tests not configured)
-- End-to-end flows (no Playwright setup)
+
+### E2E Tests (Playwright)
+
+Located in `e2e/`. Cover critical user flows against the running application:
+
+| File | Tests | Coverage |
+|---|---|---|
+| `e2e/navigation.spec.ts` | 4 | Home, Search, Library page loads; sidebar nav links |
+| `e2e/search.spec.ts` | 5 | Search heading, input, quick-filter pills, query submit, empty query guard |
+| `e2e/library.spec.ts` | 6 | Heading, status tabs presence, default active tab, filter by status, URL state |
+
+**Selectors used:** `getByRole` and `getByLabel` throughout — no CSS class selectors. The StatusTabs component uses `role="tablist"` / `role="tab"` / `aria-selected`, which makes the tab state fully queryable via ARIA without any `data-testid` additions. The search input has an explicit `<label htmlFor="search-input">`, enabling `getByLabel`.
+
+**Run with:**
+
+```bash
+npm run test:e2e      # requires dev server running on port 3000 (npm run dev)
+npm run test:e2e:ui   # Playwright UI mode
+```
+
+> The E2E suite is intentionally decoupled from Vitest. `npm run test:run` runs only unit tests; `npm run test:e2e` runs only Playwright tests.
 
 ### Running Tests
 
