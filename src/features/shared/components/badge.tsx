@@ -1,6 +1,5 @@
 import { cn } from "@/lib/cn";
-import type { BookStatus } from "@/lib/types/book";
-import { BOOK_STATUS_LABELS } from "@/lib/types/book";
+import { type BookStatus, BOOK_STATUS_LABELS } from "@/lib/types/book";
 
 interface BadgeProps {
   status: BookStatus;

@@ -2,8 +2,7 @@
 
 import { useState, type ChangeEvent } from "react";
 import Link from "next/link";
-import type { BookStatus } from "@/lib/types/book";
-import { BOOK_STATUS_VALUES, BOOK_STATUS_LABELS } from "@/lib/types/book";
+import { type BookStatus, BOOK_STATUS_VALUES, BOOK_STATUS_LABELS } from "@/lib/types/book";
 import { cn } from "@/lib/cn";
 import { Badge } from "@/features/shared/components/badge";
 import { Button } from "@/features/shared/components/button";

@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { BookCover } from "./book-cover";
 import { Badge } from "@/features/shared/components/badge";
-import type { BookStatus } from "@/lib/types/book";
-import { BOOK_STATUS_OPTIONS } from "@/lib/types/book";
+import { type BookStatus, BOOK_STATUS_OPTIONS } from "@/lib/types/book";
 import { cn } from "@/lib/cn";
+import { updateBook, deleteBook } from "@/lib/api/books";
 
 interface LibraryBook {
   id: string;
@@ -41,17 +41,8 @@ export function LibraryBookCard({ book }: LibraryBookCardProps) {
     setStatus(newStatus);
 
     try {
-      const res = await fetch(`/api/books/${book.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
-      });
-
-      if (!res.ok) {
-        setStatus(book.status);
-      } else {
-        router.refresh();
-      }
+      await updateBook(book.id, { status: newStatus });
+      router.refresh();
     } catch {
       setStatus(book.status);
     } finally {
@@ -62,10 +53,8 @@ export function LibraryBookCard({ book }: LibraryBookCardProps) {
   async function handleDelete() {
     setIsDeleting(true);
     try {
-      const res = await fetch(`/api/books/${book.id}`, { method: "DELETE" });
-      if (res.ok) {
-        router.refresh();
-      }
+      await deleteBook(book.id);
+      router.refresh();
     } catch {
       // silent — refresh will show current state
     } finally {

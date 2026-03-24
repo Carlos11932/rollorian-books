@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useEffect, type FormEvent } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import type { NormalizedBook } from "@/lib/google-books/types";
 import type { SerializableBook } from "@/features/books/types";
 import type { BookStatus } from "@/lib/types/book";
 import { BookCard } from "@/features/books/components/book-card";
 import { Skeleton } from "@/features/shared/components/skeleton";
+import { saveBook } from "@/lib/api/books";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -33,7 +35,7 @@ function toDisplayBook(book: NormalizedBook): SerializableBook {
 }
 
 async function saveBookToLibrary(book: NormalizedBook): Promise<void> {
-  const payload = {
+  await saveBook({
     title: book.title,
     authors: book.authors,
     coverUrl: book.coverUrl ?? undefined,
@@ -41,18 +43,7 @@ async function saveBookToLibrary(book: NormalizedBook): Promise<void> {
     isbn13: book.isbn ?? undefined,
     status: "WISHLIST" as const,
     genres: [],
-  };
-
-  const res = await fetch("/api/books", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
   });
-
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error((data as { error?: string }).error ?? "Failed to save book");
-  }
 }
 
 interface LibraryBookEntry {
@@ -326,11 +317,12 @@ export default function SearchPage() {
                     {/* Portrait cover */}
                     <div className="aspect-[2/3] rounded-lg overflow-hidden bg-surface-container-high relative">
                       {book.coverUrl != null ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
+                        <Image
                           src={book.coverUrl}
                           alt={book.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 shadow-xl"
+                          fill
+                          sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
+                          className="object-cover group-hover:scale-105 transition-transform duration-300 shadow-xl"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">

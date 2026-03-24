@@ -28,7 +28,7 @@ interface StatusTabsProps {
   activeStatus: StatusTabValue;
   counts: StatusCounts;
   basePath?: string;
-  hrefs?: Record<StatusTabValue, string>;
+  searchParams?: Record<string, string>;
 }
 
 const ALL_TABS: StatusTabValue[] = [
@@ -47,14 +47,19 @@ function getTabCount(tab: StatusTabValue, counts: StatusCounts): number | null {
 function getTabHref(
   tab: StatusTabValue,
   basePath: string,
-  hrefs?: Record<StatusTabValue, string>,
+  searchParams: Record<string, string> = {},
 ): string {
-  if (hrefs?.[tab]) return hrefs[tab];
-  if (tab === STATUS_TAB.ALL) return basePath;
-  return `${basePath}?status=${tab}`;
+  const params = new URLSearchParams(searchParams);
+  if (tab === STATUS_TAB.ALL) {
+    params.delete("status");
+  } else {
+    params.set("status", tab);
+  }
+  const query = params.toString();
+  return query ? `${basePath}?${query}` : basePath;
 }
 
-export function StatusTabs({ activeStatus, counts, basePath = "/library", hrefs }: StatusTabsProps) {
+export function StatusTabs({ activeStatus, counts, basePath = "/library", searchParams }: StatusTabsProps) {
   return (
     <nav
       role="tablist"
@@ -68,7 +73,7 @@ export function StatusTabs({ activeStatus, counts, basePath = "/library", hrefs 
         return (
           <Link
             key={tab}
-            href={getTabHref(tab, basePath, hrefs)}
+            href={getTabHref(tab, basePath, searchParams)}
             role="tab"
             aria-selected={isActive}
             className={cn(
