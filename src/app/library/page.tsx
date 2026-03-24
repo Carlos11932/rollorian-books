@@ -52,47 +52,14 @@ function resolveActiveStatus(param: string | undefined): StatusTabValue {
   return "all";
 }
 
-function createSearchParams(params: SearchParams): URLSearchParams {
-  const searchParams = new URLSearchParams();
-
+function toStringRecord(params: SearchParams): Record<string, string> {
+  const result: Record<string, string> = {};
   for (const [key, value] of Object.entries(params)) {
     if (typeof value === "string") {
-      searchParams.set(key, value);
-      continue;
-    }
-
-    if (Array.isArray(value)) {
-      for (const entry of value) {
-        searchParams.append(key, entry);
-      }
+      result[key] = value;
     }
   }
-
-  return searchParams;
-}
-
-function createStatusHrefs(params: SearchParams, basePath: string): Record<StatusTabValue, string> {
-  const baseSearchParams = createSearchParams(params);
-  baseSearchParams.delete("status");
-
-  const hrefs = {
-    all: basePath,
-    WISHLIST: basePath,
-    TO_READ: basePath,
-    READING: basePath,
-    READ: basePath,
-  } satisfies Record<StatusTabValue, string>;
-
-  const baseQuery = baseSearchParams.toString();
-  hrefs.all = baseQuery ? `${basePath}?${baseQuery}` : basePath;
-
-  for (const status of BOOK_STATUS_VALUES) {
-    const nextParams = new URLSearchParams(baseSearchParams);
-    nextParams.set("status", status);
-    hrefs[status] = `${basePath}?${nextParams.toString()}`;
-  }
-
-  return hrefs;
+  return result;
 }
 
 function getFilterTitle(status: BookStatus): string {
@@ -107,7 +74,7 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
   const params = await searchParams;
   const statusParam = typeof params.status === "string" ? params.status : undefined;
   const activeStatus = resolveActiveStatus(statusParam);
-  const tabHrefs = createStatusHrefs(params, "/library");
+  const tabSearchParams = toStringRecord(params);
 
   const [books, groupedCounts]: [LibraryBookRow[], StatusCountRow[]] = await Promise.all([
     prisma.book.findMany({
@@ -154,7 +121,7 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
           </p>
         </div>
 
-        <StatusTabs activeStatus={activeStatus} counts={counts} hrefs={tabHrefs} />
+        <StatusTabs activeStatus={activeStatus} counts={counts} searchParams={tabSearchParams} />
       </div>
 
       {isEmpty ? (
