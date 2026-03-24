@@ -7,6 +7,7 @@ import type { SerializableBook } from "@/features/books/types";
 import type { BookStatus } from "@/lib/types/book";
 import { BookCard } from "@/features/books/components/book-card";
 import { Skeleton } from "@/features/shared/components/skeleton";
+import { saveBook } from "@/lib/api/books";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -33,7 +34,7 @@ function toDisplayBook(book: NormalizedBook): SerializableBook {
 }
 
 async function saveBookToLibrary(book: NormalizedBook): Promise<void> {
-  const payload = {
+  await saveBook({
     title: book.title,
     authors: book.authors,
     coverUrl: book.coverUrl ?? undefined,
@@ -41,18 +42,7 @@ async function saveBookToLibrary(book: NormalizedBook): Promise<void> {
     isbn13: book.isbn ?? undefined,
     status: "WISHLIST" as const,
     genres: [],
-  };
-
-  const res = await fetch("/api/books", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
   });
-
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error((data as { error?: string }).error ?? "Failed to save book");
-  }
 }
 
 interface LibraryBookEntry {

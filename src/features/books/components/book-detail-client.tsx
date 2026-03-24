@@ -7,6 +7,7 @@ import { Button } from "@/features/shared/components/button";
 import type { SerializableBook } from "../types";
 import type { BookStatus } from "@/lib/types/book";
 import { BOOK_STATUS_OPTIONS } from "@/lib/types/book";
+import { updateBook, deleteBook } from "@/lib/api/books";
 
 const RATING_LABELS: Record<number, string> = {
   1: "Poor",
@@ -67,20 +68,11 @@ export function BookDetailClient({ book }: BookDetailClientProps) {
     setErrorMessage(null);
 
     try {
-      const res = await fetch(`/api/books/${book.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          status,
-          rating: rating ?? null,
-          notes: notes.trim() || null,
-        }),
+      await updateBook(book.id, {
+        status,
+        rating: rating ?? null,
+        notes: notes.trim() || null,
       });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error((data as { error?: string }).error ?? "Failed to save changes");
-      }
 
       setSaveState(SAVE_STATE.saved);
       router.refresh();
@@ -100,12 +92,7 @@ export function BookDetailClient({ book }: BookDetailClientProps) {
     setDeleteState(DELETE_STATE.deleting);
 
     try {
-      const res = await fetch(`/api/books/${book.id}`, { method: "DELETE" });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error((data as { error?: string }).error ?? "Failed to delete book");
-      }
+      await deleteBook(book.id);
 
       router.push("/library");
     } catch (err) {
