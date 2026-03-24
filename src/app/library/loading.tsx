@@ -2,7 +2,7 @@ import { Skeleton } from "@/features/shared/components/skeleton";
 
 export default function LibraryLoading() {
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-6 px-12 md:px-20 pt-8 pb-24">
       {/* Status tabs skeleton */}
       <div className="flex gap-2">
         {Array.from({ length: 5 }).map((_, i) => (
