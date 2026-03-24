@@ -5,6 +5,9 @@ import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/features/shared/components/empty-state";
 import { Button } from "@/features/shared/components/button";
 import { serializeBook, type SerializableBook } from "@/features/books/types";
+import { BookRailSection } from "@/features/shared/ui/book-rail-section";
+import { BookCard } from "@/features/books/components/book-card";
+import { topGenreRails } from "@/lib/utils/books";
 
 const STATUS_CONFIG: Array<{
   status: BookStatus;
@@ -60,6 +63,8 @@ export default async function Home() {
   }
 
   const featuredBook = byStatus.READING[0] ?? serializedBooks[0] ?? null;
+
+  const genreRails = topGenreRails(serializedBooks);
 
   return (
     <div className="relative min-h-screen">
@@ -141,6 +146,35 @@ export default async function Home() {
             </section>
           );
         })}
+
+        {/* Genre discovery rails */}
+        {genreRails.length > 0 && (
+          <section aria-label="Browse by genre">
+            <div className="flex items-center gap-3 mb-8">
+              <h2 className="text-xl font-bold tracking-tight text-on-surface">
+                Browse by Genre
+              </h2>
+            </div>
+            <div className="space-y-12">
+              {genreRails.map(([genre, books]) => (
+                <BookRailSection
+                  key={genre}
+                  title={genre}
+                  count={books.length}
+                >
+                  {books.map((book, index) => (
+                    <BookCard
+                      key={book.id}
+                      variant="browse"
+                      book={book}
+                      index={index}
+                    />
+                  ))}
+                </BookRailSection>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     </div>
   );
