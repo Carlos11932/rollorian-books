@@ -10,6 +10,12 @@ type RouteContext = {
   params: Promise<{ id: string }>;
 };
 
+function revalidateBookCollectionPaths(bookId: string) {
+  revalidatePath("/");
+  revalidatePath("/library");
+  revalidatePath(`/books/${bookId}`);
+}
+
 export async function GET(
   _request: NextRequest,
   { params }: RouteContext
@@ -57,9 +63,7 @@ export async function PATCH(
       data: result.data,
     });
 
-    revalidatePath('/');
-    revalidatePath('/library');
-    revalidatePath(`/books/${id}`);
+    revalidateBookCollectionPaths(id);
 
     return Response.json(book);
   } catch (error) {
@@ -82,8 +86,7 @@ export async function DELETE(
 
     await prisma.book.delete({ where: { id } });
 
-    revalidatePath('/');
-    revalidatePath('/library');
+    revalidateBookCollectionPaths(id);
 
     return new Response(null, { status: 204 });
   } catch (error) {
