@@ -379,11 +379,16 @@ Three parallel jobs run on every push to `main` and every PR:
 
 E2E job runs after all three pass:
 
-- Installs Playwright + Chromium
+- Boots an ephemeral Postgres 16 service inside GitHub Actions
+- Exports local-only `DATABASE_URL` / `DIRECT_URL` values for that service
+- Runs `npm run db:guard` to fail fast if either URL stops looking loopback/local
+- Uses `prisma db push --skip-generate` to bootstrap the schema on the empty CI database
+- Seeds the database (`prisma db seed`) only after an explicit destructive-action acknowledgement
 - Builds the app
-- Seeds the database (`prisma db seed`)
 - Runs Playwright tests
 - Uploads `playwright-report/` as an artifact on failure (7-day retention)
+
+`prisma migrate deploy` is deliberately not used in CI right now. The repository currently only contains the performance-index migration and does not have a complete migration history capable of reconstructing the schema from an empty database. `prisma db push --skip-generate` is the most stable bootstrap for an ephemeral CI database until the migration history is normalized.
 
 ### Vercel
 
@@ -395,9 +400,14 @@ Automatic deployments on push to `main`. Preview deployments on PRs.
 
 ```
 DATABASE_URL=          # Neon Postgres connection string (pooled)
+DIRECT_URL=            # Direct Prisma CLI connection string
+ROLLORIAN_DB_CONTEXT=  # Optional safety context: local-dev or ci-e2e-local
+ROLLORIAN_ALLOW_DESTRUCTIVE_DB_ACTIONS=  # Optional explicit destructive action ack
 GOOGLE_BOOKS_API_KEY=  # Google Books API v1 key (optional — works without it, rate limited)
 ```
 
-Both variables are read at runtime via `process.env["DATABASE_URL"]` and `process.env["GOOGLE_BOOKS_API_KEY"]`. For local development, place them in `.env.local`. Neither should ever be committed.
+Runtime configuration is read from `process.env["DATABASE_URL"]` and `process.env["GOOGLE_BOOKS_API_KEY"]`. For local development, place the relevant values in `.env.local`. None of them should ever be committed.
 
 `DATABASE_URL` is required — the Prisma client throws on startup if it is missing. `GOOGLE_BOOKS_API_KEY` is optional; the Google Books API works unauthenticated at reduced rate limits.
+
+`ROLLORIAN_DB_CONTEXT` and `ROLLORIAN_ALLOW_DESTRUCTIVE_DB_ACTIONS` are not needed for normal app runtime. They exist purely as hard guardrails for destructive local/CI database operations like seeding. The guard accepts only loopback database hosts and refuses database names that look like production targets.

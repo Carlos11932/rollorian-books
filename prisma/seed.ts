@@ -1,10 +1,14 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
+import { assertSafeSeedEnvironment } from "../src/lib/database-safety";
+
 const connectionString = process.env["DATABASE_URL"];
 if (!connectionString) {
   throw new Error("DATABASE_URL environment variable is not set");
 }
+
+assertSafeSeedEnvironment(connectionString, process.env);
 
 const adapter = new PrismaPg({ connectionString });
 const prisma = new PrismaClient({ adapter });

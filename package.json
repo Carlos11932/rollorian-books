@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "db:guard": "npx tsx scripts/require-safe-database.ts",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
