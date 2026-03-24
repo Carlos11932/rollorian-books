@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, type FormEvent } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import type { NormalizedBook } from "@/lib/google-books/types";
 import type { SerializableBook } from "@/features/books/types";
@@ -316,11 +317,12 @@ export default function SearchPage() {
                     {/* Portrait cover */}
                     <div className="aspect-[2/3] rounded-lg overflow-hidden bg-surface-container-high relative">
                       {book.coverUrl != null ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
+                        <Image
                           src={book.coverUrl}
                           alt={book.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 shadow-xl"
+                          fill
+                          sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
+                          className="object-cover group-hover:scale-105 transition-transform duration-300 shadow-xl"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
