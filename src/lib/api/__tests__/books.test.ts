@@ -21,6 +21,7 @@ function makeBook(overrides: Partial<Book> = {}): Book {
     rating: null,
     notes: null,
     genres: [],
+    ownerId: "user-001",
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
     ...overrides,

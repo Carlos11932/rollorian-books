@@ -1,5 +1,6 @@
 import { type BookStatus, BOOK_STATUS_LABELS, BOOK_STATUS_VALUES } from "@/lib/types/book";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { LibraryBookCard } from "@/features/books/components/library-book-card";
 import { StatusTabs, type StatusCounts, type StatusTabValue } from "@/features/books/components/status-tabs";
 import { EmptyState } from "@/features/shared/components/empty-state";
@@ -69,6 +70,9 @@ interface LibraryPageProps {
 }
 
 export default async function LibraryPage({ searchParams }: LibraryPageProps) {
+  const session = await auth();
+  const userId = session!.user!.id;
+
   const params = await searchParams;
   const statusParam = typeof params.status === "string" ? params.status : undefined;
   const activeStatus = resolveActiveStatus(statusParam);
@@ -76,7 +80,7 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
 
   const [books, groupedCounts]: [LibraryBookRow[], StatusCountRow[]] = await Promise.all([
     prisma.book.findMany({
-      where: activeStatus !== "all" ? { status: activeStatus } : undefined,
+      where: activeStatus !== "all" ? { ownerId: userId, status: activeStatus } : { ownerId: userId },
       orderBy: { createdAt: "desc" },
       select: {
         id: true,
@@ -90,7 +94,7 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
         publishedDate: true,
       },
     }),
-    prisma.book.groupBy({ by: ["status"], _count: { id: true } }),
+    prisma.book.groupBy({ by: ["status"], where: { ownerId: userId }, _count: { id: true } }),
   ]);
 
   const counts = groupedCounts.reduce<StatusCounts>(

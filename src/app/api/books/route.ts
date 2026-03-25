@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { type Book, type BookStatus, BOOK_STATUS_VALUES } from "@/lib/types/book";
 import { prisma } from "@/lib/prisma";
 import { createBookSchema } from "@/lib/schemas/book";
+import { requireAuth, UnauthorizedError } from "@/lib/auth/require-auth";
 
 const VALID_STATUSES = new Set<string>(BOOK_STATUS_VALUES);
 
@@ -20,6 +21,8 @@ function revalidateBookCollectionPaths(bookId: string) {
 
 export async function GET(request: NextRequest): Promise<Response> {
   try {
+    const { userId } = await requireAuth();
+
     const searchParams = request.nextUrl.searchParams;
     const statusParam = searchParams.get("status");
     const qParam = searchParams.get("q");
@@ -35,6 +38,7 @@ export async function GET(request: NextRequest): Promise<Response> {
 
     const books: Book[] = await prisma.book.findMany({
       where: {
+        ownerId: userId,
         ...(statusParam !== null && isBookStatus(statusParam)
           ? { status: statusParam }
           : {}),
@@ -52,6 +56,9 @@ export async function GET(request: NextRequest): Promise<Response> {
 
     return Response.json(books);
   } catch (error) {
+    if (error instanceof UnauthorizedError) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
     console.error("[GET /api/books]", error);
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
@@ -59,6 +66,8 @@ export async function GET(request: NextRequest): Promise<Response> {
 
 export async function POST(request: NextRequest): Promise<Response> {
   try {
+    const { userId } = await requireAuth();
+
     const body: unknown = await request.json();
     const result = createBookSchema.safeParse(body);
 
@@ -70,13 +79,16 @@ export async function POST(request: NextRequest): Promise<Response> {
     }
 
     const book: Book = await prisma.book.create({
-      data: result.data,
+      data: { ...result.data, ownerId: userId },
     });
 
     revalidateBookCollectionPaths(book.id);
 
     return Response.json(book, { status: 201 });
   } catch (error) {
+    if (error instanceof UnauthorizedError) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
     console.error("[POST /api/books]", error);
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }

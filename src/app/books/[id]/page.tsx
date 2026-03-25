@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 import type { Book } from "@/lib/types/book";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { fetchBookById } from "@/lib/google-books/client";
 import { stripHtml } from "@/lib/utils/text";
 import type { GoogleBooksVolume } from "@/lib/google-books/types";
@@ -15,9 +16,9 @@ interface BookDetailPageProps {
 
 type ResolvedBook = { source: "local"; book: Book } | GoogleBookView;
 
-const resolveBook = cache(async function resolveBook(id: string): Promise<ResolvedBook | null> {
+const resolveBook = cache(async function resolveBook(id: string, userId: string): Promise<ResolvedBook | null> {
   try {
-    const local: Book | null = await prisma.book.findUnique({ where: { id } });
+    const local: Book | null = await prisma.book.findUnique({ where: { id, ownerId: userId } });
     if (local) {
       return { source: "local", book: local };
     }
@@ -67,7 +68,9 @@ function googleVolumeToView(volume: GoogleBooksVolume): GoogleBookView {
 
 export async function generateMetadata({ params }: BookDetailPageProps) {
   const { id } = await params;
-  const resolved = await resolveBook(id);
+  const session = await auth();
+  const userId = session!.user!.id;
+  const resolved = await resolveBook(id, userId);
 
   if (!resolved) return { title: "Book not found" };
 
@@ -87,7 +90,9 @@ export async function generateMetadata({ params }: BookDetailPageProps) {
 
 export default async function BookDetailPage({ params }: BookDetailPageProps) {
   const { id } = await params;
-  const resolved = await resolveBook(id);
+  const session = await auth();
+  const userId = session!.user!.id;
+  const resolved = await resolveBook(id, userId);
 
   if (!resolved) {
     notFound();

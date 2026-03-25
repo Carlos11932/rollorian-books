@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import type { Book } from "@/lib/types/book";
 import { prisma } from "@/lib/prisma";
 import { updateBookSchema } from "@/lib/schemas/book";
+import { requireAuth, UnauthorizedError } from "@/lib/auth/require-auth";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -21,9 +22,12 @@ export async function GET(
   { params }: RouteContext
 ): Promise<Response> {
   try {
+    const { userId } = await requireAuth();
     const { id } = await params;
 
-    const book: Book | null = await prisma.book.findUnique({ where: { id } });
+    const book: Book | null = await prisma.book.findUnique({
+      where: { id, ownerId: userId },
+    });
 
     if (!book) {
       return Response.json({ error: "Book not found" }, { status: 404 });
@@ -31,6 +35,9 @@ export async function GET(
 
     return Response.json(book);
   } catch (error) {
+    if (error instanceof UnauthorizedError) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
     console.error("[GET /api/books/[id]]", error);
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
@@ -41,9 +48,12 @@ export async function PATCH(
   { params }: RouteContext
 ): Promise<Response> {
   try {
+    const { userId } = await requireAuth();
     const { id } = await params;
 
-    const existing: Book | null = await prisma.book.findUnique({ where: { id } });
+    const existing: Book | null = await prisma.book.findUnique({
+      where: { id, ownerId: userId },
+    });
     if (!existing) {
       return Response.json({ error: "Book not found" }, { status: 404 });
     }
@@ -67,6 +77,9 @@ export async function PATCH(
 
     return Response.json(book);
   } catch (error) {
+    if (error instanceof UnauthorizedError) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
     console.error("[PATCH /api/books/[id]]", error);
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
@@ -77,9 +90,12 @@ export async function DELETE(
   { params }: RouteContext
 ): Promise<Response> {
   try {
+    const { userId } = await requireAuth();
     const { id } = await params;
 
-    const existing: Book | null = await prisma.book.findUnique({ where: { id } });
+    const existing: Book | null = await prisma.book.findUnique({
+      where: { id, ownerId: userId },
+    });
     if (!existing) {
       return Response.json({ error: "Book not found" }, { status: 404 });
     }
@@ -90,6 +106,9 @@ export async function DELETE(
 
     return new Response(null, { status: 204 });
   } catch (error) {
+    if (error instanceof UnauthorizedError) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
     console.error("[DELETE /api/books/[id]]", error);
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }

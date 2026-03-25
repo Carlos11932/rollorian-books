@@ -55,4 +55,5 @@ export interface Book {
   genres: string[];
   createdAt: Date;
   updatedAt: Date;
+  ownerId: string;
 }

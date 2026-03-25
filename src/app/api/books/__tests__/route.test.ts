@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { BookStatus, type Book } from "@/lib/types/book";
+import { requireAuth, UnauthorizedError } from "@/lib/auth/require-auth";
 
 const { revalidatePathMock } = vi.hoisted(() => ({
   revalidatePathMock: vi.fn(),
@@ -27,6 +28,10 @@ vi.mock("next/cache", () => ({
 import { POST, GET } from "@/app/api/books/route";
 import { prisma } from "@/lib/prisma";
 
+// The global setup already mocks requireAuth — grab a typed reference
+// so individual tests can override the resolved value.
+const requireAuthMock = vi.mocked(requireAuth);
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function makeBook(overrides: Partial<Book> = {}): Book {
@@ -46,6 +51,7 @@ function makeBook(overrides: Partial<Book> = {}): Book {
     rating: null,
     notes: null,
     genres: [],
+    ownerId: "test-user-001",
     createdAt: new Date("2024-01-01T00:00:00.000Z"),
     updatedAt: new Date("2024-01-01T00:00:00.000Z"),
     ...overrides,
@@ -165,6 +171,31 @@ describe("POST /api/books", () => {
     const calledWith = prismaMock.create.mock.calls[0]![0] as { data: Record<string, unknown> };
     expect(calledWith.data).not.toHaveProperty("unknownField");
   });
+
+  it("passes ownerId from requireAuth to prisma.create", async () => {
+    const createdBook = makeBook();
+    prismaMock.create.mockResolvedValue(createdBook);
+
+    const request = makePostRequest(validBody);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await POST(request as any);
+
+    const calledWith = prismaMock.create.mock.calls[0]![0] as { data: Record<string, unknown> };
+    expect(calledWith.data).toMatchObject({ ownerId: "test-user-001" });
+  });
+
+  it("returns 401 when requireAuth throws UnauthorizedError", async () => {
+    requireAuthMock.mockRejectedValueOnce(new UnauthorizedError());
+
+    const request = makePostRequest(validBody);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = await POST(request as any);
+
+    expect(response.status).toBe(401);
+    const json: unknown = await response.json();
+    expect((json as { error: string }).error).toBe("Unauthorized");
+    expect(prismaMock.create).not.toHaveBeenCalled();
+  });
 });
 
 // ─── GET /api/books ───────────────────────────────────────────────────────────
@@ -211,6 +242,30 @@ describe("GET /api/books", () => {
     expect(prismaMock.findMany).toHaveBeenCalledOnce();
     const calledWith = prismaMock.findMany.mock.calls[0]![0] as { where: Record<string, unknown> };
     expect(calledWith.where).toMatchObject({ status: "READING" });
+  });
+
+  it("passes ownerId from requireAuth to prisma.findMany where clause", async () => {
+    prismaMock.findMany.mockResolvedValue([]);
+    const request = makeGetRequest();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await GET(request as any);
+
+    expect(prismaMock.findMany).toHaveBeenCalledOnce();
+    const calledWith = prismaMock.findMany.mock.calls[0]![0] as { where: Record<string, unknown> };
+    expect(calledWith.where).toMatchObject({ ownerId: "test-user-001" });
+  });
+
+  it("returns 401 when requireAuth throws UnauthorizedError", async () => {
+    requireAuthMock.mockRejectedValueOnce(new UnauthorizedError());
+
+    const request = makeGetRequest();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = await GET(request as any);
+
+    expect(response.status).toBe(401);
+    const json: unknown = await response.json();
+    expect((json as { error: string }).error).toBe("Unauthorized");
+    expect(prismaMock.findMany).not.toHaveBeenCalled();
   });
 
   it("returns 500 when prisma throws", async () => {

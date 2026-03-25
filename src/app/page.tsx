@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Book, BookStatus } from "@/lib/types/book";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { EmptyState } from "@/features/shared/components/empty-state";
 import { Button } from "@/features/shared/components/button";
 import { serializeBook, type SerializableBook } from "@/features/books/types";
@@ -27,7 +28,11 @@ const STATUS_BADGE_LABEL: Record<BookStatus, string> = {
 };
 
 export default async function Home() {
+  const session = await auth();
+  const userId = session!.user!.id;
+
   const books: Book[] = await prisma.book.findMany({
+    where: { ownerId: userId },
     orderBy: { updatedAt: "desc" },
   });
 

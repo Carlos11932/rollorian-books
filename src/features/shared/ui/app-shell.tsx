@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { auth, signOut } from '@/lib/auth';
 import { SiteHeader } from './site-header';
 import { NavLinks } from './nav-links';
 import { MobileNav } from './mobile-nav';
@@ -7,11 +8,26 @@ interface AppShellProps {
   children: React.ReactNode;
 }
 
-export function AppShell({ children }: AppShellProps) {
+export async function AppShell({ children }: AppShellProps) {
+  const session = await auth();
+
+  // Session is guaranteed here — middleware protects all routes.
+  // Fallback values are for type safety only.
+  const user = {
+    name: session?.user?.name ?? null,
+    email: session?.user?.email ?? "",
+    image: session?.user?.image ?? null,
+  };
+
+  async function signOutAction() {
+    "use server";
+    await signOut({ redirectTo: "/login" });
+  }
+
   return (
     <>
       {/* Fixed top nav */}
-      <SiteHeader />
+      <SiteHeader user={user} signOutAction={signOutAction} />
 
       {/* Fixed sidebar — desktop only */}
       <aside className="fixed left-0 top-0 h-full w-64 hidden lg:flex flex-col py-8 z-40 bg-surface-container-lowest shadow-[40px_0_40px_rgba(0,17,12,0.4)]">
