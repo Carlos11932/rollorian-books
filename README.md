@@ -1,8 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Rollorian Books
+
+Next.js 16 + Prisma app for searching books, curating a local library, and exercising the UI with Vitest + Playwright.
+
+## Getting Started
+
+1. Copy `.env.example` to `.env.local` and set your real runtime `DATABASE_URL` / `DIRECT_URL`.
+2. Install dependencies with `npm ci`.
+3. Start the app with `npm run dev`.
+
+```bash
+npm ci
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+## Safe local seeding
+
+The seed is intentionally destructive: it deletes all rows from `Book` before inserting deterministic fixtures.
+
+It now refuses to run unless ALL of this is true:
+
+- `DATABASE_URL` points to a loopback Postgres host (`localhost`, `127.0.0.1`, `::1`)
+- the database name does not look production-like (`prod`, `production`, `staging`, `live`, `primary`)
+- `ROLLORIAN_DB_CONTEXT` is explicitly set to `local-dev` or `ci-e2e-local`
+- `ROLLORIAN_ALLOW_DESTRUCTIVE_DB_ACTIONS=true`
+
+Example for a deliberate local seed against a disposable Postgres instance:
+
+```bash
+export DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:5432/rollorian_books_local"
+export DIRECT_URL="$DATABASE_URL"
+export ROLLORIAN_DB_CONTEXT="local-dev"
+export ROLLORIAN_ALLOW_DESTRUCTIVE_DB_ACTIONS="true"
+npm run db:guard
+npx prisma db push --skip-generate
+npx prisma db seed
+```
+
+CI follows the same policy, but against an ephemeral GitHub Actions Postgres service instead of any shared/real database.
+
+## Tests
+
+```bash
+npx tsc --noEmit
+npm test
+npm run lint
+```
 
 ## GitHub issue enrichment
 
-This repo now includes a GitHub-native issue intake and enrichment flow based on:
+This repo includes a GitHub-native issue intake and enrichment flow based on:
 
 - GitHub Issue Forms
 - GitHub Actions
@@ -11,38 +59,3 @@ This repo now includes a GitHub-native issue intake and enrichment flow based on
 Use the `Quick intake` issue form for short mobile-friendly submissions. The workflow expands the issue into a clearer review ticket while keeping the original raw intake inside the final issue.
 
 See `docs/github-issue-enrichment.md` for setup, trigger behavior, labels, and the GitHub settings required for it to work.
-
-## Getting Started
-
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
