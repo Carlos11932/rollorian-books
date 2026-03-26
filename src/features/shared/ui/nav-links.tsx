@@ -2,20 +2,22 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/cn';
 
 const navItems = [
-  { href: '/', label: 'Home', icon: 'home' },
-  { href: '/search', label: 'Search', icon: 'search' },
-  { href: '/library', label: 'Library', icon: 'local_library' },
-];
+  { href: '/', key: 'home', icon: 'home' },
+  { href: '/search', key: 'search', icon: 'search' },
+  { href: '/library', key: 'library', icon: 'local_library' },
+] as const;
 
 export function NavLinks() {
   const pathname = usePathname();
+  const t = useTranslations('nav');
 
   return (
     <nav className="flex-1 flex flex-col gap-2">
-      {navItems.map(({ href, label, icon }) => {
+      {navItems.map(({ href, key, icon }) => {
         const isActive = pathname === href;
         return (
           <Link
@@ -29,7 +31,7 @@ export function NavLinks() {
             )}
           >
             <span className="material-symbols-outlined text-[20px]">{icon}</span>
-            {label}
+            {t(key)}
           </Link>
         );
       })}
