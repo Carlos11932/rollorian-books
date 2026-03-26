@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { getTranslations } from 'next-intl/server';
 import { Badge } from "@/features/shared/components/badge";
 import { Button } from "@/features/shared/components/button";
 import type { SerializableBook } from "../types";
@@ -8,7 +9,9 @@ interface HeroBannerProps {
   book: SerializableBook | null;
 }
 
-export function HeroBanner({ book }: HeroBannerProps) {
+export async function HeroBanner({ book }: HeroBannerProps) {
+  const t = await getTranslations();
+
   if (!book) {
     return (
       <div
@@ -23,15 +26,14 @@ export function HeroBanner({ book }: HeroBannerProps) {
             className="text-4xl font-bold text-text"
             style={{ fontFamily: "var(--font-headline)" }}
           >
-            Your archive awaits
+            {t('home.heroTitle')}
           </h1>
           <p className="text-muted max-w-sm mx-auto">
-            Start building your book collection. Search for books and save them
-            to your library.
+            {t('home.heroDescription')}
           </p>
           <div className="flex justify-center">
             <Link href="/search">
-              <Button variant="primary">Search for books</Button>
+              <Button variant="primary">{t('home.heroSearch')}</Button>
             </Link>
           </div>
         </div>
@@ -40,7 +42,7 @@ export function HeroBanner({ book }: HeroBannerProps) {
   }
 
   const authorLine =
-    book.authors.length > 0 ? book.authors.join(", ") : "Unknown author";
+    book.authors.length > 0 ? book.authors.join(", ") : t('common.unknownAuthor');
   const isReading = book.status === "READING";
 
   return (
@@ -108,7 +110,7 @@ export function HeroBanner({ book }: HeroBannerProps) {
           <div className="flex gap-3 mt-2">
             <Link href={`/books/${book.id}`}>
               <Button variant="primary">
-                {isReading ? "Continue reading" : "View details"}
+                {isReading ? t('home.heroContinue') : t('home.heroViewDetails')}
               </Button>
             </Link>
           </div>

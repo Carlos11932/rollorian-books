@@ -1,0 +1,127 @@
+{
+  "common": {
+    "unknownAuthor": "Autor desconocido",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "saving": "Guardando...",
+    "saved": "Guardado",
+    "save": "Guardar",
+    "delete": "Eliminar",
+    "clear": "Limpiar",
+    "viewAll": "Ver todo",
+    "notRated": "Sin valorar",
+    "loading": "Cargando..."
+  },
+  "nav": {
+    "home": "Inicio",
+    "search": "Buscar",
+    "library": "Biblioteca",
+    "settings": "Ajustes",
+    "searchAriaLabel": "Buscar",
+    "brand": "Rollorian-books",
+    "appName": "The Archive",
+    "tagline": "Colección Privada",
+    "addVolume": "Añadir volumen"
+  },
+  "home": {
+    "emptyTitle": "Tu archivo está vacío",
+    "emptyDescription": "Busca libros y guárdalos en tu biblioteca personal.",
+    "emptyAction": "Encuentra tu primer libro",
+    "browseByGenre": "Explorar por género",
+    "heroTitle": "Tu archivo te espera",
+    "heroDescription": "Empieza a construir tu colección de libros...",
+    "heroSearch": "Buscar libros",
+    "heroContinue": "Continuar leyendo",
+    "heroViewDetails": "Ver detalles"
+  },
+  "library": {
+    "heading": "Tu Archivo",
+    "description": "Gestiona tu colección personal de libros. Consulta lo que estás leyendo, lo que quieres leer y lo que ya has terminado.",
+    "emptyAll": "Tu biblioteca está vacía",
+    "emptyFilter": "No hay libros con este filtro.",
+    "searchPlaceholder": "Busca en el catálogo...",
+    "tryAnotherStatus": "Prueba con otro estado...",
+    "statusEyebrow": {
+      "WISHLIST": "Lista de deseos",
+      "TO_READ": "Próximamente",
+      "READING": "En progreso",
+      "READ": "Completados"
+    },
+    "statusEmpty": {
+      "WISHLIST": "No hay libros en tu lista de deseos.",
+      "TO_READ": "No tienes libros pendientes de leer.",
+      "READING": "No estás leyendo ningún libro ahora mismo.",
+      "READ": "Aún no has marcado ningún libro como leído."
+    }
+  },
+  "search": {
+    "heading": "Explora el Archivo",
+    "inputLabel": "Busca por título, autor o ISBN",
+    "genresLabel": "Géneros",
+    "loading": "Cargando resultados",
+    "noResults": "No encontramos nada para \"{query}\"",
+    "tryAnother": "Prueba con otro título...",
+    "resultsLabel": "Resultados de búsqueda",
+    "resultsCount": "{count} resultado(s) para \"{query}\"",
+    "archivedSuggestions": "Sugerencias del Archivo",
+    "genres": {
+      "novel": "Novela",
+      "history": "Historia",
+      "scifi": "Ciencia Ficción",
+      "romance": "Romance",
+      "philosophy": "Filosofía",
+      "mystery": "Misterio"
+    }
+  },
+  "book": {
+    "status": {
+      "WISHLIST": "Lista de deseos",
+      "TO_READ": "Por leer",
+      "READING": "Leyendo",
+      "READ": "Leído"
+    },
+    "statusLabel": "Estado",
+    "ratingLabel": "Valoración",
+    "notesLabel": "Notas",
+    "notesPlaceholder": "Escribe algo útil sobre este libro.",
+    "manage": "Gestionar",
+    "updateState": "Actualizar estado de lectura",
+    "saveChanges": "Guardar cambios",
+    "savingChanges": "Guardando...",
+    "savedChanges": "Guardado",
+    "removeBook": "Eliminar libro",
+    "confirmRemove": "Confirmar eliminación",
+    "removing": "Eliminando...",
+    "backToLibrary": "Volver a la biblioteca",
+    "backToSearch": "Volver a la búsqueda",
+    "googlePreview": "Vista previa en Google Books",
+    "notInLibrary": "No está en tu biblioteca",
+    "trackQuestion": "¿Quieres seguir este libro?",
+    "trackDescription": "Guárdalo en tu biblioteca para llevar el seguimiento de tu progreso de lectura.",
+    "saveToLibrary": "Guardar en biblioteca",
+    "savedRedirecting": "Guardado — redirigiendo...",
+    "openDetail": "Abrir detalle",
+    "details": "Detalles",
+    "publisher": "Editorial",
+    "published": "Publicación",
+    "pages": "Páginas",
+    "isbn": "ISBN",
+    "genres": "Géneros",
+    "notes": "Notas",
+    "rating": {
+      "1": "Muy malo",
+      "2": "Regular",
+      "3": "Bueno",
+      "4": "Muy bueno",
+      "5": "Excelente"
+    }
+  },
+  "errors": {
+    "notFoundTitle": "Página no encontrada",
+    "notFoundDescription": "La página que buscas no existe o fue movida.",
+    "backToHome": "Volver al inicio",
+    "errorTitle": "Algo salió mal",
+    "errorDescription": "Ocurrió un error inesperado. Por favor, inténtalo de nuevo.",
+    "tryAgain": "Intentar de nuevo"
+  }
+}

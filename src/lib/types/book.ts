@@ -25,17 +25,6 @@ export const BOOK_STATUS_VALUES: BookStatus[] = [
   BookStatus.READ,
 ] as const;
 
-/** Display labels for each BookStatus */
-export const BOOK_STATUS_LABELS: Record<BookStatus, string> = {
-  WISHLIST: "Wishlist",
-  TO_READ: "To Read",
-  READING: "Reading",
-  READ: "Read",
-};
-
-/** Pre-built options array for select/dropdown components */
-export const BOOK_STATUS_OPTIONS: { value: BookStatus; label: string }[] =
-  BOOK_STATUS_VALUES.map((value) => ({ value, label: BOOK_STATUS_LABELS[value] }));
 
 export interface Book {
   id: string;

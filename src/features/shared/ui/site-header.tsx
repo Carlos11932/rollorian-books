@@ -2,16 +2,19 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/cn';
-
-const navItems = [
-  { href: '/', label: 'Home' },
-  { href: '/search', label: 'Search' },
-  { href: '/library', label: 'Library' },
-];
+import { LocaleSwitcher } from './locale-switcher';
 
 export function SiteHeader() {
   const pathname = usePathname();
+  const t = useTranslations('nav');
+
+  const navItems = [
+    { href: '/', label: t('home') },
+    { href: '/search', label: t('search') },
+    { href: '/library', label: t('library') },
+  ];
 
   return (
     <nav className="fixed top-0 w-full z-50 bg-[#001711]/80 backdrop-blur-xl bg-gradient-to-b from-[#001711] to-transparent">
@@ -19,7 +22,7 @@ export function SiteHeader() {
         {/* Left: Logo + desktop nav */}
         <div className="flex items-center gap-12">
           <span className="text-xl font-bold tracking-tighter text-primary font-headline">
-            The Private Curator
+            {t('brand')}
           </span>
           <div className="hidden md:flex gap-8 items-center">
             {navItems.map(({ href, label }) => {
@@ -42,10 +45,11 @@ export function SiteHeader() {
           </div>
         </div>
 
-        {/* Right: search icon + profile avatar */}
+        {/* Right: locale switcher + search icon + profile avatar */}
         <div className="flex items-center gap-6">
+          <LocaleSwitcher />
           <button
-            aria-label="Search"
+            aria-label={t('searchAriaLabel')}
             type="button"
             className="hover:bg-surface-variant/50 p-2 rounded-full transition-colors"
           >

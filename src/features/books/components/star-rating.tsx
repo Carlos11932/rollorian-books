@@ -1,10 +1,14 @@
+import { getTranslations } from 'next-intl/server';
+
 interface StarRatingProps {
   rating: number | null;
 }
 
-export function StarRating({ rating }: StarRatingProps) {
+export async function StarRating({ rating }: StarRatingProps) {
+  const t = await getTranslations('common');
+
   if (rating === null) {
-    return <span className="text-xs text-on-surface/40 uppercase tracking-wide">Not rated</span>;
+    return <span className="text-xs text-on-surface/40 uppercase tracking-wide">{t('notRated')}</span>;
   }
 
   return (

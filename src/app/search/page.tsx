@@ -3,6 +3,7 @@
 import { useState, useEffect, type FormEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useTranslations } from 'next-intl';
 import type { NormalizedBook } from "@/lib/google-books/types";
 import type { SerializableBook } from "@/features/books/types";
 import type { BookStatus } from "@/lib/types/book";
@@ -55,42 +56,54 @@ interface LibraryBookEntry {
 
 const GENRES = [
   {
-    label: "Historia",
+    labelKey: "search.genres.history",
+    queryValue: "Historia",
     icon: "history_edu",
     span: "md:col-span-2 md:row-span-2",
     labelTag: "Anthology",
   },
   {
-    label: "Romance",
+    labelKey: "search.genres.romance",
+    queryValue: "Romance",
     icon: "favorite",
     span: "md:col-span-1 md:row-span-1",
     labelTag: null,
   },
   {
-    label: "Ciencia Ficción",
+    labelKey: "search.genres.scifi",
+    queryValue: "Ciencia Ficción",
     icon: "rocket_launch",
     span: "md:col-span-1 md:row-span-1",
     labelTag: null,
   },
   {
-    label: "Filosofía",
+    labelKey: "search.genres.philosophy",
+    queryValue: "Filosofía",
     icon: "psychology",
     span: "md:col-span-1 md:row-span-1",
     labelTag: null,
   },
   {
-    label: "Misterio",
+    labelKey: "search.genres.mystery",
+    queryValue: "Misterio",
     icon: "search",
     span: "md:col-span-1 md:row-span-1",
     labelTag: null,
   },
 ];
 
-const QUICK_FILTERS = ["Novela", "Historia", "Ciencia Ficción", "Romance", "Filosofía"];
+const QUICK_FILTERS: { labelKey: string; queryValue: string }[] = [
+  { labelKey: "search.genres.novel", queryValue: "Novela" },
+  { labelKey: "search.genres.history", queryValue: "Historia" },
+  { labelKey: "search.genres.scifi", queryValue: "Ciencia Ficción" },
+  { labelKey: "search.genres.romance", queryValue: "Romance" },
+  { labelKey: "search.genres.philosophy", queryValue: "Filosofía" },
+];
 
 // ── Component ───────────────────────────────────────────────────────────────
 
 export default function SearchPage() {
+  const t = useTranslations();
   const [query, setQuery] = useState("");
   const [inputValue, setInputValue] = useState("");
   const [results, setResults] = useState<NormalizedBook[]>([]);
@@ -163,9 +176,9 @@ export default function SearchPage() {
     void handleSearch(inputValue);
   }
 
-  function handleQuickFilter(genre: string) {
-    setInputValue(genre);
-    void handleSearch(genre);
+  function handleQuickFilter(queryValue: string) {
+    setInputValue(queryValue);
+    void handleSearch(queryValue);
   }
 
   async function handleSave(displayBook: SerializableBook): Promise<void> {
@@ -183,7 +196,7 @@ export default function SearchPage() {
       {/* ── Centered header — always visible ── */}
       <div className="text-center mb-8">
         <h1 className="text-3xl md:text-5xl font-bold text-on-surface tracking-tight mb-8 font-headline">
-          Explore the Archive
+          {t('search.heading')}
         </h1>
 
         {/* Search input */}
@@ -193,7 +206,7 @@ export default function SearchPage() {
           className="relative w-full max-w-2xl mx-auto"
         >
           <label htmlFor="search-input" className="sr-only">
-            Busca por título, autor o ISBN
+            {t('search.inputLabel')}
           </label>
 
           {/* Search icon — left */}
@@ -212,7 +225,7 @@ export default function SearchPage() {
             type="search"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Busca por título, autor o ISBN"
+            placeholder={t('search.inputLabel')}
             autoComplete="off"
             spellCheck={false}
             disabled={isLoading}
@@ -232,14 +245,14 @@ export default function SearchPage() {
 
         {/* Quick filter pills */}
         <div className="flex flex-wrap justify-center gap-3 mt-8">
-          {QUICK_FILTERS.map((genre) => (
+          {QUICK_FILTERS.map((filter) => (
             <button
-              key={genre}
+              key={filter.labelKey}
               type="button"
-              onClick={() => handleQuickFilter(genre)}
+              onClick={() => handleQuickFilter(filter.queryValue)}
               className="px-5 py-2 bg-surface-container-high text-on-surface-variant rounded-full text-sm font-medium hover:bg-surface-bright cursor-pointer transition-colors duration-150"
             >
-              {genre}
+              {t(filter.labelKey)}
             </button>
           ))}
         </div>
@@ -259,13 +272,13 @@ export default function SearchPage() {
       {!hasSearched && !isLoading && (
         <>
           {/* Bento grid of genres */}
-          <section className="mb-16" aria-label="Géneros">
+          <section className="mb-16" aria-label={t('search.genresLabel')}>
             <div className="grid grid-cols-1 md:grid-cols-4 grid-rows-2 gap-4 h-auto md:h-[450px]">
               {GENRES.map((genre) => (
                 <button
-                  key={genre.label}
+                  key={genre.labelKey}
                   type="button"
-                  onClick={() => handleQuickFilter(genre.label)}
+                  onClick={() => handleQuickFilter(genre.queryValue)}
                   className={[
                     genre.span,
                     "rounded-xl overflow-hidden relative group cursor-pointer bg-surface-container-low text-left",
@@ -292,7 +305,7 @@ export default function SearchPage() {
                       </span>
                     )}
                     <span className="text-xl font-bold text-primary font-headline">
-                      {genre.label}
+                      {t(genre.labelKey)}
                     </span>
                   </div>
                 </button>
@@ -302,9 +315,9 @@ export default function SearchPage() {
 
           {/* Archived Suggestions */}
           {librarySuggestions.length > 0 && (
-            <section aria-label="Archived Suggestions">
+            <section aria-label={t('search.archivedSuggestions')}>
               <h2 className="text-xl md:text-2xl font-bold font-headline tracking-tight mb-8">
-                Archived Suggestions
+                {t('search.archivedSuggestions')}
               </h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
                 {librarySuggestions.map((book) => (
@@ -357,7 +370,7 @@ export default function SearchPage() {
                         {book.title}
                       </p>
                       <p className="text-on-surface-variant text-xs truncate">
-                        {book.authors.length > 0 ? book.authors.join(", ") : "Autor desconocido"}
+                        {book.authors.length > 0 ? book.authors.join(", ") : t('common.unknownAuthor')}
                       </p>
                     </div>
                   </Link>
@@ -373,7 +386,7 @@ export default function SearchPage() {
         <div
           className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6"
           aria-busy="true"
-          aria-label="Cargando resultados"
+          aria-label={t('search.loading')}
         >
           {Array.from({ length: 12 }).map((_, i) => (
             <div key={i} className="grid gap-2">
@@ -395,17 +408,17 @@ export default function SearchPage() {
             menu_book
           </span>
           <p className="text-lg font-medium text-on-surface-variant">
-            No encontramos nada para &ldquo;{query}&rdquo;
+            {t('search.noResults', { query })}
           </p>
-          <p className="text-sm text-outline">Prueba con otro título, autor o ISBN</p>
+          <p className="text-sm text-outline">{t('search.tryAnother')}</p>
         </div>
       )}
 
       {/* ── Results grid ── */}
       {hasSearched && !isLoading && results.length > 0 && (
-        <section aria-label="Resultados de búsqueda" aria-live="polite">
+        <section aria-label={t('search.resultsLabel')} aria-live="polite">
           <p className="text-tertiary text-sm mb-6">
-            {results.length} {results.length === 1 ? "resultado" : "resultados"} para &laquo;{query}&raquo;
+            {t('search.resultsCount', { count: results.length, query })}
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
             {results.map((book, index) => (

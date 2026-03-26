@@ -1,4 +1,5 @@
-import { type BookStatus, BOOK_STATUS_LABELS, BOOK_STATUS_VALUES } from "@/lib/types/book";
+import { getTranslations } from 'next-intl/server';
+import { type BookStatus, BOOK_STATUS_VALUES } from "@/lib/types/book";
 import { prisma } from "@/lib/prisma";
 import { LibraryBookCard } from "@/features/books/components/library-book-card";
 import { StatusTabs, type StatusCounts, type StatusTabValue } from "@/features/books/components/status-tabs";
@@ -24,20 +25,6 @@ interface StatusCountRow {
 
 const STATUS_ORDERED: BookStatus[] = ["READING", "TO_READ", "WISHLIST", "READ"];
 
-const STATUS_EYEBROW: Record<BookStatus, string> = {
-  WISHLIST: "Wishlist",
-  TO_READ: "Up next",
-  READING: "In progress",
-  READ: "Completed",
-};
-
-const STATUS_EMPTY_COPY: Record<BookStatus, string> = {
-  WISHLIST: "Prospects worth keeping visible until they earn a stronger commitment.",
-  TO_READ: "Confirmed next reads waiting for their turn.",
-  READING: "Books currently in motion.",
-  READ: "Completed titles with notes and history preserved.",
-};
-
 type SearchParams = Record<string, string | string[] | undefined>;
 
 function isValidStatus(value: string): value is BookStatus {
@@ -60,10 +47,6 @@ function toStringRecord(params: SearchParams): Record<string, string> {
   return result;
 }
 
-function getFilterTitle(status: BookStatus): string {
-  return `No ${BOOK_STATUS_LABELS[status]} books`;
-}
-
 interface LibraryPageProps {
   searchParams: Promise<SearchParams>;
 }
@@ -73,6 +56,8 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
   const statusParam = typeof params.status === "string" ? params.status : undefined;
   const activeStatus = resolveActiveStatus(statusParam);
   const tabSearchParams = toStringRecord(params);
+
+  const t = await getTranslations();
 
   const [books, groupedCounts]: [LibraryBookRow[], StatusCountRow[]] = await Promise.all([
     prisma.book.findMany({
@@ -103,6 +88,10 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
 
   const isEmpty = books.length === 0;
 
+  function getFilterTitle(status: BookStatus): string {
+    return `No ${t(`book.status.${status}`)} books`;
+  }
+
   return (
     <div className="grid gap-6 px-12 md:px-20 pt-8 pb-24">
       <div
@@ -112,10 +101,10 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
         <div className="grid gap-1">
           <p className="text-xs font-bold uppercase tracking-widest text-muted">Library</p>
           <h1 className="text-3xl font-bold text-text" style={{ fontFamily: "var(--font-headline)" }}>
-            Your Archive
+            {t('library.heading')}
           </h1>
           <p className="text-sm text-muted leading-relaxed max-w-lg">
-            Your archive, split into rails that match reading intent. Filter by status or keep everything visible and scroll each shelf.
+            {t('library.description')}
           </p>
         </div>
 
@@ -124,19 +113,19 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
 
       {isEmpty ? (
         <EmptyState
-          title={activeStatus === "all" ? "Your library is empty" : getFilterTitle(activeStatus)}
+          title={activeStatus === "all" ? t('library.emptyAll') : getFilterTitle(activeStatus)}
           description={
             activeStatus === "all"
-              ? "Search the catalog, save a title, and the rails will start filling by status."
-              : "Try another status or save something from Search."
+              ? t('library.searchPlaceholder')
+              : t('library.tryAnotherStatus')
           }
         />
       ) : activeStatus !== "all" ? (
         <BookRailSection
-          title={STATUS_EYEBROW[activeStatus]}
-          eyebrow={BOOK_STATUS_LABELS[activeStatus]}
+          title={t(`library.statusEyebrow.${activeStatus}`)}
+          eyebrow={t(`book.status.${activeStatus}`)}
           count={books.length}
-          emptyCopy="No books match this filter."
+          emptyCopy={t('library.emptyFilter')}
         >
           {books.map((book) => (
             <div key={book.id} className="shrink-0 w-[clamp(260px,32vw,340px)]" style={{ scrollSnapAlign: "start" }}>
@@ -152,11 +141,11 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
             return (
               <BookRailSection
                 key={status}
-                title={STATUS_EYEBROW[status]}
-                eyebrow={BOOK_STATUS_LABELS[status]}
+                title={t(`library.statusEyebrow.${status}`)}
+                eyebrow={t(`book.status.${status}`)}
                 count={statusBooks.length}
                 emptyTitle={getFilterTitle(status)}
-                emptyCopy={STATUS_EMPTY_COPY[status]}
+                emptyCopy={t(`library.statusEmpty.${status}`)}
               >
                 {statusBooks.map((book) => (
                   <div key={book.id} className="shrink-0 w-[clamp(260px,32vw,340px)]" style={{ scrollSnapAlign: "start" }}>

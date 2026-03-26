@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { getTranslations } from 'next-intl/server';
 import type { Book, BookStatus } from "@/lib/types/book";
 import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/features/shared/components/empty-state";
@@ -9,24 +10,11 @@ import { BookRailSection } from "@/features/shared/ui/book-rail-section";
 import { BookCard } from "@/features/books/components/book-card";
 import { topGenreRails } from "@/lib/utils/books";
 
-const STATUS_CONFIG: Array<{
-  status: BookStatus;
-  title: string;
-}> = [
-  { status: "READING", title: "Currently Reading" },
-  { status: "READ", title: "Finished" },
-  { status: "TO_READ", title: "To Read" },
-  { status: "WISHLIST", title: "Wishlist" },
-];
-
-const STATUS_BADGE_LABEL: Record<BookStatus, string> = {
-  READING: "Currently Reading",
-  READ: "Finished",
-  TO_READ: "To Read",
-  WISHLIST: "Wishlist",
-};
+const STATUS_ORDER: BookStatus[] = ["READING", "READ", "TO_READ", "WISHLIST"];
 
 export default async function Home() {
+  const t = await getTranslations();
+
   const books: Book[] = await prisma.book.findMany({
     orderBy: { updatedAt: "desc" },
   });
@@ -35,11 +23,11 @@ export default async function Home() {
     return (
       <EmptyState
         icon="📚"
-        title="Your archive is empty"
-        description="Search for books and save them to your personal library."
+        title={t('home.emptyTitle')}
+        description={t('home.emptyDescription')}
         action={
           <Link href="/search">
-            <Button variant="primary">Find your first book</Button>
+            <Button variant="primary">{t('home.emptyAction')}</Button>
           </Link>
         }
         className="mt-8 min-h-[60vh]"
@@ -62,18 +50,16 @@ export default async function Home() {
     byStatus[book.status].push(book);
   }
 
-  const featuredBook = byStatus.READING[0] ?? serializedBooks[0] ?? null;
-
   const genreRails = topGenreRails(serializedBooks);
 
   return (
     <div className="relative min-h-screen">
-      {featuredBook?.coverUrl ? (
+      {byStatus.READING[0]?.coverUrl ? (
         <div
           aria-hidden="true"
           className="fixed inset-0 z-0 pointer-events-none"
           style={{
-            backgroundImage: `url(${featuredBook.coverUrl})`,
+            backgroundImage: `url(${byStatus.READING[0].coverUrl})`,
             backgroundSize: "cover",
             backgroundPosition: "center",
             filter: "blur(80px) brightness(0.25) saturate(1.5)",
@@ -86,7 +72,7 @@ export default async function Home() {
       <div className="fixed inset-0 z-0 bg-surface/50 pointer-events-none" aria-hidden="true" />
 
       <div className="relative z-10 px-12 md:px-20 space-y-16 pb-24 pt-8">
-        {STATUS_CONFIG.map(({ status, title }) => {
+        {STATUS_ORDER.map((status) => {
           const sectionBooks = byStatus[status];
           if (sectionBooks.length === 0) return null;
 
@@ -94,7 +80,7 @@ export default async function Home() {
             <section key={status}>
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold tracking-tight text-on-surface flex items-center gap-3">
-                  {title}
+                  {t(`book.status.${status}`)}
                   {status === "READING" && (
                     <span
                       className="material-symbols-outlined text-secondary text-sm"
@@ -105,12 +91,12 @@ export default async function Home() {
                   )}
                 </h2>
                 <Link href="/library" className="text-primary text-sm font-semibold hover:underline">
-                  View All
+                  {t('common.viewAll')}
                 </Link>
               </div>
               <div className="flex gap-6 overflow-x-auto hide-scrollbar pb-4 -mx-4 px-4">
                 {sectionBooks.map((book: SerializableBook) => {
-                  const authorLine = book.authors.length > 0 ? book.authors.join(", ") : "Unknown author";
+                  const authorLine = book.authors.length > 0 ? book.authors.join(", ") : t('common.unknownAuthor');
                   const year = book.publishedDate ? new Date(book.publishedDate).getFullYear() : null;
 
                   return (
@@ -134,7 +120,7 @@ export default async function Home() {
                           </div>
                         )}
                         <div className="absolute inset-0 bg-gradient-to-t from-surface-container-lowest/80 via-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-4">
-                          <span className="text-secondary text-xs font-bold mb-1">{STATUS_BADGE_LABEL[book.status]}</span>
+                          <span className="text-secondary text-xs font-bold mb-1">{t(`book.status.${book.status}`)}</span>
                         </div>
                       </div>
                       <h3 className="mt-4 text-on-surface font-bold text-sm group-hover:text-primary transition-colors">{book.title}</h3>
@@ -149,10 +135,10 @@ export default async function Home() {
 
         {/* Genre discovery rails */}
         {genreRails.length > 0 && (
-          <section aria-label="Browse by genre">
+          <section aria-label={t('home.browseByGenre')}>
             <div className="flex items-center gap-3 mb-8">
               <h2 className="text-xl font-bold tracking-tight text-on-surface">
-                Browse by Genre
+                {t('home.browseByGenre')}
               </h2>
             </div>
             <div className="space-y-12">

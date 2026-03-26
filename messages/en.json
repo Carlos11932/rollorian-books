@@ -1,0 +1,127 @@
+{
+  "common": {
+    "unknownAuthor": "Unknown author",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "saving": "Saving...",
+    "saved": "Saved",
+    "save": "Save",
+    "delete": "Delete",
+    "clear": "Clear",
+    "viewAll": "View All",
+    "notRated": "Not rated",
+    "loading": "Loading..."
+  },
+  "nav": {
+    "home": "Home",
+    "search": "Search",
+    "library": "Library",
+    "settings": "Settings",
+    "searchAriaLabel": "Search",
+    "brand": "Rollorian-books",
+    "appName": "The Archive",
+    "tagline": "Private Collection",
+    "addVolume": "Add New Volume"
+  },
+  "home": {
+    "emptyTitle": "Your archive is empty",
+    "emptyDescription": "Search for books and save them to your personal library.",
+    "emptyAction": "Find your first book",
+    "browseByGenre": "Browse by Genre",
+    "heroTitle": "Your archive awaits",
+    "heroDescription": "Start building your book collection...",
+    "heroSearch": "Search for books",
+    "heroContinue": "Continue reading",
+    "heroViewDetails": "View details"
+  },
+  "library": {
+    "heading": "Your Archive",
+    "description": "Manage your personal book collection. Track what you're reading, what you want to read, and what you've already finished.",
+    "emptyAll": "Your library is empty",
+    "emptyFilter": "No books match this filter.",
+    "searchPlaceholder": "Search the catalog...",
+    "tryAnotherStatus": "Try another status...",
+    "statusEyebrow": {
+      "WISHLIST": "Wishlist",
+      "TO_READ": "Up next",
+      "READING": "In progress",
+      "READ": "Completed"
+    },
+    "statusEmpty": {
+      "WISHLIST": "No books in your wishlist.",
+      "TO_READ": "No books waiting to be read.",
+      "READING": "You're not reading anything right now.",
+      "READ": "You haven't marked any books as read yet."
+    }
+  },
+  "search": {
+    "heading": "Explore the Archive",
+    "inputLabel": "Search by title, author or ISBN",
+    "genresLabel": "Genres",
+    "loading": "Loading results",
+    "noResults": "Nothing found for \"{query}\"",
+    "tryAnother": "Try another title...",
+    "resultsLabel": "Search results",
+    "resultsCount": "{count} result(s) for \"{query}\"",
+    "archivedSuggestions": "Archived Suggestions",
+    "genres": {
+      "novel": "Novel",
+      "history": "History",
+      "scifi": "Science Fiction",
+      "romance": "Romance",
+      "philosophy": "Philosophy",
+      "mystery": "Mystery"
+    }
+  },
+  "book": {
+    "status": {
+      "WISHLIST": "Wishlist",
+      "TO_READ": "To Read",
+      "READING": "Reading",
+      "READ": "Read"
+    },
+    "statusLabel": "Status",
+    "ratingLabel": "Rating",
+    "notesLabel": "Notes",
+    "notesPlaceholder": "Write something useful about this book.",
+    "manage": "Manage",
+    "updateState": "Update reading state",
+    "saveChanges": "Save changes",
+    "savingChanges": "Saving...",
+    "savedChanges": "Saved",
+    "removeBook": "Remove book",
+    "confirmRemove": "Confirm remove",
+    "removing": "Removing...",
+    "backToLibrary": "Back to library",
+    "backToSearch": "Back to search",
+    "googlePreview": "Google Books preview",
+    "notInLibrary": "Not in your library",
+    "trackQuestion": "Want to track this book?",
+    "trackDescription": "Save it to your library to keep track of your reading progress.",
+    "saveToLibrary": "Save to library",
+    "savedRedirecting": "Saved — redirecting...",
+    "openDetail": "Open detail",
+    "details": "Details",
+    "publisher": "Publisher",
+    "published": "Published",
+    "pages": "Pages",
+    "isbn": "ISBN",
+    "genres": "Genres",
+    "notes": "Notes",
+    "rating": {
+      "1": "Poor",
+      "2": "Fair",
+      "3": "Good",
+      "4": "Great",
+      "5": "Excellent"
+    }
+  },
+  "errors": {
+    "notFoundTitle": "Page not found",
+    "notFoundDescription": "The page you're looking for doesn't exist or was moved.",
+    "backToHome": "Back to Home",
+    "errorTitle": "Something went wrong",
+    "errorDescription": "An unexpected error occurred. Please try again.",
+    "tryAgain": "Try again"
+  }
+}
