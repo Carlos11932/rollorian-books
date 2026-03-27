@@ -1,4 +1,4 @@
-import type { Book } from "@/lib/types/book";
+import type { Book, BookStatus, UserBookWithBook } from "@/lib/types/book";
 import type { GoogleBooksVolume } from "@/lib/google-books/types";
 
 /**
@@ -21,21 +21,35 @@ export interface GoogleBookView {
 }
 
 /**
- * Serializable version of the Prisma Book model.
- * Date fields are converted to ISO strings when passing from Server to Client components.
+ * Serializable version combining Book fields with UserBook reading-state fields.
+ * Date fields are converted to ISO strings for passing from Server to Client components.
+ *
+ * `status`, `rating`, and `notes` come from the UserBook junction row,
+ * while the remaining fields come from the Book itself.
  */
 export type SerializableBook = Omit<Book, "createdAt" | "updatedAt"> & {
+  status: BookStatus;
+  rating: number | null;
+  notes: string | null;
   createdAt: string;
   updatedAt: string;
 };
 
 /**
- * Converts a Prisma Book to a serialization-safe version for passing to Client Components.
+ * Converts a UserBookWithBook (junction + included book) into a flat,
+ * serialization-safe shape for passing to Client Components.
+ *
+ * Book-level fields come from `userBook.book`, while reading-state fields
+ * (`status`, `rating`, `notes`) and timestamps come from the `userBook` itself.
  */
-export function serializeBook(book: Book): SerializableBook {
+export function serializeUserBook(userBook: UserBookWithBook): SerializableBook {
+  const { book } = userBook;
   return {
     ...book,
-    createdAt: book.createdAt.toISOString(),
-    updatedAt: book.updatedAt.toISOString(),
+    status: userBook.status,
+    rating: userBook.rating,
+    notes: userBook.notes,
+    createdAt: userBook.createdAt.toISOString(),
+    updatedAt: userBook.updatedAt.toISOString(),
   };
 }

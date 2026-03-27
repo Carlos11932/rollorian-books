@@ -1,0 +1,4 @@
+-- This migration is intentionally empty.
+-- Originally attempted to make Book.ownerId NOT NULL, but the column
+-- is being removed entirely in the next migration (refactor_userbook_junction).
+-- Kept as a no-op so Prisma's migration history stays consistent.

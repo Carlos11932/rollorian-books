@@ -1,7 +1,8 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
-import type { Book } from "@/lib/types/book";
+import type { UserBookWithBook } from "@/lib/types/book";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { fetchBookById } from "@/lib/google-books/client";
 import { stripHtml } from "@/lib/utils/text";
 import type { GoogleBooksVolume } from "@/lib/google-books/types";
@@ -13,13 +14,16 @@ interface BookDetailPageProps {
   params: Promise<{ id: string }>;
 }
 
-type ResolvedBook = { source: "local"; book: Book } | GoogleBookView;
+type ResolvedBook = { source: "local"; userBook: UserBookWithBook } | GoogleBookView;
 
-const resolveBook = cache(async function resolveBook(id: string): Promise<ResolvedBook | null> {
+const resolveBook = cache(async function resolveBook(id: string, userId: string): Promise<ResolvedBook | null> {
   try {
-    const local: Book | null = await prisma.book.findUnique({ where: { id } });
-    if (local) {
-      return { source: "local", book: local };
+    const userBook = await prisma.userBook.findUnique({
+      where: { userId_bookId: { userId, bookId: id } },
+      include: { book: true },
+    });
+    if (userBook) {
+      return { source: "local", userBook: userBook as UserBookWithBook };
     }
   } catch {
     // Invalid ID format for Prisma — fall through to Google Books
@@ -67,12 +71,17 @@ function googleVolumeToView(volume: GoogleBooksVolume): GoogleBookView {
 
 export async function generateMetadata({ params }: BookDetailPageProps) {
   const { id } = await params;
-  const resolved = await resolveBook(id);
+  const session = await auth();
+  if (!session?.user?.id) {
+    redirect("/login");
+  }
+  const userId = session.user.id;
+  const resolved = await resolveBook(id, userId);
 
   if (!resolved) return { title: "Book not found" };
 
   if (resolved.source === "local") {
-    const { book } = resolved;
+    const { book } = resolved.userBook;
     return {
       title: `${book.title} — Rollorian`,
       description: `Book detail for ${book.title} by ${book.authors.join(", ")}`,
@@ -87,14 +96,19 @@ export async function generateMetadata({ params }: BookDetailPageProps) {
 
 export default async function BookDetailPage({ params }: BookDetailPageProps) {
   const { id } = await params;
-  const resolved = await resolveBook(id);
+  const session = await auth();
+  if (!session?.user?.id) {
+    redirect("/login");
+  }
+  const userId = session.user.id;
+  const resolved = await resolveBook(id, userId);
 
   if (!resolved) {
     notFound();
   }
 
   if (resolved.source === "local") {
-    return <LocalBookDetail book={resolved.book} />;
+    return <LocalBookDetail userBook={resolved.userBook} />;
   }
 
   return <GoogleBookDetail view={resolved} />;

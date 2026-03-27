@@ -7,7 +7,7 @@ config({ path: ".env.local" });
 export default defineConfig({
   schema: "prisma/schema.prisma",
   datasource: {
-    url: process.env["DIRECT_URL"] as string,
+    url: process.env["DATABASE_URL_UNPOOLED"] as string,
   },
   migrations: {
     seed: "npx tsx prisma/seed.ts",

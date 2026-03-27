@@ -5,9 +5,12 @@ import { fetchBooks } from "@/lib/google-books/client";
 import { normalizeSearchResults } from "@/lib/google-books/normalize";
 import { analyzeQuery, rankSearchResults, PROVIDER_LIMIT } from "@/lib/google-books/strategy";
 import { searchQuerySchema } from "@/lib/schemas/book";
+import { requireAuth, UnauthorizedError } from "@/lib/auth/require-auth";
 
 export async function GET(request: NextRequest): Promise<Response> {
   try {
+    await requireAuth();
+
     const searchParams = request.nextUrl.searchParams;
     const rawQ = searchParams.get("q");
 
@@ -32,6 +35,9 @@ export async function GET(request: NextRequest): Promise<Response> {
 
     return Response.json(ranked);
   } catch (error) {
+    if (error instanceof UnauthorizedError) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
     console.error("[GET /api/search/books]", error);
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }

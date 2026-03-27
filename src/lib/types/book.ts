@@ -38,10 +38,26 @@ export interface Book {
   pageCount: number | null;
   isbn10: string | null;
   isbn13: string | null;
-  status: BookStatus;
-  rating: number | null;
-  notes: string | null;
   genres: string[];
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface UserBook {
+  id: string;
+  userId: string;
+  bookId: string;
+  status: BookStatus;
+  rating: number | null;
+  notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface UserBookWithBook extends UserBook {
+  book: Book;
+}
+
+export interface BookWithUserData extends Book {
+  userBooks: UserBook[];
 }

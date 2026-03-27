@@ -27,6 +27,13 @@ function writeInfo(message: string) {
 }
 
 async function main() {
+  const seedUser = await prisma.user.upsert({
+    where: { email: "carlos@rollorian.dev" },
+    create: { name: "Carlos", email: "carlos@rollorian.dev", image: null },
+    update: {},
+  });
+
+  // Delete books first (FK → user), then other user data is handled by cascade
   await prisma.book.deleteMany();
 
   await prisma.book.createMany({
@@ -46,6 +53,7 @@ async function main() {
         rating: 5,
         notes: "A masterpiece of science fiction.",
         genres: ["Science Fiction", "Fantasy"],
+        ownerId: seedUser.id,
       },
       {
         title: "The Hobbit",
@@ -60,6 +68,7 @@ async function main() {
         status: BookStatus.READING as BookStatusValue,
         rating: 4,
         genres: ["Fantasy", "Adventure"],
+        ownerId: seedUser.id,
       },
       {
         title: "Clean Code",
@@ -73,6 +82,7 @@ async function main() {
         isbn13: "9780132350884",
         status: BookStatus.TO_READ as BookStatusValue,
         genres: ["Programming", "Software Engineering"],
+        ownerId: seedUser.id,
       },
       {
         title: "Sapiens",
@@ -86,6 +96,7 @@ async function main() {
         isbn13: "9780062316097",
         status: BookStatus.WISHLIST as BookStatusValue,
         genres: ["History", "Non-Fiction"],
+        ownerId: seedUser.id,
       },
       {
         title: "The Pragmatic Programmer",
@@ -101,11 +112,12 @@ async function main() {
         rating: 5,
         notes: "Essential reading for every developer.",
         genres: ["Programming", "Career"],
+        ownerId: seedUser.id,
       },
     ],
   });
 
-  writeInfo("Seed complete: 5 books created");
+  writeInfo(`Seed complete: 5 books created for user ${seedUser.email}`);
 }
 
 main()

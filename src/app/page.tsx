@@ -1,11 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { getTranslations } from 'next-intl/server';
-import type { Book, BookStatus } from "@/lib/types/book";
+import type { BookStatus } from "@/lib/types/book";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { EmptyState } from "@/features/shared/components/empty-state";
 import { Button } from "@/features/shared/components/button";
-import { serializeBook, type SerializableBook } from "@/features/books/types";
+import { serializeUserBook, type SerializableBook } from "@/features/books/types";
 import { BookRailSection } from "@/features/shared/ui/book-rail-section";
 import { BookCard } from "@/features/books/components/book-card";
 import { topGenreRails } from "@/lib/utils/books";
@@ -15,11 +17,19 @@ const STATUS_ORDER: BookStatus[] = ["READING", "READ", "TO_READ", "WISHLIST"];
 export default async function Home() {
   const t = await getTranslations();
 
-  const books: Book[] = await prisma.book.findMany({
+  const session = await auth();
+  if (!session?.user?.id) {
+    redirect("/login");
+  }
+  const userId = session.user.id;
+
+  const userBooks = await prisma.userBook.findMany({
+    where: { userId },
+    include: { book: true },
     orderBy: { updatedAt: "desc" },
   });
 
-  if (books.length === 0) {
+  if (userBooks.length === 0) {
     return (
       <EmptyState
         icon="📚"
@@ -35,8 +45,8 @@ export default async function Home() {
     );
   }
 
-  const serializedBooks: SerializableBook[] = books.map((book: Book) =>
-    serializeBook(book),
+  const serializedBooks: SerializableBook[] = userBooks.map((ub) =>
+    serializeUserBook(ub),
   );
 
   const byStatus: Record<BookStatus, SerializableBook[]> = {

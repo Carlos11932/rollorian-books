@@ -5,8 +5,20 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/cn';
 import { LocaleSwitcher } from './locale-switcher';
+import { UserMenu } from './user-menu';
 
-export function SiteHeader() {
+interface SiteHeaderUser {
+  name: string | null;
+  email: string;
+  image: string | null;
+}
+
+interface SiteHeaderProps {
+  user: SiteHeaderUser;
+  signOutAction: () => Promise<void>;
+}
+
+export function SiteHeader({ user, signOutAction }: SiteHeaderProps) {
   const pathname = usePathname();
   const t = useTranslations('nav');
 
@@ -45,7 +57,7 @@ export function SiteHeader() {
           </div>
         </div>
 
-        {/* Right: locale switcher + search icon + profile avatar */}
+        {/* Right: locale switcher + search icon + user menu */}
         <div className="flex items-center gap-6">
           <LocaleSwitcher />
           <button
@@ -57,11 +69,7 @@ export function SiteHeader() {
               search
             </span>
           </button>
-          <div className="w-8 h-8 rounded-full overflow-hidden border border-primary/20 bg-surface-container flex items-center justify-center">
-            <span className="material-symbols-outlined text-primary text-xl leading-none">
-              account_circle
-            </span>
-          </div>
+          <UserMenu user={user} signOutAction={signOutAction} />
         </div>
       </div>
     </nav>

@@ -1,6 +1,8 @@
+import { redirect } from "next/navigation";
 import { getTranslations } from 'next-intl/server';
 import { type BookStatus, BOOK_STATUS_VALUES } from "@/lib/types/book";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { LibraryBookCard } from "@/features/books/components/library-book-card";
 import { StatusTabs, type StatusCounts, type StatusTabValue } from "@/features/books/components/status-tabs";
 import { EmptyState } from "@/features/shared/components/empty-state";
@@ -8,14 +10,17 @@ import { BookRailSection } from "@/features/shared/ui/book-rail-section";
 
 interface LibraryBookRow {
   id: string;
-  title: string;
-  authors: string[];
-  coverUrl: string | null;
   status: BookStatus;
   rating: number | null;
   notes: string | null;
-  publisher: string | null;
-  publishedDate: string | null;
+  book: {
+    id: string;
+    title: string;
+    authors: string[];
+    coverUrl: string | null;
+    publisher: string | null;
+    publishedDate: string | null;
+  };
 }
 
 interface StatusCountRow {
@@ -52,6 +57,12 @@ interface LibraryPageProps {
 }
 
 export default async function LibraryPage({ searchParams }: LibraryPageProps) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    redirect("/login");
+  }
+  const userId = session.user.id;
+
   const params = await searchParams;
   const statusParam = typeof params.status === "string" ? params.status : undefined;
   const activeStatus = resolveActiveStatus(statusParam);
@@ -59,23 +70,28 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
 
   const t = await getTranslations();
 
-  const [books, groupedCounts]: [LibraryBookRow[], StatusCountRow[]] = await Promise.all([
-    prisma.book.findMany({
-      where: activeStatus !== "all" ? { status: activeStatus } : undefined,
+  const [userBooks, groupedCounts]: [LibraryBookRow[], StatusCountRow[]] = await Promise.all([
+    prisma.userBook.findMany({
+      where: activeStatus !== "all" ? { userId, status: activeStatus } : { userId },
       orderBy: { createdAt: "desc" },
       select: {
         id: true,
-        title: true,
-        authors: true,
-        coverUrl: true,
         status: true,
         rating: true,
         notes: true,
-        publisher: true,
-        publishedDate: true,
+        book: {
+          select: {
+            id: true,
+            title: true,
+            authors: true,
+            coverUrl: true,
+            publisher: true,
+            publishedDate: true,
+          },
+        },
       },
     }),
-    prisma.book.groupBy({ by: ["status"], _count: { id: true } }),
+    prisma.userBook.groupBy({ by: ["status"], where: { userId }, _count: { id: true } }),
   ]);
 
   const counts = groupedCounts.reduce<StatusCounts>(
@@ -85,6 +101,19 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
     },
     { WISHLIST: 0, TO_READ: 0, READING: 0, READ: 0 },
   );
+
+  // Flatten UserBook + Book into the shape LibraryBookCard expects
+  const books = userBooks.map((ub) => ({
+    id: ub.book.id,
+    title: ub.book.title,
+    authors: ub.book.authors,
+    coverUrl: ub.book.coverUrl,
+    status: ub.status,
+    rating: ub.rating,
+    notes: ub.notes,
+    publisher: ub.book.publisher,
+    publishedDate: ub.book.publishedDate,
+  }));
 
   const isEmpty = books.length === 0;
 
