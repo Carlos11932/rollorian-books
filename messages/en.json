@@ -104,6 +104,17 @@
       "mystery": "Mystery"
     }
   },
+  "discover": {
+    "heading": "Discover by Genre",
+    "loadingGenres": "Loading genre picks",
+    "Fiction": "Fiction",
+    "Science Fiction": "Science Fiction",
+    "Fantasy": "Fantasy",
+    "History": "History",
+    "Romance": "Romance",
+    "Mystery": "Mystery",
+    "Philosophy": "Philosophy"
+  },
   "book": {
     "status": {
       "WISHLIST": "Wishlist",

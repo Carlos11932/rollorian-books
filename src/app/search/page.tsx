@@ -9,6 +9,7 @@ import type { SerializableBook } from "@/features/books/types";
 import type { BookStatus } from "@/lib/types/book";
 import { BookCard } from "@/features/books/components/book-card";
 import { Skeleton } from "@/features/shared/components/skeleton";
+import { BookRailSection } from "@/features/shared/ui/book-rail-section";
 import { saveBook } from "@/lib/api/books";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -71,46 +72,6 @@ interface UserBookApiEntry {
   };
 }
 
-// ── Genre bento data ────────────────────────────────────────────────────────
-
-const GENRES = [
-  {
-    labelKey: "search.genres.history",
-    queryValue: "Historia",
-    icon: "history_edu",
-    span: "md:col-span-2 md:row-span-2",
-    labelTag: "Anthology",
-  },
-  {
-    labelKey: "search.genres.romance",
-    queryValue: "Romance",
-    icon: "favorite",
-    span: "md:col-span-1 md:row-span-1",
-    labelTag: null,
-  },
-  {
-    labelKey: "search.genres.scifi",
-    queryValue: "Ciencia Ficción",
-    icon: "rocket_launch",
-    span: "md:col-span-1 md:row-span-1",
-    labelTag: null,
-  },
-  {
-    labelKey: "search.genres.philosophy",
-    queryValue: "Filosofía",
-    icon: "psychology",
-    span: "md:col-span-1 md:row-span-1",
-    labelTag: null,
-  },
-  {
-    labelKey: "search.genres.mystery",
-    queryValue: "Misterio",
-    icon: "search",
-    span: "md:col-span-1 md:row-span-1",
-    labelTag: null,
-  },
-];
-
 const QUICK_FILTERS: { labelKey: string; queryValue: string }[] = [
   { labelKey: "search.genres.novel", queryValue: "Novela" },
   { labelKey: "search.genres.history", queryValue: "Historia" },
@@ -118,6 +79,30 @@ const QUICK_FILTERS: { labelKey: string; queryValue: string }[] = [
   { labelKey: "search.genres.romance", queryValue: "Romance" },
   { labelKey: "search.genres.philosophy", queryValue: "Filosofía" },
 ];
+
+// ── Discover genre label map ─────────────────────────────────────────────────
+
+/** Maps the API genre name to its i18n key under the "discover" namespace. */
+const DISCOVER_GENRE_LABEL_KEYS: Record<string, string> = {
+  "Fiction": "discover.Fiction",
+  "Science Fiction": "discover.Science Fiction",
+  "Fantasy": "discover.Fantasy",
+  "History": "discover.History",
+  "Romance": "discover.Romance",
+  "Mystery": "discover.Mystery",
+  "Philosophy": "discover.Philosophy",
+};
+
+// ── Discover types ───────────────────────────────────────────────────────────
+
+interface DiscoverGenre {
+  name: string;
+  books: NormalizedBook[];
+}
+
+interface DiscoverResponse {
+  genres: DiscoverGenre[];
+}
 
 // ── Component ───────────────────────────────────────────────────────────────
 
@@ -133,6 +118,10 @@ export default function SearchPage() {
   // Library books indexed by isbn13 for fast lookup
   const [libraryIndex, setLibraryIndex] = useState<Map<string, BookStatus>>(new Map());
   const [librarySuggestions, setLibrarySuggestions] = useState<SerializableBook[]>([]);
+
+  // Discover genre carousels
+  const [discoverGenres, setDiscoverGenres] = useState<DiscoverGenre[]>([]);
+  const [isDiscoverLoading, setIsDiscoverLoading] = useState(true);
 
   // Load user's library on mount to detect already-saved books and show suggestions
   useEffect(() => {
@@ -160,6 +149,22 @@ export default function SearchPage() {
       })
       .catch(() => {
         // Non-critical — search still works without library data
+      });
+  }, []);
+
+  // Load discover genre carousels on mount
+  useEffect(() => {
+    setIsDiscoverLoading(true);
+    void fetch("/api/discover/genres")
+      .then((res) => (res.ok ? (res.json() as Promise<DiscoverResponse>) : Promise.resolve({ genres: [] })))
+      .then((data) => {
+        setDiscoverGenres(data.genres);
+      })
+      .catch(() => {
+        // Non-critical — page still works without discover data
+      })
+      .finally(() => {
+        setIsDiscoverLoading(false);
       });
   }, []);
 
@@ -211,6 +216,17 @@ export default function SearchPage() {
 
   async function handleSave(displayBook: SerializableBook): Promise<void> {
     const original = results.find((r) => r.externalId === displayBook.id);
+    if (!original) return;
+    await saveBookToLibrary(original);
+    if (original.isbn) {
+      setLibraryIndex((prev) => new Map(prev).set(original.isbn!, "WISHLIST"));
+    }
+  }
+
+  async function handleDiscoverSave(displayBook: SerializableBook): Promise<void> {
+    const original = discoverGenres
+      .flatMap((g) => g.books)
+      .find((b) => b.externalId === displayBook.id);
     if (!original) return;
     await saveBookToLibrary(original);
     if (original.isbn) {
@@ -299,48 +315,6 @@ export default function SearchPage() {
       {/* ── Default state (no active search) ── */}
       {!hasSearched && !isLoading && (
         <>
-          {/* Bento grid of genres */}
-          <section className="mb-16" aria-label={t('search.genresLabel')}>
-            <div className="grid grid-cols-1 md:grid-cols-4 grid-rows-2 gap-4 h-auto md:h-[450px]">
-              {GENRES.map((genre) => (
-                <button
-                  key={genre.labelKey}
-                  type="button"
-                  onClick={() => handleQuickFilter(genre.queryValue)}
-                  className={[
-                    genre.span,
-                    "rounded-xl overflow-hidden relative group cursor-pointer bg-surface-container-low text-left",
-                  ].join(" ")}
-                >
-                  {/* Background icon — decorative */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span
-                      className="material-symbols-outlined text-primary/20"
-                      style={{ fontSize: "96px" }}
-                    >
-                      {genre.icon}
-                    </span>
-                  </div>
-
-                  {/* Gradient overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-surface to-transparent" />
-
-                  {/* Text content */}
-                  <div className="absolute bottom-0 p-6">
-                    {genre.labelTag != null && (
-                      <span className="block text-xs font-semibold text-secondary uppercase tracking-widest mb-1">
-                        {genre.labelTag}
-                      </span>
-                    )}
-                    <span className="text-xl font-bold text-primary font-headline">
-                      {t(genre.labelKey)}
-                    </span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </section>
-
           {/* Archived Suggestions */}
           {librarySuggestions.length > 0 && (
             <section aria-label={t('search.archivedSuggestions')}>
@@ -404,6 +378,66 @@ export default function SearchPage() {
                   </Link>
                 ))}
               </div>
+            </section>
+          )}
+
+          {/* ── Genre discovery carousels ── */}
+          {(isDiscoverLoading || discoverGenres.length > 0) && (
+            <section aria-label={t('discover.heading')} className="mt-16 space-y-12">
+              <h2 className="text-xl md:text-2xl font-bold font-headline tracking-tight">
+                {t('discover.heading')}
+              </h2>
+
+              {/* Skeleton while loading */}
+              {isDiscoverLoading && (
+                <div
+                  className="space-y-12"
+                  aria-busy="true"
+                  aria-label={t('discover.loadingGenres')}
+                >
+                  {Array.from({ length: 3 }).map((_, sectionIdx) => (
+                    <div key={sectionIdx} className="space-y-4">
+                      <Skeleton variant="text" className="h-6 w-40" />
+                      <div className="flex gap-6 overflow-hidden">
+                        {Array.from({ length: 6 }).map((_, i) => (
+                          <div key={i} className="shrink-0 space-y-2" style={{ width: "160px" }}>
+                            <Skeleton variant="card" className="h-[220px] w-[160px]" />
+                            <Skeleton variant="text" className="h-3 w-3/4" />
+                            <Skeleton variant="text" className="h-3 w-1/2" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Genre rails */}
+              {!isDiscoverLoading &&
+                discoverGenres.map((genre) => {
+                  const labelKey = DISCOVER_GENRE_LABEL_KEYS[genre.name];
+                  const genreLabel = labelKey != null
+                    ? t(labelKey as Parameters<typeof t>[0])
+                    : genre.name;
+
+                  return (
+                    <BookRailSection
+                      key={genre.name}
+                      title={genreLabel}
+                    >
+                      {genre.books.map((book, index) => (
+                        <BookCard
+                          key={book.externalId}
+                          variant="search"
+                          book={toDisplayBook(book)}
+                          index={index}
+                          savedStatus={getSavedStatus(book)}
+                          onSave={handleDiscoverSave}
+                        />
+                      ))}
+                    </BookRailSection>
+                  );
+                })}
             </section>
           )}
         </>
