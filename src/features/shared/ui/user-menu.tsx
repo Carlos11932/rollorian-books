@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/cn";
+import type { UserRole } from "@/lib/types/user";
 
 interface UserMenuUser {
   name: string | null;
@@ -13,9 +15,10 @@ interface UserMenuUser {
 interface UserMenuProps {
   user: UserMenuUser;
   signOutAction: () => Promise<void>;
+  role?: UserRole;
 }
 
-export function UserMenu({ user, signOutAction }: UserMenuProps) {
+export function UserMenu({ user, signOutAction, role }: UserMenuProps) {
   const [open, setOpen] = useState(false);
 
   const initials = user.name
@@ -79,6 +82,19 @@ export function UserMenu({ user, signOutAction }: UserMenuProps) {
             </div>
 
             <div className="border-t border-outline-variant/20 my-1" />
+
+            {/* Admin link — only for SUPERADMIN */}
+            {role === "SUPERADMIN" && (
+              <Link
+                href="/admin"
+                role="menuitem"
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-2 px-3 py-2 text-sm text-tertiary hover:text-on-surface hover:bg-surface-container-high rounded-lg transition-colors"
+              >
+                <span className="material-symbols-outlined text-[18px]">admin_panel_settings</span>
+                Admin
+              </Link>
+            )}
 
             {/* Sign out */}
             <form action={signOutAction}>

@@ -6,10 +6,13 @@
  * These types MUST stay in sync with `prisma/schema.prisma`.
  */
 
+export type UserRole = "USER" | "SUPERADMIN";
+
 export interface User {
   id: string;
   name: string | null;
   email: string;
   emailVerified: Date | null;
   image: string | null;
+  role: UserRole;
 }

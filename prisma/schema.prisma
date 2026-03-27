@@ -13,15 +13,94 @@ enum BookStatus {
   READ
 }
 
+enum UserRole {
+  USER
+  SUPERADMIN
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+}
+
+enum GroupMemberRole {
+  ADMIN
+  MEMBER
+}
+
+enum GroupMemberStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
 model User {
-  id            String     @id @default(cuid())
+  id            String        @id @default(cuid())
   name          String?
-  email         String     @unique
+  email         String        @unique
   emailVerified DateTime?
   image         String?
+  role          UserRole      @default(USER)
   accounts      Account[]
   sessions      Session[]
   userBooks     UserBook[]
+  invitations   Invitation[]
+  createdGroups Group[]       @relation("GroupCreator")
+  groupMembers  GroupMember[]
+  followers     Follow[]      @relation("following")
+  following     Follow[]      @relation("followers")
+}
+
+model Group {
+  id          String        @id @default(cuid())
+  name        String
+  createdById String
+  createdBy   User          @relation("GroupCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  members     GroupMember[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model GroupMember {
+  id        String            @id @default(cuid())
+  groupId   String
+  userId    String
+  role      GroupMemberRole   @default(MEMBER)
+  status    GroupMemberStatus @default(PENDING)
+  group     Group             @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  @@unique([groupId, userId])
+  @@index([userId])
+  @@index([groupId, status])
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+  follower    User     @relation("followers", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User     @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followingId])
+}
+
+model Invitation {
+  id           String           @id @default(cuid())
+  email        String
+  invitedById  String
+  status       InvitationStatus @default(PENDING)
+  createdAt    DateTime         @default(now())
+  expiresAt    DateTime
+  invitedBy    User             @relation(fields: [invitedById], references: [id], onDelete: Cascade)
+
+  @@index([email])
+  @@index([invitedById])
 }
 
 model Account {

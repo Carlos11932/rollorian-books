@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/cn';
 import { LocaleSwitcher } from './locale-switcher';
 import { UserMenu } from './user-menu';
+import type { UserRole } from '@/lib/types/user';
 
 interface SiteHeaderUser {
   name: string | null;
@@ -16,9 +17,10 @@ interface SiteHeaderUser {
 interface SiteHeaderProps {
   user: SiteHeaderUser;
   signOutAction: () => Promise<void>;
+  role?: UserRole;
 }
 
-export function SiteHeader({ user, signOutAction }: SiteHeaderProps) {
+export function SiteHeader({ user, signOutAction, role }: SiteHeaderProps) {
   const pathname = usePathname();
   const t = useTranslations('nav');
 
@@ -26,6 +28,8 @@ export function SiteHeader({ user, signOutAction }: SiteHeaderProps) {
     { href: '/', label: t('home') },
     { href: '/search', label: t('search') },
     { href: '/library', label: t('library') },
+    { href: '/groups', label: t('groups') },
+    ...(role === 'SUPERADMIN' ? [{ href: '/admin', label: t('admin') }] : []),
   ];
 
   return (
@@ -69,7 +73,7 @@ export function SiteHeader({ user, signOutAction }: SiteHeaderProps) {
               search
             </span>
           </button>
-          <UserMenu user={user} signOutAction={signOutAction} />
+          <UserMenu user={user} signOutAction={signOutAction} role={role} />
         </div>
       </div>
     </nav>

@@ -36,15 +36,90 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     signIn: "/login",
   },
   callbacks: {
-    session({ session, user }) {
+    async session({ session, user }) {
       // Auth.js v5 with database sessions: `user` comes from the DB via the adapter.
       // session.user.id is NOT included by default — we must add it explicitly.
       session.user.id = user.id;
+
+      // Fetch role from DB — do NOT trust a stale cached value.
+      const dbUser = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: { role: true },
+      });
+      session.user.role = dbUser?.role ?? "USER";
+
       return session;
     },
     authorized({ auth: session }) {
       // Return true if the user has a session, false redirects to `pages.signIn`.
       return !!session;
+    },
+    async signIn({ user }) {
+      const email = user.email;
+      if (!email) return false;
+
+      // Allow if user already exists in DB (returning user).
+      const existing = await prisma.user.findUnique({
+        where: { email },
+        select: { id: true },
+      });
+      if (existing) return true;
+
+      // Allow if email matches the designated superadmin.
+      const superadminEmail = process.env.SUPERADMIN_EMAIL;
+      if (superadminEmail && email === superadminEmail) return true;
+
+      // Allow if a valid PENDING non-expired invitation exists.
+      const invitation = await prisma.invitation.findFirst({
+        where: {
+          email,
+          status: "PENDING",
+          expiresAt: { gt: new Date() },
+        },
+        select: { id: true },
+      });
+      if (invitation) return true;
+
+      // No valid path to sign in — redirect with error.
+      return "/login?error=not-invited";
+    },
+  },
+  events: {
+    async createUser({ user }) {
+      const email = user.email;
+      if (!email) return;
+
+      try {
+        const superadminEmail = process.env.SUPERADMIN_EMAIL;
+
+        // If this is the designated superadmin, elevate their role.
+        if (superadminEmail && email === superadminEmail) {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { role: "SUPERADMIN" },
+          });
+          return;
+        }
+
+        // If there's a PENDING invitation, mark it accepted.
+        const invitation = await prisma.invitation.findFirst({
+          where: {
+            email,
+            status: "PENDING",
+            expiresAt: { gt: new Date() },
+          },
+          select: { id: true },
+        });
+        if (invitation) {
+          await prisma.invitation.update({
+            where: { id: invitation.id },
+            data: { status: "ACCEPTED" },
+          });
+        }
+      } catch {
+        // Errors must NOT break signup — log only.
+        console.error("[auth] createUser event failed for:", email);
+      }
     },
   },
 });

@@ -1,0 +1,79 @@
+import "server-only";
+
+import { prisma } from "@/lib/prisma";
+import { requireSuperAdmin, UnauthorizedError, ForbiddenError } from "@/lib/auth/require-auth";
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+): Promise<Response> {
+  try {
+    const { userId: callerId } = await requireSuperAdmin();
+
+    const { id } = await params;
+
+    // EC1: Prevent self-delete
+    if (id === callerId) {
+      return Response.json(
+        { error: "You cannot delete your own account" },
+        { status: 422 }
+      );
+    }
+
+    const targetUser = await prisma.user.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+
+    if (!targetUser) {
+      return Response.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // EC9: Prevent deletion if user is the sole ADMIN of any group
+    const adminMemberships = await prisma.groupMember.findMany({
+      where: { userId: id, role: "ADMIN", status: "ACCEPTED" },
+      select: { groupId: true, group: { select: { name: true } } },
+    });
+
+    if (adminMemberships.length > 0) {
+      // For each group where this user is an admin, check if there's another admin
+      const soleAdminGroups: string[] = [];
+      for (const membership of adminMemberships) {
+        const otherAdminCount = await prisma.groupMember.count({
+          where: {
+            groupId: membership.groupId,
+            role: "ADMIN",
+            status: "ACCEPTED",
+            userId: { not: id },
+          },
+        });
+        if (otherAdminCount === 0) {
+          soleAdminGroups.push(membership.group.name);
+        }
+      }
+
+      if (soleAdminGroups.length > 0) {
+        return Response.json(
+          {
+            error: `Cannot delete user: they are the sole admin of the following group(s): ${soleAdminGroups.join(", ")}. Promote another member to admin first.`,
+          },
+          { status: 422 }
+        );
+      }
+    }
+
+    // Cascade is handled by Prisma schema (onDelete: Cascade on UserBook, Account, Session)
+    await prisma.user.delete({ where: { id } });
+
+    return new Response(null, { status: 204 });
+  } catch (error) {
+    if (error instanceof UnauthorizedError) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (error instanceof ForbiddenError) {
+      return Response.json({ error: "Forbidden" }, { status: 403 });
+    }
+    console.error("[DELETE /api/admin/users/[id]]", error);
+    return Response.json({ error: "Internal server error" }, { status: 500 });
+  }
+}

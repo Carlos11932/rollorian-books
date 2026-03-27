@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { auth, signOut } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 import { SiteHeader } from './site-header';
 import { NavLinks } from './nav-links';
 import { MobileNav } from './mobile-nav';
@@ -19,7 +20,15 @@ export async function AppShell({ children }: AppShellProps) {
     name: session?.user?.name ?? null,
     email: session?.user?.email ?? "",
     image: session?.user?.image ?? null,
+    role: session?.user?.role ?? "USER",
   };
+
+  // Fetch pending group invitation count for nav badge
+  const pendingGroupInvitations = session?.user?.id
+    ? await prisma.groupMember.count({
+        where: { userId: session.user.id, status: 'PENDING' },
+      })
+    : 0;
 
   async function signOutAction() {
     "use server";
@@ -29,7 +38,7 @@ export async function AppShell({ children }: AppShellProps) {
   return (
     <>
       {/* Fixed top nav */}
-      <SiteHeader user={user} signOutAction={signOutAction} />
+      <SiteHeader user={user} signOutAction={signOutAction} role={user.role} />
 
       {/* Fixed sidebar — desktop only */}
       <aside className="fixed left-0 top-0 h-full w-64 hidden lg:flex flex-col py-8 z-40 bg-surface-container-lowest shadow-[40px_0_40px_rgba(0,17,12,0.4)]">
@@ -51,7 +60,7 @@ export async function AppShell({ children }: AppShellProps) {
         </div>
 
         {/* Sidebar nav links */}
-        <NavLinks />
+        <NavLinks role={user.role} pendingGroupInvitations={pendingGroupInvitations} />
 
         {/* Sidebar footer */}
         <div className="px-6 flex flex-col gap-4">
@@ -74,7 +83,7 @@ export async function AppShell({ children }: AppShellProps) {
       <main className="lg:pl-64 pt-16 min-h-screen">{children}</main>
 
       {/* Mobile bottom nav */}
-      <MobileNav />
+      <MobileNav role={user.role} pendingGroupInvitations={pendingGroupInvitations} />
     </>
   );
 }
