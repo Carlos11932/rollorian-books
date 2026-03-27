@@ -9,7 +9,7 @@ export const updateGroupSchema = z.object({
 });
 
 export const inviteMemberSchema = z.object({
-  userId: z.string().min(1, { error: "User ID is required" }),
+  email: z.string().email({ error: "A valid email is required" }),
 });
 
 export const updateMemberStatusSchema = z.object({

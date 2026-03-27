@@ -41,17 +41,19 @@ export async function POST(
       );
     }
 
-    const { userId: invitedUserId } = result.data;
+    const { email } = result.data;
 
-    // Check the invited user exists
+    // Look up the invited user by email
     const invitedUser = await prisma.user.findUnique({
-      where: { id: invitedUserId },
+      where: { email },
       select: { id: true },
     });
 
     if (!invitedUser) {
       return Response.json({ error: "User not found" }, { status: 404 });
     }
+
+    const invitedUserId = invitedUser.id;
 
     // Check not already a member
     const existingMembership = await prisma.groupMember.findUnique({

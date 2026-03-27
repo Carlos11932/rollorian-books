@@ -4,6 +4,7 @@ import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin, UnauthorizedError, ForbiddenError } from "@/lib/auth/require-auth";
 import { z } from "zod";
+import { sendInvitationEmail } from "@/lib/email/send-invitation";
 
 const createInvitationSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -92,6 +93,11 @@ export async function POST(request: NextRequest): Promise<Response> {
           select: { id: true, name: true },
         },
       },
+    });
+
+    // Fire-and-forget: don't block response on email delivery
+    sendInvitationEmail(email).catch((err) => {
+      console.error("[POST /api/admin/invitations] email failed:", err);
     });
 
     return Response.json(invitation, { status: 201 });

@@ -12,14 +12,14 @@ interface InviteMemberFormProps {
 export function InviteMemberForm({ groupId }: InviteMemberFormProps) {
   const t = useTranslations('groups');
   const router = useRouter();
-  const [userId, setUserId] = useState('');
+  const [email, setEmail] = useState('');
   const [inviting, setInviting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const trimmed = userId.trim();
+    const trimmed = email.trim();
     if (!trimmed) return;
 
     setInviting(true);
@@ -30,11 +30,11 @@ export function InviteMemberForm({ groupId }: InviteMemberFormProps) {
       const res = await fetch(`/api/groups/${groupId}/members`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: trimmed }),
+        body: JSON.stringify({ email: trimmed }),
       });
 
       if (res.ok) {
-        setUserId('');
+        setEmail('');
         setSuccess(true);
         router.refresh();
       } else {
@@ -52,14 +52,14 @@ export function InviteMemberForm({ groupId }: InviteMemberFormProps) {
     <form onSubmit={(e) => void handleSubmit(e)} className="grid gap-3">
       <div className="flex gap-2">
         <input
-          type="text"
-          value={userId}
-          onChange={(e) => setUserId(e.target.value)}
-          placeholder={t('inviteUserIdPlaceholder')}
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder={t('inviteEmailPlaceholder')}
           disabled={inviting}
           className="flex-1 bg-surface-container-lowest border border-line text-on-surface placeholder:text-outline text-sm py-2.5 px-4 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
         />
-        <Button type="submit" size="sm" loading={inviting} disabled={!userId.trim()}>
+        <Button type="submit" size="sm" loading={inviting} disabled={!email.trim()}>
           {inviting ? t('inviting') : t('inviteButton')}
         </Button>
       </div>
