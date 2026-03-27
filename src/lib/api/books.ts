@@ -5,7 +5,7 @@
  * Components import these functions instead of calling fetch directly.
  */
 
-import type { Book } from "@/lib/types/book";
+import type { UserBookWithBook } from "@/lib/types/book";
 import type { CreateBookInput, UpdateBookInput } from "@/lib/schemas/book";
 
 // Re-export input types for consumers
@@ -48,8 +48,8 @@ async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
  * Save a Google Books entry to the user's library.
  * Maps to POST /api/books.
  */
-export async function saveBook(data: CreateBookInput): Promise<Book> {
-  return apiFetch<Book>("/api/books", {
+export async function saveBook(data: CreateBookInput): Promise<UserBookWithBook> {
+  return apiFetch<UserBookWithBook>("/api/books", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),

@@ -21,10 +21,10 @@ export default async function LoginPage() {
             <span className="material-symbols-outlined text-primary text-[28px]">auto_stories</span>
           </div>
           <h1 className="text-2xl font-black tracking-tighter text-primary font-headline">
-            The Private Curator
+            Rollorian Books
           </h1>
           <p className="text-sm text-tertiary text-center">
-            Your personal book archive
+            Tu biblioteca personal
           </p>
         </div>
 
@@ -73,7 +73,7 @@ export default async function LoginPage() {
 
         {/* Footer note */}
         <p className="text-xs text-tertiary/60 text-center mt-6">
-          Private collection — by invitation only
+          Colección privada — solo por invitación
         </p>
       </div>
     </div>

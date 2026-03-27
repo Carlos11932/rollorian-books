@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { saveBook, updateBook, deleteBook, ApiError } from "@/lib/api/books";
-import type { Book } from "@/lib/types/book";
+import type { Book, UserBookWithBook } from "@/lib/types/book";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -17,11 +17,7 @@ function makeBook(overrides: Partial<Book> = {}): Book {
     pageCount: null,
     isbn10: null,
     isbn13: "9780135957059",
-    status: "WISHLIST",
-    rating: null,
-    notes: null,
     genres: [],
-    ownerId: "user-001",
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
     ...overrides,
@@ -63,9 +59,20 @@ describe("saveBook", () => {
     vi.unstubAllGlobals();
   });
 
-  it("returns the saved Book on a 201 response", async () => {
+  it("returns the saved UserBookWithBook on a 201 response", async () => {
     const book = makeBook();
-    vi.mocked(fetch).mockResolvedValue(makeJsonResponse(book, 201));
+    const userBook: UserBookWithBook = {
+      id: "ub-001",
+      userId: "user-001",
+      bookId: book.id,
+      status: "WISHLIST",
+      rating: null,
+      notes: null,
+      createdAt: new Date("2024-01-01"),
+      updatedAt: new Date("2024-01-01"),
+      book,
+    };
+    vi.mocked(fetch).mockResolvedValue(makeJsonResponse(userBook, 201));
 
     const result = await saveBook({
       title: "The Pragmatic Programmer",
@@ -76,10 +83,9 @@ describe("saveBook", () => {
 
     // JSON round-trips dates as strings — match the stable fields only
     expect(result).toMatchObject({
-      id: book.id,
-      title: book.title,
-      authors: book.authors,
-      status: book.status,
+      id: userBook.id,
+      status: userBook.status,
+      book: { id: book.id, title: book.title },
     });
     expect(fetch).toHaveBeenCalledWith(
       "/api/books",
@@ -136,7 +142,7 @@ describe("updateBook", () => {
   });
 
   it("resolves without a value on a 200 response", async () => {
-    const book = makeBook({ status: "READING" });
+    const book = makeBook();
     vi.mocked(fetch).mockResolvedValue(makeJsonResponse(book, 200));
 
     await expect(updateBook("book-123", { status: "READING" })).resolves.toBeUndefined();
@@ -159,7 +165,7 @@ describe("updateBook", () => {
   });
 
   it("sends status, rating and notes in the request body", async () => {
-    const book = makeBook({ status: "READ", rating: 4 });
+    const book = makeBook();
     vi.mocked(fetch).mockResolvedValue(makeJsonResponse(book, 200));
 
     await updateBook("book-123", { status: "READ", rating: 4, notes: "Great book" });

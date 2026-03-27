@@ -1,6 +1,4 @@
--- Make Book.ownerId NOT NULL
--- PREREQUISITE: scripts/migrate-book-owners.ts must have been run first
--- (all books must have an ownerId value before this migration can apply)
-
--- AlterTable
-ALTER TABLE "Book" ALTER COLUMN "ownerId" SET NOT NULL;
+-- This migration is intentionally empty.
+-- Originally attempted to make Book.ownerId NOT NULL, but the column
+-- is being removed entirely in the next migration (refactor_userbook_junction).
+-- Kept as a no-op so Prisma's migration history stays consistent.

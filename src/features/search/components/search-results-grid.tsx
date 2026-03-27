@@ -33,8 +33,6 @@ function toDisplayBook(book: NormalizedBook): SerializableBook {
     rating: null,
     notes: null,
     genres: [],
-    // ownerId is required on the type but not meaningful for search display objects
-    ownerId: "",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };

@@ -14,14 +14,14 @@ enum BookStatus {
 }
 
 model User {
-  id            String    @id @default(cuid())
+  id            String     @id @default(cuid())
   name          String?
-  email         String    @unique
+  email         String     @unique
   emailVerified DateTime?
   image         String?
   accounts      Account[]
   sessions      Session[]
-  books         Book[]
+  userBooks     UserBook[]
 }
 
 model Account {
@@ -70,17 +70,28 @@ model Book {
   pageCount     Int?
   isbn10        String?
   isbn13        String?
-  status        BookStatus @default(WISHLIST)
-  rating        Int?
-  notes         String?
   genres        String[]
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
-  ownerId       String
-  owner         User       @relation(fields: [ownerId], references: [id])
+  userBooks     UserBook[]
 
-  @@index([status])
   @@index([createdAt])
-  @@index([ownerId])
-  @@index([ownerId, status])
+}
+
+model UserBook {
+  id        String     @id @default(cuid())
+  userId    String
+  bookId    String
+  status    BookStatus @default(WISHLIST)
+  rating    Int?
+  notes     String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book      Book       @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, bookId])
+  @@index([userId])
+  @@index([userId, status])
+  @@index([bookId])
 }

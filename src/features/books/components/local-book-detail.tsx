@@ -1,7 +1,7 @@
 import Link from "next/link";
-import type { Book } from "@/lib/types/book";
+import type { UserBookWithBook } from "@/lib/types/book";
 import { stripHtml } from "@/lib/utils/text";
-import { serializeBook } from "@/features/books/types";
+import { serializeUserBook } from "@/features/books/types";
 import { BookCover } from "@/features/books/components/book-cover";
 import { BookDetailClient } from "@/features/books/components/book-detail-client";
 import { Badge } from "@/features/shared/components/badge";
@@ -11,11 +11,12 @@ import { NotesCard } from "@/features/books/components/notes-card";
 import { BlurredBackground } from "@/features/shared/components/blurred-background";
 
 interface LocalBookDetailProps {
-  book: Book;
+  userBook: UserBookWithBook;
 }
 
-export function LocalBookDetail({ book }: LocalBookDetailProps) {
-  const serialized = serializeBook(book);
+export function LocalBookDetail({ userBook }: LocalBookDetailProps) {
+  const book = userBook.book;
+  const serialized = serializeUserBook(userBook);
   const authorLine = book.authors.length > 0 ? book.authors.join(", ") : "Unknown author";
   const yearLine = book.publishedDate ? book.publishedDate.slice(0, 4) : null;
 
@@ -72,8 +73,8 @@ export function LocalBookDetail({ book }: LocalBookDetailProps) {
               </div>
 
               <div className="flex flex-wrap items-center gap-3">
-                <Badge status={book.status} />
-                <StarRating rating={book.rating} />
+                <Badge status={userBook.status} />
+                <StarRating rating={userBook.rating} />
               </div>
 
               {book.description && (
@@ -94,7 +95,7 @@ export function LocalBookDetail({ book }: LocalBookDetailProps) {
           genres={book.genres}
         />
 
-        {book.notes && <NotesCard notes={book.notes} />}
+        {userBook.notes && <NotesCard notes={userBook.notes} />}
 
         <BookDetailClient book={serialized} />
       </div>

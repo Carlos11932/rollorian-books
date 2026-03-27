@@ -31,7 +31,7 @@ export function SiteHeader({ user, signOutAction }: SiteHeaderProps) {
         {/* Left: Logo + desktop nav */}
         <div className="flex items-center gap-12">
           <span className="text-xl font-bold tracking-tighter text-primary font-headline">
-            The Private Curator
+            Rollorian Books
           </span>
           <div className="hidden md:flex gap-8 items-center">
             {navItems.map(({ href, label }) => {

@@ -28,7 +28,6 @@ function makeBook(
     rating: null,
     notes: null,
     genres: [],
-    ownerId: "user-001",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     ...overrides,

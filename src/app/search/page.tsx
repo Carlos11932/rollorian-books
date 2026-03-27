@@ -29,8 +29,6 @@ function toDisplayBook(book: NormalizedBook): SerializableBook {
     rating: null,
     notes: null,
     genres: [],
-    // ownerId is required on the type but not meaningful for search display objects
-    ownerId: "",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
@@ -48,9 +46,28 @@ async function saveBookToLibrary(book: NormalizedBook): Promise<void> {
   });
 }
 
-interface LibraryBookEntry {
-  isbn13: string | null;
+/** Shape returned by GET /api/books (UserBookWithBook from the API) */
+interface UserBookApiEntry {
+  id: string;
   status: BookStatus;
+  rating: number | null;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+  book: {
+    id: string;
+    title: string;
+    subtitle: string | null;
+    authors: string[];
+    description: string | null;
+    coverUrl: string | null;
+    publisher: string | null;
+    publishedDate: string | null;
+    pageCount: number | null;
+    isbn10: string | null;
+    isbn13: string | null;
+    genres: string[];
+  };
 }
 
 // ── Genre bento data ────────────────────────────────────────────────────────
@@ -108,16 +125,25 @@ export default function SearchPage() {
   useEffect(() => {
     void fetch("/api/books")
       .then((res) => (res.ok ? res.json() : []))
-      .then((books: LibraryBookEntry[]) => {
+      .then((entries: UserBookApiEntry[]) => {
         const index = new Map<string, BookStatus>();
-        for (const book of books) {
-          if (book.isbn13) {
-            index.set(book.isbn13, book.status);
+        for (const entry of entries) {
+          if (entry.book.isbn13) {
+            index.set(entry.book.isbn13, entry.status);
           }
         }
         setLibraryIndex(index);
-        // Use all fetched books as suggestions (they are already SerializableBook-compatible)
-        setLibrarySuggestions(books as unknown as SerializableBook[]);
+        // Flatten UserBook + Book into SerializableBook shape for suggestions
+        setLibrarySuggestions(
+          entries.map((entry): SerializableBook => ({
+            ...entry.book,
+            status: entry.status,
+            rating: entry.rating,
+            notes: entry.notes,
+            createdAt: entry.createdAt,
+            updatedAt: entry.updatedAt,
+          })),
+        );
       })
       .catch(() => {
         // Non-critical — search still works without library data

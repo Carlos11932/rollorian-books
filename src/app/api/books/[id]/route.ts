@@ -2,7 +2,7 @@ import "server-only";
 
 import type { NextRequest } from "next/server";
 import { revalidatePath } from "next/cache";
-import type { Book } from "@/lib/types/book";
+import type { UserBookWithBook } from "@/lib/types/book";
 import { prisma } from "@/lib/prisma";
 import { updateBookSchema } from "@/lib/schemas/book";
 import { requireAuth, UnauthorizedError } from "@/lib/auth/require-auth";
@@ -23,17 +23,18 @@ export async function GET(
 ): Promise<Response> {
   try {
     const { userId } = await requireAuth();
-    const { id } = await params;
+    const { id: bookId } = await params;
 
-    const book: Book | null = await prisma.book.findUnique({
-      where: { id, ownerId: userId },
+    const userBook: UserBookWithBook | null = await prisma.userBook.findUnique({
+      where: { userId_bookId: { userId, bookId } },
+      include: { book: true },
     });
 
-    if (!book) {
+    if (!userBook) {
       return Response.json({ error: "Book not found" }, { status: 404 });
     }
 
-    return Response.json(book);
+    return Response.json(userBook);
   } catch (error) {
     if (error instanceof UnauthorizedError) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -49,10 +50,10 @@ export async function PATCH(
 ): Promise<Response> {
   try {
     const { userId } = await requireAuth();
-    const { id } = await params;
+    const { id: bookId } = await params;
 
-    const existing: Book | null = await prisma.book.findUnique({
-      where: { id, ownerId: userId },
+    const existing = await prisma.userBook.findUnique({
+      where: { userId_bookId: { userId, bookId } },
     });
     if (!existing) {
       return Response.json({ error: "Book not found" }, { status: 404 });
@@ -68,14 +69,15 @@ export async function PATCH(
       );
     }
 
-    const book: Book = await prisma.book.update({
-      where: { id },
+    const userBook: UserBookWithBook = await prisma.userBook.update({
+      where: { userId_bookId: { userId, bookId } },
       data: result.data,
+      include: { book: true },
     });
 
-    revalidateBookCollectionPaths(id);
+    revalidateBookCollectionPaths(bookId);
 
-    return Response.json(book);
+    return Response.json(userBook);
   } catch (error) {
     if (error instanceof UnauthorizedError) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -91,18 +93,20 @@ export async function DELETE(
 ): Promise<Response> {
   try {
     const { userId } = await requireAuth();
-    const { id } = await params;
+    const { id: bookId } = await params;
 
-    const existing: Book | null = await prisma.book.findUnique({
-      where: { id, ownerId: userId },
+    const existing = await prisma.userBook.findUnique({
+      where: { userId_bookId: { userId, bookId } },
     });
     if (!existing) {
       return Response.json({ error: "Book not found" }, { status: 404 });
     }
 
-    await prisma.book.delete({ where: { id } });
+    await prisma.userBook.delete({
+      where: { userId_bookId: { userId, bookId } },
+    });
 
-    revalidateBookCollectionPaths(id);
+    revalidateBookCollectionPaths(bookId);
 
     return new Response(null, { status: 204 });
   } catch (error) {
