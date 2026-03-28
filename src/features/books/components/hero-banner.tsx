@@ -3,10 +3,10 @@ import Link from "next/link";
 import { getTranslations } from 'next-intl/server';
 import { Badge } from "@/features/shared/components/badge";
 import { Button } from "@/features/shared/components/button";
-import type { SerializableBook } from "../types";
+import type { LibraryEntryView } from "../types";
 
 interface HeroBannerProps {
-  book: SerializableBook | null;
+  book: LibraryEntryView | null;
 }
 
 export async function HeroBanner({ book }: HeroBannerProps) {

@@ -1,21 +1,18 @@
 import "server-only";
 
 import type { NextRequest } from "next/server";
-import { revalidatePath } from "next/cache";
-import type { UserBookWithBook } from "@/lib/types/book";
-import { prisma } from "@/lib/prisma";
 import { updateBookSchema } from "@/lib/schemas/book";
 import { requireAuth, UnauthorizedError } from "@/lib/auth/require-auth";
+import {
+  getLibraryEntry,
+  updateLibraryEntry,
+  deleteLibraryEntry,
+  LibraryEntryNotFoundError,
+} from "@/lib/books";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
 };
-
-function revalidateBookCollectionPaths(bookId: string) {
-  revalidatePath("/");
-  revalidatePath("/library");
-  revalidatePath(`/books/${bookId}`);
-}
 
 export async function GET(
   _request: NextRequest,
@@ -25,19 +22,15 @@ export async function GET(
     const { userId } = await requireAuth();
     const { id: bookId } = await params;
 
-    const userBook: UserBookWithBook | null = await prisma.userBook.findUnique({
-      where: { userId_bookId: { userId, bookId } },
-      include: { book: true },
-    });
-
-    if (!userBook) {
-      return Response.json({ error: "Book not found" }, { status: 404 });
-    }
+    const userBook = await getLibraryEntry(userId, bookId);
 
     return Response.json(userBook);
   } catch (error) {
     if (error instanceof UnauthorizedError) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (error instanceof LibraryEntryNotFoundError) {
+      return Response.json({ error: "Book not found" }, { status: 404 });
     }
     console.error("[GET /api/books/[id]]", error);
     return Response.json({ error: "Internal server error" }, { status: 500 });
@@ -52,13 +45,6 @@ export async function PATCH(
     const { userId } = await requireAuth();
     const { id: bookId } = await params;
 
-    const existing = await prisma.userBook.findUnique({
-      where: { userId_bookId: { userId, bookId } },
-    });
-    if (!existing) {
-      return Response.json({ error: "Book not found" }, { status: 404 });
-    }
-
     const body: unknown = await request.json();
     const result = updateBookSchema.safeParse(body);
 
@@ -69,18 +55,15 @@ export async function PATCH(
       );
     }
 
-    const userBook: UserBookWithBook = await prisma.userBook.update({
-      where: { userId_bookId: { userId, bookId } },
-      data: result.data,
-      include: { book: true },
-    });
-
-    revalidateBookCollectionPaths(bookId);
+    const userBook = await updateLibraryEntry(userId, bookId, result.data);
 
     return Response.json(userBook);
   } catch (error) {
     if (error instanceof UnauthorizedError) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (error instanceof LibraryEntryNotFoundError) {
+      return Response.json({ error: "Book not found" }, { status: 404 });
     }
     console.error("[PATCH /api/books/[id]]", error);
     return Response.json({ error: "Internal server error" }, { status: 500 });
@@ -95,23 +78,15 @@ export async function DELETE(
     const { userId } = await requireAuth();
     const { id: bookId } = await params;
 
-    const existing = await prisma.userBook.findUnique({
-      where: { userId_bookId: { userId, bookId } },
-    });
-    if (!existing) {
-      return Response.json({ error: "Book not found" }, { status: 404 });
-    }
-
-    await prisma.userBook.delete({
-      where: { userId_bookId: { userId, bookId } },
-    });
-
-    revalidateBookCollectionPaths(bookId);
+    await deleteLibraryEntry(userId, bookId);
 
     return new Response(null, { status: 204 });
   } catch (error) {
     if (error instanceof UnauthorizedError) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (error instanceof LibraryEntryNotFoundError) {
+      return Response.json({ error: "Book not found" }, { status: 404 });
     }
     console.error("[DELETE /api/books/[id]]", error);
     return Response.json({ error: "Internal server error" }, { status: 500 });

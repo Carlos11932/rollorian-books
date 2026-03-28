@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import type { SerializableBook } from "@/features/books/types"
+import type { LibraryEntryView } from "@/features/books/types"
 import {
   groupBooksByGenre,
   genreAffinityScore,
@@ -11,8 +11,8 @@ import {
 // --- Test helper ---
 
 function makeBook(
-  overrides: Partial<SerializableBook> & { status: SerializableBook["status"] },
-): SerializableBook {
+  overrides: Partial<LibraryEntryView> & { status: LibraryEntryView["status"] },
+): LibraryEntryView {
   return {
     id: crypto.randomUUID(),
     title: "Test Book",

@@ -4,7 +4,7 @@ import type { NormalizedBook } from "@/lib/google-books/types";
 import { BookCard } from "@/features/books/components/book-card";
 import { Skeleton } from "@/features/shared/components/skeleton";
 import { EmptyState } from "@/features/shared/components/empty-state";
-import type { SerializableBook } from "@/features/books/types";
+import type { LibraryEntryView } from "@/features/books/types";
 
 interface SearchResultsGridProps {
   results: NormalizedBook[];
@@ -13,10 +13,10 @@ interface SearchResultsGridProps {
 }
 
 /**
- * Maps a NormalizedBook to a partial SerializableBook suitable for display.
+ * Maps a NormalizedBook to a partial LibraryEntryView suitable for display.
  * The "fake" id is the externalId — it's never used for DB lookups here.
  */
-function toDisplayBook(book: NormalizedBook): SerializableBook {
+function toDisplayBook(book: NormalizedBook): LibraryEntryView {
   return {
     id: book.externalId,
     title: book.title,
@@ -68,7 +68,7 @@ export function SearchResultsGrid({
   isLoading = false,
   hasSearched = false,
 }: SearchResultsGridProps) {
-  async function handleSave(displayBook: SerializableBook): Promise<void> {
+  async function handleSave(displayBook: LibraryEntryView): Promise<void> {
     // Find the original NormalizedBook to save correctly
     const original = results.find((r) => r.externalId === displayBook.id);
     if (!original) return;

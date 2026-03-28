@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getTranslations } from 'next-intl/server';
 import type { UserBookWithBook } from "@/lib/types/book";
 import { stripHtml } from "@/lib/utils/text";
-import { serializeUserBook } from "@/features/books/types";
+import { toLibraryEntryView } from "@/features/books/types";
 import { BookCover } from "@/features/books/components/book-cover";
 import { BookDetailClient } from "@/features/books/components/book-detail-client";
 import { Badge } from "@/features/shared/components/badge";
@@ -18,7 +18,7 @@ interface LocalBookDetailProps {
 export async function LocalBookDetail({ userBook }: LocalBookDetailProps) {
   const t = await getTranslations();
   const book = userBook.book;
-  const serialized = serializeUserBook(userBook);
+  const serialized = toLibraryEntryView(userBook);
   const authorLine = book.authors.length > 0 ? book.authors.join(", ") : t('common.unknownAuthor');
   const yearLine = book.publishedDate ? book.publishedDate.slice(0, 4) : null;
 

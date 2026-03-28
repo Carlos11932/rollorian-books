@@ -26,6 +26,14 @@ vi.mock("next/cache", () => ({
   revalidatePath: revalidatePathMock,
 }));
 
+vi.mock("@/lib/revalidation", () => ({
+  revalidateBookCollectionPaths: (bookId: string) => {
+    revalidatePathMock("/");
+    revalidatePathMock("/library");
+    revalidatePathMock(`/books/${bookId}`);
+  },
+}));
+
 // Import after mocks are established.
 import { POST, GET } from "@/app/api/books/route";
 import { prisma } from "@/lib/prisma";
