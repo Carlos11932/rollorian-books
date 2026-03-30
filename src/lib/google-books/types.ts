@@ -1,3 +1,5 @@
+export type { NormalizedBook } from "../book-providers/types";
+
 export interface GoogleBooksIndustryIdentifier {
   type: string;
   identifier: string;
@@ -29,14 +31,4 @@ export interface GoogleBooksVolume {
 export interface GoogleBooksResponse {
   totalItems: number;
   items?: GoogleBooksVolume[];
-}
-
-export interface NormalizedBook {
-  externalSource: "google_books";
-  externalId: string;
-  title: string;
-  authors: string[];
-  publishedYear: number | null;
-  isbn: string | null;
-  coverUrl: string | null;
 }

@@ -1,9 +1,8 @@
 import "server-only";
 
 import type { NextRequest } from "next/server";
-import { fetchBooks } from "@/lib/google-books/client";
-import { normalizeSearchResults } from "@/lib/google-books/normalize";
-import { analyzeQuery, rankSearchResults, PROVIDER_LIMIT } from "@/lib/google-books/strategy";
+import { searchBooks } from "@/lib/book-providers/search-orchestrator";
+import { analyzeQuery, rankSearchResults } from "@/lib/google-books/strategy";
 import { searchQuerySchema } from "@/lib/schemas/book";
 import { requireAuth, UnauthorizedError } from "@/lib/auth/require-auth";
 
@@ -26,12 +25,8 @@ export async function GET(request: NextRequest): Promise<Response> {
     const { q } = result.data;
     const analysis = analyzeQuery(q);
 
-    const rawVolumes = await fetchBooks(analysis.googleQuery, {
-      maxResults: analysis.providerMaxResults ?? PROVIDER_LIMIT,
-    });
-
-    const normalized = normalizeSearchResults(rawVolumes);
-    const ranked = rankSearchResults(normalized, analysis);
+    const allResults = await searchBooks(analysis.googleQuery);
+    const ranked = rankSearchResults(allResults, analysis);
 
     return Response.json(ranked);
   } catch (error) {

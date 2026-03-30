@@ -69,6 +69,13 @@ function normalizeBook(item: GoogleBooksVolume): NormalizedBook {
     publishedYear: extractPublishedYear(volumeInfo.publishedDate),
     isbn: isbn13 ?? isbn10,
     coverUrl: buildCoverUrl(volumeInfo.imageLinks),
+    description: volumeInfo.description ?? undefined,
+    pageCount: volumeInfo.pageCount ?? undefined,
+    publisher: volumeInfo.publisher ?? undefined,
+    genres: Array.isArray(volumeInfo.categories) && volumeInfo.categories.length > 0
+      ? volumeInfo.categories
+      : undefined,
+    subtitle: volumeInfo.subtitle ?? undefined,
   };
 }
 

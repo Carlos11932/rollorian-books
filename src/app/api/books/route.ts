@@ -11,6 +11,8 @@ import {
   saveLibraryEntry,
   DuplicateLibraryEntryError,
 } from "@/lib/books";
+import { fetchByIsbn } from "@/lib/book-providers/search-orchestrator";
+import { prisma } from "@/lib/prisma";
 
 export async function GET(request: NextRequest): Promise<Response> {
   try {
@@ -59,6 +61,14 @@ export async function POST(request: NextRequest): Promise<Response> {
 
     const userBook = await saveLibraryEntry(userId, result.data);
 
+    // Fire-and-forget enrichment — fill missing metadata from other providers
+    const book = userBook.book;
+    if (book.isbn13 && (!book.description || !book.coverUrl || !book.pageCount)) {
+      enrichBookMetadata(book.id, book.isbn13).catch(() => {
+        // Intentionally swallowed — enrichment is best-effort
+      });
+    }
+
     return Response.json(userBook, { status: 201 });
   } catch (error) {
     if (error instanceof UnauthorizedError) {
@@ -69,5 +79,43 @@ export async function POST(request: NextRequest): Promise<Response> {
     }
     console.error("[POST /api/books]", error);
     return Response.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Metadata enrichment (fire-and-forget)
+// ---------------------------------------------------------------------------
+
+async function enrichBookMetadata(
+  bookId: string,
+  isbn: string
+): Promise<void> {
+  const enriched = await fetchByIsbn(isbn);
+  if (!enriched) return;
+
+  const updates: Record<string, unknown> = {};
+
+  if (enriched.description) updates.description = enriched.description;
+  if (enriched.coverUrl) updates.coverUrl = enriched.coverUrl;
+  if (enriched.pageCount) updates.pageCount = enriched.pageCount;
+  if (enriched.publisher) updates.publisher = enriched.publisher;
+  if (enriched.subtitle) updates.subtitle = enriched.subtitle;
+
+  if (Object.keys(updates).length > 0) {
+    // Fetch current book to only fill missing fields, never overwrite
+    const current = await prisma.book.findUnique({ where: { id: bookId } });
+    if (!current) return;
+
+    const filtered: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(updates)) {
+      const existing = current[key as keyof typeof current];
+      if (existing === null || existing === undefined) {
+        filtered[key] = value;
+      }
+    }
+
+    if (Object.keys(filtered).length > 0) {
+      await prisma.book.update({ where: { id: bookId }, data: filtered });
+    }
   }
 }

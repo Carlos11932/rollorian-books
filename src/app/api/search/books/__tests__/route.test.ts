@@ -1,22 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
 import { requireAuth, UnauthorizedError } from "@/lib/auth/require-auth";
-import type { NormalizedBook } from "@/lib/google-books/types";
+import type { NormalizedBook } from "@/lib/book-providers/types";
 
-// Mock `@/lib/google-books/client` BEFORE importing the route so the module
-// initialiser never tries to reach the Google Books API in tests.
-vi.mock("@/lib/google-books/client", () => ({
-  fetchBooks: vi.fn(),
+// Mock the search orchestrator BEFORE importing the route so the module
+// initialiser never tries to reach any book API in tests.
+vi.mock("@/lib/book-providers/search-orchestrator", () => ({
+  searchBooks: vi.fn(),
 }));
 
 // Import after mocks are established.
 import { GET } from "@/app/api/search/books/route";
-import { fetchBooks } from "@/lib/google-books/client";
+import { searchBooks } from "@/lib/book-providers/search-orchestrator";
 
 // The global setup already mocks requireAuth — grab a typed reference
 // so individual tests can override the resolved value.
 const requireAuthMock = vi.mocked(requireAuth);
-const fetchBooksMock = vi.mocked(fetchBooks);
+const searchBooksMock = vi.mocked(searchBooks);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -27,14 +27,15 @@ function makeGetRequest(q?: string): NextRequest {
   return new NextRequest(url, { method: "GET" });
 }
 
-function makeGoogleVolume(id: string, title: string) {
+function makeNormalizedBook(id: string, title: string): NormalizedBook {
   return {
-    id,
-    volumeInfo: {
-      title,
-      authors: ["Test Author"],
-      publishedDate: "2023",
-    },
+    externalSource: "google_books",
+    externalId: id,
+    title,
+    authors: ["Test Author"],
+    publishedYear: 2023,
+    isbn: null,
+    coverUrl: null,
   };
 }
 
@@ -54,15 +55,15 @@ describe("GET /api/search/books", () => {
     expect(response.status).toBe(401);
     const json: unknown = await response.json();
     expect((json as { error: string }).error).toBe("Unauthorized");
-    expect(fetchBooksMock).not.toHaveBeenCalled();
+    expect(searchBooksMock).not.toHaveBeenCalled();
   });
 
   it("returns 200 with normalized and ranked results on successful search", async () => {
-    const volumes = [
-      makeGoogleVolume("vol-001", "Clean Code"),
-      makeGoogleVolume("vol-002", "The Clean Coder"),
+    const books = [
+      makeNormalizedBook("vol-001", "Clean Code"),
+      makeNormalizedBook("vol-002", "The Clean Coder"),
     ];
-    fetchBooksMock.mockResolvedValueOnce(volumes);
+    searchBooksMock.mockResolvedValueOnce(books);
 
     const request = makeGetRequest("clean code");
     const response = await GET(request);
@@ -74,7 +75,7 @@ describe("GET /api/search/books", () => {
     expect(results.length).toBeGreaterThan(0);
     expect(results[0]).toHaveProperty("externalSource", "google_books");
     expect(results[0]).toHaveProperty("title");
-    expect(fetchBooksMock).toHaveBeenCalledOnce();
+    expect(searchBooksMock).toHaveBeenCalledOnce();
   });
 
   it("returns 400 when the q param is missing", async () => {
@@ -84,7 +85,7 @@ describe("GET /api/search/books", () => {
     expect(response.status).toBe(400);
     const json: unknown = await response.json();
     expect((json as { error: string }).error).toBeTruthy();
-    expect(fetchBooksMock).not.toHaveBeenCalled();
+    expect(searchBooksMock).not.toHaveBeenCalled();
   });
 
   it("returns 400 when q is an empty string", async () => {
@@ -94,6 +95,6 @@ describe("GET /api/search/books", () => {
     expect(response.status).toBe(400);
     const json: unknown = await response.json();
     expect((json as { error: string }).error).toBeTruthy();
-    expect(fetchBooksMock).not.toHaveBeenCalled();
+    expect(searchBooksMock).not.toHaveBeenCalled();
   });
 });
