@@ -61,3 +61,29 @@ export interface UserBookWithBook extends UserBook {
 export interface BookWithUserData extends Book {
   userBooks: UserBook[];
 }
+
+// ── Book Lists (Shelves) ────────────────────────────────────────────────────
+
+export interface BookList {
+  id: string;
+  name: string;
+  description: string | null;
+  userId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface BookListItem {
+  id: string;
+  listId: string;
+  bookId: string;
+  addedAt: Date;
+}
+
+export interface BookListWithItems extends BookList {
+  items: (BookListItem & { book: Book })[];
+}
+
+export interface BookListSummary extends BookList {
+  _count: { items: number };
+}

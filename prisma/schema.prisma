@@ -50,6 +50,7 @@ model User {
   groupMembers  GroupMember[]
   followers     Follow[]      @relation("following")
   following     Follow[]      @relation("followers")
+  bookLists     BookList[]
 }
 
 model Group {
@@ -138,7 +139,7 @@ model VerificationToken {
 }
 
 model Book {
-  id            String     @id @default(cuid())
+  id            String         @id @default(cuid())
   title         String
   subtitle      String?
   authors       String[]
@@ -150,9 +151,10 @@ model Book {
   isbn10        String?
   isbn13        String?
   genres        String[]
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   userBooks     UserBook[]
+  listItems     BookListItem[]
 
   @@index([createdAt])
 }
@@ -173,4 +175,29 @@ model UserBook {
   @@index([userId])
   @@index([userId, status])
   @@index([bookId])
+}
+
+model BookList {
+  id          String         @id @default(cuid())
+  name        String
+  description String?
+  userId      String
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items       BookListItem[]
+
+  @@index([userId])
+}
+
+model BookListItem {
+  id         String   @id @default(cuid())
+  listId     String
+  bookId     String
+  addedAt    DateTime @default(now())
+  list       BookList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  book       Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@unique([listId, bookId])
+  @@index([listId])
 }
