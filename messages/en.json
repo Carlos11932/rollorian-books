@@ -24,7 +24,9 @@
     "appName": "The Archive",
     "tagline": "Private Collection",
     "addVolume": "Add New Volume",
-    "groups": "Groups"
+    "groups": "Groups",
+    "lists": "Lists",
+    "stats": "Stats"
   },
   "admin": {
     "heading": "Admin Panel",
@@ -96,6 +98,12 @@
     "resultsLabel": "Search results",
     "resultsCount": "{count} result(s) for \"{query}\"",
     "archivedSuggestions": "Archived Suggestions",
+    "scanIsbn": "Scan ISBN",
+    "scanning": "Point camera at book barcode",
+    "scanSuccess": "ISBN detected!",
+    "cameraPermission": "Camera access is needed to scan barcodes",
+    "cameraNotSupported": "Barcode scanning is not supported in this browser. Use Chrome or Safari.",
+    "closeScan": "Close scanner",
     "genres": {
       "novel": "Novel",
       "history": "History",
@@ -225,6 +233,52 @@
     "forbidden": "You don't have access to this group.",
     "you": "(you)",
     "noMembers": "No members yet."
+  },
+  "lists": {
+    "title": "My Lists",
+    "create": "Create List",
+    "name": "List name",
+    "description": "Description (optional)",
+    "empty": "No lists yet",
+    "createFirst": "Create your first list to organize your books",
+    "addToList": "Add to list",
+    "removeFromList": "Remove from list",
+    "bookCount": "{count, plural, one {# book} other {# books}}",
+    "deleteConfirm": "Delete this list?",
+    "deleteWarning": "This action cannot be undone. Books won't be deleted from your library.",
+    "created": "List created",
+    "deleted": "List deleted",
+    "bookAdded": "Book added to list",
+    "bookRemoved": "Book removed from list",
+    "alreadyInList": "Already in this list",
+    "editName": "Edit name",
+    "editDescription": "Edit description",
+    "backToLists": "Back to lists",
+    "emptyList": "No books in this list yet",
+    "emptyListDescription": "Add books from your library or search results",
+    "createNew": "Create new list",
+    "saving": "Saving...",
+    "deleting": "Deleting..."
+  },
+  "recommendations": {
+    "heading": "Readers Also Read",
+    "readerCount": "{count, plural, one {# reader} other {# readers}} in your circle",
+    "noRecommendations": "Follow readers or join groups to get recommendations"
+  },
+  "stats": {
+    "title": "Reading Stats",
+    "totalBooks": "Total Books",
+    "readThisYear": "Read This Year",
+    "averageRating": "Avg Rating",
+    "pagesRead": "Pages Read",
+    "booksPerMonth": "Books Read Per Month",
+    "topGenres": "Top Genres",
+    "readingStreak": "Reading Streak",
+    "streakWeeks": "{count} week streak",
+    "streakDays": "{count} day streak",
+    "noStreak": "Start reading to build your streak!",
+    "noData": "No reading data yet",
+    "startReading": "Add some books to see your stats"
   },
   "errors": {
     "notFoundTitle": "Page not found",
