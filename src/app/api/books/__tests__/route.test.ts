@@ -178,6 +178,22 @@ describe("POST /api/books", () => {
     expect(response.status).toBe(400);
   });
 
+  it("returns 409 when the book is already in the user's library", async () => {
+    const existingBook = makeBook();
+    const existingUserBook = makeUserBook(existingBook);
+    bookMock.findFirst.mockResolvedValue(existingBook);
+    userBookMock.findUnique.mockResolvedValue(existingUserBook);
+
+    const request = makePostRequest(validBody);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = await POST(request as any);
+
+    expect(response.status).toBe(409);
+    const json: unknown = await response.json();
+    expect((json as { error: string }).error).toContain("already");
+    expect(userBookMock.create).not.toHaveBeenCalled();
+  });
+
   it("returns 500 when prisma throws an unexpected error", async () => {
     bookMock.create.mockRejectedValue(new Error("DB connection lost"));
     const request = makePostRequest(validBody);

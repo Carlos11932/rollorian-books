@@ -24,8 +24,9 @@ export async function GET(request: NextRequest): Promise<Response> {
       throw new InvalidStatusError([...BOOK_STATUS_VALUES]);
     }
 
+    // After the guard above, statusParam is either null or a valid BookStatus
     const userBooks = await getLibrary(userId, {
-      status: statusParam !== null && isBookStatus(statusParam) ? statusParam : undefined,
+      status: statusParam ?? undefined,
       q: qParam ?? undefined,
     });
 

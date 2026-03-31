@@ -1,3 +1,5 @@
+import "server-only";
+
 export { DuplicateLibraryEntryError, LibraryEntryNotFoundError, InvalidStatusError } from "./errors";
 export { saveLibraryEntry } from "./save-library-entry";
 export { updateLibraryEntry } from "./update-library-entry";
