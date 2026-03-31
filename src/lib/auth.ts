@@ -68,6 +68,7 @@ function getProviders() {
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
   providers: getProviders(),
+  trustHost: true,
   session: (isE2ETestMode || isPreviewEnv) ? { strategy: "jwt" } : undefined,
   pages: {
     signIn: "/login",
