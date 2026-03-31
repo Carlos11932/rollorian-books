@@ -5,6 +5,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 
 const isE2ETestMode = process.env.E2E_TEST_MODE === "true";
+const isPreviewEnv = process.env.VERCEL_ENV === "preview";
 
 // CredentialsProvider is only added in E2E test mode.
 // It allows Playwright tests to authenticate without requiring Google OAuth.
@@ -29,9 +30,38 @@ const e2eCredentialsProvider = Credentials({
   },
 });
 
+// Preview auth — allows signing in by email on Vercel preview deployments.
+// Unlike E2E, this does NOT create users — you must already exist in the DB.
+// Activated automatically by Vercel's VERCEL_ENV=preview.
+const previewCredentialsProvider = Credentials({
+  id: "preview",
+  name: "Preview Login",
+  credentials: {
+    email: { label: "Email", type: "email" },
+  },
+  async authorize(credentials) {
+    if (!isPreviewEnv) return null;
+    const email = credentials?.email as string | undefined;
+    if (!email) return null;
+    // Only allow existing users — no account creation in previews
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: { id: true, email: true, name: true },
+    });
+    if (!user) return null;
+    return { id: user.id, email: user.email, name: user.name };
+  },
+});
+
+function getProviders() {
+  if (isE2ETestMode) return [Google, e2eCredentialsProvider];
+  if (isPreviewEnv) return [Google, previewCredentialsProvider];
+  return [Google];
+}
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
-  providers: isE2ETestMode ? [Google, e2eCredentialsProvider] : [Google],
+  providers: getProviders(),
   pages: {
     signIn: "/login",
   },

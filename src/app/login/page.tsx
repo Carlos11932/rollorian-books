@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { auth, signIn } from "@/lib/auth";
 
+const isPreviewEnv = process.env.VERCEL_ENV === "preview";
+
 export default async function LoginPage() {
   const session = await auth();
 
@@ -31,7 +33,7 @@ export default async function LoginPage() {
         {/* Divider */}
         <div className="border-t border-outline-variant/20 mb-6" />
 
-        {/* Sign in form */}
+        {/* Google Sign in — always available */}
         <form
           action={async () => {
             "use server";
@@ -71,9 +73,45 @@ export default async function LoginPage() {
           </button>
         </form>
 
+        {/* Preview auth — email login for Vercel preview deployments */}
+        {isPreviewEnv && (
+          <>
+            <div className="flex items-center gap-3 my-4">
+              <div className="flex-1 border-t border-outline-variant/20" />
+              <span className="text-xs text-tertiary/60">Preview mode</span>
+              <div className="flex-1 border-t border-outline-variant/20" />
+            </div>
+
+            <form
+              action={async (formData: FormData) => {
+                "use server";
+                const email = formData.get("email") as string;
+                await signIn("preview", { email, redirectTo: "/" });
+              }}
+              className="flex flex-col gap-2"
+            >
+              <input
+                name="email"
+                type="email"
+                required
+                placeholder="tu@email.com"
+                className="w-full bg-surface-container-high border border-outline-variant/30 text-on-surface text-sm py-2.5 px-3 rounded-lg placeholder:text-tertiary/40 focus:outline-none focus:border-primary/60 transition-colors"
+              />
+              <button
+                type="submit"
+                className="w-full bg-tertiary-container hover:bg-tertiary-container/80 text-on-tertiary-container font-medium text-sm py-2.5 px-4 rounded-lg transition-colors"
+              >
+                Sign in with email
+              </button>
+            </form>
+          </>
+        )}
+
         {/* Footer note */}
         <p className="text-xs text-tertiary/60 text-center mt-6">
-          Colección privada — solo por invitación
+          {isPreviewEnv
+            ? "Preview deployment — email login available"
+            : "Colección privada — solo por invitación"}
         </p>
       </div>
     </div>
