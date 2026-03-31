@@ -7,6 +7,7 @@ import {
   isMissingUserBookSchemaError,
 } from "@/lib/prisma-schema-compat";
 import { requireAuth, UnauthorizedError } from "@/lib/auth/require-auth";
+import { canViewUserBooks } from "@/lib/privacy/can-view-user-books";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -83,7 +84,15 @@ function getRecommendations(userId: string) {
         ...groupMembers.map((m) => m.userId),
       ]);
 
-      if (similarReaderIds.size === 0) {
+      const allowedReaderIds = (
+        await Promise.all(
+          [...similarReaderIds].map(async (readerId) => (
+            await canViewUserBooks(userId, readerId) ? readerId : null
+          )),
+        )
+      ).filter((readerId): readerId is string => readerId !== null);
+
+      if (allowedReaderIds.length === 0) {
         return [];
       }
 
@@ -91,7 +100,7 @@ function getRecommendations(userId: string) {
       const myBookIdArray = [...myBookIds];
       const candidateBooks = await prisma.userBook.findMany({
         where: {
-          userId: { in: [...similarReaderIds] },
+          userId: { in: allowedReaderIds },
           status: { in: ["READ", "READING"] },
           bookId: { notIn: myBookIdArray },
         },
