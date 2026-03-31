@@ -1,8 +1,10 @@
-import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { NextResponse, type NextRequest } from "next/server";
 
-export default auth((request) => {
-  if (request.auth) {
+export default function middleware(request: NextRequest) {
+  const token = request.cookies.get("authjs.session-token")?.value
+    || request.cookies.get("__Secure-authjs.session-token")?.value;
+
+  if (token) {
     return NextResponse.next();
   }
 
@@ -13,7 +15,7 @@ export default auth((request) => {
   );
 
   return NextResponse.redirect(loginUrl);
-});
+}
 
 export const config = {
   matcher: [
