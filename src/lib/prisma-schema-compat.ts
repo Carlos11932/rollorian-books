@@ -21,3 +21,14 @@ export function isMissingListsSchemaError(error: unknown): boolean {
     && /(BookList|bookList|BookListItem|bookListItem)/i.test(getErrorMessage(error))
   );
 }
+
+export function isMissingUserRoleError(error: unknown): boolean {
+  return isPrismaSchemaMismatchError(error) && /role/i.test(getErrorMessage(error));
+}
+
+export function isMissingSocialSchemaError(error: unknown): boolean {
+  return (
+    isPrismaSchemaMismatchError(error)
+    && /(Invitation|invitation|GroupMember|groupMember|Follow|follow)/i.test(getErrorMessage(error))
+  );
+}

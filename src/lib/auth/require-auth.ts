@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isMissingUserRoleError } from "@/lib/prisma-schema-compat";
 import type { UserRole } from "@/lib/types/user";
 
 /**
@@ -62,14 +63,26 @@ export async function requireSuperAdmin(): Promise<{
 
   const userId = session.user.id;
 
-  const dbUser = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { role: true },
-  });
+  try {
+    const dbUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true },
+    });
 
-  if (!dbUser || dbUser.role !== "SUPERADMIN") {
+    if (!dbUser || dbUser.role !== "SUPERADMIN") {
+      throw new ForbiddenError();
+    }
+
+    return { userId, role: dbUser.role };
+  } catch (error) {
+    if (!isMissingUserRoleError(error)) {
+      throw error;
+    }
+
+    if (session.user.email && process.env.SUPERADMIN_EMAIL === session.user.email) {
+      return { userId, role: "SUPERADMIN" };
+    }
+
     throw new ForbiddenError();
   }
-
-  return { userId, role: dbUser.role };
 }
