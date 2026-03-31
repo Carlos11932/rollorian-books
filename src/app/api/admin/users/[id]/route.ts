@@ -36,21 +36,24 @@ export async function DELETE(
     });
 
     if (adminMemberships.length > 0) {
-      // For each group where this user is an admin, check if there's another admin
-      const soleAdminGroups: string[] = [];
-      for (const membership of adminMemberships) {
-        const otherAdminCount = await prisma.groupMember.count({
-          where: {
-            groupId: membership.groupId,
-            role: "ADMIN",
-            status: "ACCEPTED",
-            userId: { not: id },
-          },
-        });
-        if (otherAdminCount === 0) {
-          soleAdminGroups.push(membership.group.name);
-        }
-      }
+      const groupIds = adminMemberships.map((m) => m.groupId);
+
+      // Count other admins per group in a single query
+      const otherAdminCounts = await prisma.groupMember.groupBy({
+        by: ["groupId"],
+        where: {
+          groupId: { in: groupIds },
+          role: "ADMIN",
+          status: "ACCEPTED",
+          userId: { not: id },
+        },
+        _count: { userId: true },
+      });
+
+      const groupsWithOtherAdmins = new Set(otherAdminCounts.map((r) => r.groupId));
+      const soleAdminGroups = adminMemberships
+        .filter((m) => !groupsWithOtherAdmins.has(m.groupId))
+        .map((m) => m.group.name);
 
       if (soleAdminGroups.length > 0) {
         return Response.json(

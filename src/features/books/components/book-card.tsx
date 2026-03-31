@@ -9,7 +9,7 @@ import { Badge } from "@/features/shared/components/badge";
 import { Button } from "@/features/shared/components/button";
 import { BookCover } from "./book-cover";
 import { CardOverlay } from "./card-overlay";
-import type { SerializableBook } from "../types";
+import type { LibraryEntryView } from "../types";
 
 // --- Discriminated union for variant-specific props ---
 
@@ -20,7 +20,7 @@ interface BrowseVariantProps {
 interface SearchVariantProps {
   variant: "search";
   savedStatus?: BookStatus | null;
-  onSave?: (book: SerializableBook) => Promise<void>;
+  onSave?: (book: LibraryEntryView) => Promise<void>;
 }
 
 interface LibraryVariantProps {
@@ -32,7 +32,7 @@ interface LibraryVariantProps {
 type VariantProps = BrowseVariantProps | SearchVariantProps | LibraryVariantProps;
 
 interface BaseBookCardProps {
-  book: SerializableBook;
+  book: LibraryEntryView;
   index?: number;
 }
 
@@ -101,7 +101,7 @@ function SearchCard({
   onSave,
 }: BaseBookCardProps & SearchVariantProps) {
   const t = useTranslations('common');
-  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const authorLine = book.authors.length > 0 ? book.authors.join(", ") : t('unknownAuthor');
 
   const isAlreadySaved = savedStatus != null;
@@ -116,7 +116,8 @@ function SearchCard({
       await onSave(book);
       setSaveState("saved");
     } catch {
-      setSaveState("idle");
+      setSaveState("error");
+      setTimeout(() => setSaveState("idle"), 2000);
     }
   }
 
@@ -176,14 +177,16 @@ function SearchCard({
               "focus:outline-none focus:ring-2 focus:ring-primary/50",
               saveState === "saved"
                 ? "bg-white/10 text-white/50 border-white/10 cursor-default"
-                : "bg-primary/15 text-primary border-primary/30 hover:bg-primary/25",
+                : saveState === "error"
+                  ? "bg-error/15 text-error border-error/30"
+                  : "bg-primary/15 text-primary border-primary/30 hover:bg-primary/25",
               saveState === "saving" && "opacity-60 cursor-not-allowed",
             )}
           >
             <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>
-              {saveState === "saved" ? "bookmark" : "bookmark_add"}
+              {saveState === "saved" ? "bookmark" : saveState === "error" ? "error" : "bookmark_add"}
             </span>
-            {saveState === "saving" ? t('saving') : saveState === "saved" ? t('saved') : t('save')}
+            {saveState === "saving" ? t('saving') : saveState === "saved" ? t('saved') : saveState === "error" ? t('error') : t('save')}
           </button>
         )}
       </div>

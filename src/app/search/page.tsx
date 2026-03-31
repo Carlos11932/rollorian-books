@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useTranslations } from 'next-intl';
 import type { NormalizedBook } from "@/lib/google-books/types";
-import type { SerializableBook } from "@/features/books/types";
+import type { LibraryEntryView } from "@/features/books/types";
 import type { BookStatus } from "@/lib/types/book";
 import { BookCard } from "@/features/books/components/book-card";
 import { Skeleton } from "@/features/shared/components/skeleton";
@@ -14,7 +14,7 @@ import { saveBook } from "@/lib/api/books";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-function toDisplayBook(book: NormalizedBook): SerializableBook {
+function toDisplayBook(book: NormalizedBook): LibraryEntryView {
   return {
     id: book.externalId,
     title: book.title,
@@ -117,7 +117,7 @@ export default function SearchPage() {
 
   // Library books indexed by isbn13 for fast lookup
   const [libraryIndex, setLibraryIndex] = useState<Map<string, BookStatus>>(new Map());
-  const [librarySuggestions, setLibrarySuggestions] = useState<SerializableBook[]>([]);
+  const [librarySuggestions, setLibrarySuggestions] = useState<LibraryEntryView[]>([]);
 
   // Discover genre carousels
   const [discoverGenres, setDiscoverGenres] = useState<DiscoverGenre[]>([]);
@@ -135,9 +135,9 @@ export default function SearchPage() {
           }
         }
         setLibraryIndex(index);
-        // Flatten UserBook + Book into SerializableBook shape for suggestions
+        // Flatten UserBook + Book into LibraryEntryView shape for suggestions
         setLibrarySuggestions(
-          entries.map((entry): SerializableBook => ({
+          entries.map((entry): LibraryEntryView => ({
             ...entry.book,
             status: entry.status,
             rating: entry.rating,
@@ -214,7 +214,7 @@ export default function SearchPage() {
     void handleSearch(queryValue);
   }
 
-  async function handleSave(displayBook: SerializableBook): Promise<void> {
+  async function handleSave(displayBook: LibraryEntryView): Promise<void> {
     const original = results.find((r) => r.externalId === displayBook.id);
     if (!original) return;
     await saveBookToLibrary(original);
@@ -223,7 +223,7 @@ export default function SearchPage() {
     }
   }
 
-  async function handleDiscoverSave(displayBook: SerializableBook): Promise<void> {
+  async function handleDiscoverSave(displayBook: LibraryEntryView): Promise<void> {
     const original = discoverGenres
       .flatMap((g) => g.books)
       .find((b) => b.externalId === displayBook.id);

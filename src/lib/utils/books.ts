@@ -1,4 +1,4 @@
-import type { SerializableBook } from "@/features/books/types"
+import type { LibraryEntryView } from "@/features/books/types"
 import type { BookStatus } from "@/lib/types/book"
 import { toTitleCase } from "./text"
 
@@ -20,9 +20,9 @@ export const AFFINITY_WEIGHTS: Record<BookStatus, number> = {
  * Returns a Map preserving insertion order.
  */
 export function groupBooksByGenre(
-  books: SerializableBook[],
-): Map<string, SerializableBook[]> {
-  const byGenre = new Map<string, SerializableBook[]>()
+  books: LibraryEntryView[],
+): Map<string, LibraryEntryView[]> {
+  const byGenre = new Map<string, LibraryEntryView[]>()
 
   for (const book of books) {
     for (const genre of book.genres) {
@@ -46,7 +46,7 @@ export function groupBooksByGenre(
  * Higher score = user has more actively engaged with this genre.
  * READ (4) > READING (3) > TO_READ (2) > WISHLIST (1).
  */
-export function genreAffinityScore(books: SerializableBook[]): number {
+export function genreAffinityScore(books: LibraryEntryView[]): number {
   return books.reduce(
     (score, book) => score + (AFFINITY_WEIGHTS[book.status] ?? 1),
     0,
@@ -58,9 +58,9 @@ export function genreAffinityScore(books: SerializableBook[]): number {
  * capped at maxRails.
  */
 export function topGenreRails(
-  books: SerializableBook[],
+  books: LibraryEntryView[],
   maxRails: number = MAX_GENRE_RAILS,
-): Array<[string, SerializableBook[]]> {
+): Array<[string, LibraryEntryView[]]> {
   const byGenre = groupBooksByGenre(books)
 
   return [...byGenre.entries()]

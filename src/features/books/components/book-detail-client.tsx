@@ -5,12 +5,12 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from 'next-intl';
 import { cn } from "@/lib/cn";
 import { Button } from "@/features/shared/components/button";
-import type { SerializableBook } from "../types";
+import type { LibraryEntryView } from "../types";
 import { type BookStatus, BOOK_STATUS_VALUES } from "@/lib/types/book";
 import { updateBook, deleteBook } from "@/lib/api/books";
 
 interface BookDetailClientProps {
-  book: SerializableBook;
+  book: LibraryEntryView;
 }
 
 const SAVE_STATE = {

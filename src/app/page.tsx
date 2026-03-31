@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { EmptyState } from "@/features/shared/components/empty-state";
 import { Button } from "@/features/shared/components/button";
-import { serializeUserBook, type SerializableBook } from "@/features/books/types";
+import { toLibraryEntryView, type LibraryEntryView } from "@/features/books/types";
 import { BookRailSection } from "@/features/shared/ui/book-rail-section";
 import { BookCard } from "@/features/books/components/book-card";
 import { topGenreRails } from "@/lib/utils/books";
@@ -45,11 +45,11 @@ export default async function Home() {
     );
   }
 
-  const serializedBooks: SerializableBook[] = userBooks.map((ub) =>
-    serializeUserBook(ub),
+  const serializedBooks: LibraryEntryView[] = userBooks.map((ub) =>
+    toLibraryEntryView(ub),
   );
 
-  const byStatus: Record<BookStatus, SerializableBook[]> = {
+  const byStatus: Record<BookStatus, LibraryEntryView[]> = {
     READING: [],
     READ: [],
     TO_READ: [],
@@ -105,7 +105,7 @@ export default async function Home() {
                 </Link>
               </div>
               <div className="flex gap-6 overflow-x-auto hide-scrollbar pb-4 -mx-4 px-4">
-                {sectionBooks.map((book: SerializableBook) => {
+                {sectionBooks.map((book: LibraryEntryView) => {
                   const authorLine = book.authors.length > 0 ? book.authors.join(", ") : t('common.unknownAuthor');
                   const year = book.publishedDate ? new Date(book.publishedDate).getFullYear() : null;
 

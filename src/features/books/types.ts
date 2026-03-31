@@ -27,7 +27,7 @@ export interface GoogleBookView {
  * `status`, `rating`, and `notes` come from the UserBook junction row,
  * while the remaining fields come from the Book itself.
  */
-export type SerializableBook = Omit<Book, "createdAt" | "updatedAt"> & {
+export type LibraryEntryView = Omit<Book, "createdAt" | "updatedAt"> & {
   status: BookStatus;
   rating: number | null;
   notes: string | null;
@@ -42,7 +42,7 @@ export type SerializableBook = Omit<Book, "createdAt" | "updatedAt"> & {
  * Book-level fields come from `userBook.book`, while reading-state fields
  * (`status`, `rating`, `notes`) and timestamps come from the `userBook` itself.
  */
-export function serializeUserBook(userBook: UserBookWithBook): SerializableBook {
+export function toLibraryEntryView(userBook: UserBookWithBook): LibraryEntryView {
   const { book } = userBook;
   return {
     ...book,
