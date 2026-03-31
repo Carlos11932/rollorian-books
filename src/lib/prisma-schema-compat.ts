@@ -15,6 +15,10 @@ export function isMissingFinishedAtError(error: unknown): boolean {
   return isPrismaSchemaMismatchError(error) && /finishedAt/i.test(getErrorMessage(error));
 }
 
+export function isMissingUserBookSchemaError(error: unknown): boolean {
+  return isPrismaSchemaMismatchError(error) && /UserBook|userBook/i.test(getErrorMessage(error));
+}
+
 export function isMissingListsSchemaError(error: unknown): boolean {
   return (
     isPrismaSchemaMismatchError(error)

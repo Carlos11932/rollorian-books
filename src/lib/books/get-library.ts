@@ -2,7 +2,10 @@ import "server-only";
 
 import { prisma } from "@/lib/prisma";
 import { type BookStatus, type UserBookWithBook, BOOK_STATUS_VALUES } from "@/lib/types/book";
-import { isMissingFinishedAtError } from "@/lib/prisma-schema-compat";
+import {
+  isMissingFinishedAtError,
+  isMissingUserBookSchemaError,
+} from "@/lib/prisma-schema-compat";
 
 const VALID_STATUSES = new Set<string>(BOOK_STATUS_VALUES);
 
@@ -39,6 +42,10 @@ export async function getLibrary(
       orderBy: { createdAt: "desc" },
     });
   } catch (error) {
+    if (isMissingUserBookSchemaError(error)) {
+      return [];
+    }
+
     if (!isMissingFinishedAtError(error)) {
       throw error;
     }

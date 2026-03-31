@@ -1,8 +1,27 @@
 import "server-only";
 
 import { prisma } from "@/lib/prisma";
-import { isMissingFinishedAtError } from "@/lib/prisma-schema-compat";
+import {
+  isMissingFinishedAtError,
+  isMissingUserBookSchemaError,
+} from "@/lib/prisma-schema-compat";
 import { requireAuth, UnauthorizedError } from "@/lib/auth/require-auth";
+
+const EMPTY_STATS = {
+  booksByStatus: {
+    WISHLIST: 0,
+    TO_READ: 0,
+    READING: 0,
+    READ: 0,
+  },
+  totalBooks: 0,
+  booksReadThisYear: 0,
+  booksReadByMonth: [] as { month: string; count: number }[],
+  averageRating: null,
+  totalPagesRead: 0,
+  topGenres: [] as { genre: string; count: number }[],
+  readingStreak: { current: 0, unit: "weeks" as const },
+};
 
 export async function GET(): Promise<Response> {
   try {
@@ -23,6 +42,10 @@ async function getStats(userId: string) {
   try {
     return await getStatsUsingFinishedAt(userId);
   } catch (error) {
+    if (isMissingUserBookSchemaError(error)) {
+      return EMPTY_STATS;
+    }
+
     if (!isMissingFinishedAtError(error)) {
       throw error;
     }

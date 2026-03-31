@@ -16,6 +16,6 @@ export default function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     "/",
-    "/((?!login|api/auth|api/health|_next|favicon\\.ico|.*\\..*).+)",
+    "/((?!api|login|_next|favicon\\.ico|.*\\..*).+)",
   ],
 };
