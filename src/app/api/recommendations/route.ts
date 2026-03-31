@@ -2,6 +2,7 @@ import "server-only";
 
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { isMissingSocialSchemaError } from "@/lib/prisma-schema-compat";
 import { requireAuth, UnauthorizedError } from "@/lib/auth/require-auth";
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -141,6 +142,9 @@ export async function GET(): Promise<Response> {
   } catch (error) {
     if (error instanceof UnauthorizedError) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (isMissingSocialSchemaError(error)) {
+      return Response.json({ recommendations: [] });
     }
     console.error("[GET /api/recommendations]", error);
     return Response.json({ error: "Internal server error" }, { status: 500 });
