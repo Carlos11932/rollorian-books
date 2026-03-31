@@ -28,6 +28,10 @@
     "lists": "Listas",
     "stats": "Estadísticas"
   },
+  "settingsPage": {
+    "title": "Los ajustes están en camino",
+    "description": "Esta sección aún no está implementada, pero la ruta ya resuelve correctamente para que la shell de la app no se rompa en las previews."
+  },
   "admin": {
     "heading": "Panel de administración",
     "description": "Gestiona usuarios e invitaciones de la plataforma.",

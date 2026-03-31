@@ -3,6 +3,7 @@ import "server-only";
 import type { NextRequest } from "next/server";
 import type { BookListSummary } from "@/lib/types/book";
 import { prisma } from "@/lib/prisma";
+import { isMissingListsSchemaError } from "@/lib/prisma-schema-compat";
 import { createListSchema } from "@/lib/schemas/list";
 import { requireAuth, UnauthorizedError } from "@/lib/auth/require-auth";
 
@@ -44,6 +45,9 @@ export async function GET(_request: NextRequest): Promise<Response> {
     if (error instanceof UnauthorizedError) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
+    if (isMissingListsSchemaError(error)) {
+      return Response.json([]);
+    }
     console.error("[GET /api/lists]", error);
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
@@ -76,6 +80,9 @@ export async function POST(request: NextRequest): Promise<Response> {
   } catch (error) {
     if (error instanceof UnauthorizedError) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (isMissingListsSchemaError(error)) {
+      return Response.json({ error: "Lists feature unavailable until database schema is updated" }, { status: 503 });
     }
     console.error("[POST /api/lists]", error);
     return Response.json({ error: "Internal server error" }, { status: 500 });

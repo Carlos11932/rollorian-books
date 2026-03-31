@@ -3,6 +3,7 @@ import "server-only";
 import type { NextRequest } from "next/server";
 import type { BookListWithItems } from "@/lib/types/book";
 import { prisma } from "@/lib/prisma";
+import { isMissingListsSchemaError } from "@/lib/prisma-schema-compat";
 import { updateListSchema } from "@/lib/schemas/list";
 import { requireAuth, UnauthorizedError } from "@/lib/auth/require-auth";
 
@@ -40,6 +41,9 @@ export async function GET(
   } catch (error) {
     if (error instanceof UnauthorizedError) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (isMissingListsSchemaError(error)) {
+      return Response.json({ error: "List not found" }, { status: 404 });
     }
     console.error("[GET /api/lists/[id]]", error);
     return Response.json({ error: "Internal server error" }, { status: 500 });
@@ -83,6 +87,9 @@ export async function PATCH(
     if (error instanceof UnauthorizedError) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
+    if (isMissingListsSchemaError(error)) {
+      return Response.json({ error: "Lists feature unavailable until database schema is updated" }, { status: 503 });
+    }
     console.error("[PATCH /api/lists/[id]]", error);
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
@@ -110,6 +117,9 @@ export async function DELETE(
   } catch (error) {
     if (error instanceof UnauthorizedError) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (isMissingListsSchemaError(error)) {
+      return Response.json({ error: "Lists feature unavailable until database schema is updated" }, { status: 503 });
     }
     console.error("[DELETE /api/lists/[id]]", error);
     return Response.json({ error: "Internal server error" }, { status: 500 });

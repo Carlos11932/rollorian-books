@@ -28,6 +28,10 @@
     "lists": "Lists",
     "stats": "Stats"
   },
+  "settingsPage": {
+    "title": "Settings are on the way",
+    "description": "This section is not implemented yet, but the route now resolves correctly so the app shell stays stable in preview deployments."
+  },
   "admin": {
     "heading": "Admin Panel",
     "description": "Manage users and invitations for the platform.",

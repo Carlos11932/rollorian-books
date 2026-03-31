@@ -1,6 +1,7 @@
 import "server-only";
 
 import { prisma } from "@/lib/prisma";
+import { isMissingFinishedAtError } from "@/lib/prisma-schema-compat";
 import type { UserBookWithBook } from "@/lib/types/book";
 import type { CreateBookInput } from "@/lib/schemas/book";
 import { revalidateBookCollectionPaths } from "@/lib/revalidation";
@@ -36,17 +37,41 @@ export async function saveLibraryEntry(
     throw new DuplicateLibraryEntryError();
   }
 
-  const userBook: UserBookWithBook = await prisma.userBook.create({
-    data: {
-      userId,
-      bookId: book.id,
-      status,
-      ...(status === "READ" ? { finishedAt: new Date() } : {}),
-      ...(rating !== undefined ? { rating } : {}),
-      ...(notes !== undefined ? { notes } : {}),
-    },
-    include: { book: true },
-  });
+  let userBook: UserBookWithBook;
+
+  try {
+    userBook = await prisma.userBook.create({
+      data: {
+        userId,
+        bookId: book.id,
+        status,
+        ...(status === "READ" ? { finishedAt: new Date() } : {}),
+        ...(rating !== undefined ? { rating } : {}),
+        ...(notes !== undefined ? { notes } : {}),
+      },
+      include: { book: true },
+    });
+  } catch (error) {
+    if (!isMissingFinishedAtError(error)) {
+      throw error;
+    }
+
+    const legacyUserBook = await prisma.userBook.create({
+      data: {
+        userId,
+        bookId: book.id,
+        status,
+        ...(rating !== undefined ? { rating } : {}),
+        ...(notes !== undefined ? { notes } : {}),
+      },
+      include: { book: true },
+    });
+
+    userBook = {
+      ...legacyUserBook,
+      finishedAt: null,
+    };
+  }
 
   revalidateBookCollectionPaths(book.id);
 

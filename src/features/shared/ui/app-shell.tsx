@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { auth, signOut } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { isPrismaSchemaMismatchError } from '@/lib/prisma-schema-compat';
 import { SiteHeader } from './site-header';
 import { NavLinks } from './nav-links';
 import { MobileNav } from './mobile-nav';
@@ -24,11 +25,18 @@ export async function AppShell({ children }: AppShellProps) {
   };
 
   // Fetch pending group invitation count for nav badge
-  const pendingGroupInvitations = session?.user?.id
-    ? await prisma.groupMember.count({
+  let pendingGroupInvitations = 0;
+  if (session?.user?.id) {
+    try {
+      pendingGroupInvitations = await prisma.groupMember.count({
         where: { userId: session.user.id, status: 'PENDING' },
-      })
-    : 0;
+      });
+    } catch (error) {
+      if (!isPrismaSchemaMismatchError(error)) {
+        throw error;
+      }
+    }
+  }
 
   async function signOutAction() {
     "use server";
