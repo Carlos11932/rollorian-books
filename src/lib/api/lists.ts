@@ -45,8 +45,14 @@ async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
 // ── Public API ───────────────────────────────────────────────────────────────
 
 /** Fetch all lists for the current user. Maps to GET /api/lists. */
-export async function fetchLists(): Promise<BookListSummary[]> {
-  return apiFetch<BookListSummary[]>("/api/lists");
+export async function fetchLists(bookId?: string): Promise<BookListSummary[]> {
+  const searchParams = new URLSearchParams();
+  if (bookId) {
+    searchParams.set("bookId", bookId);
+  }
+
+  const query = searchParams.toString();
+  return apiFetch<BookListSummary[]>(query ? `/api/lists?${query}` : "/api/lists");
 }
 
 /** Create a new list. Maps to POST /api/lists. */

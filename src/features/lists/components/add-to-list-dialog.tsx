@@ -4,8 +4,13 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/cn";
 import type { BookListSummary } from "@/lib/types/book";
-import { fetchLists, addToList, createList, removeFromList } from "@/lib/api/lists";
-import { ApiError } from "@/lib/api/lists";
+import {
+  fetchLists,
+  addToList,
+  createList,
+  removeFromList,
+  ApiError,
+} from "@/lib/api/lists";
 
 interface AddToListDialogProps {
   bookId: string;
@@ -28,27 +33,15 @@ export function AddToListDialog({ bookId, open, onClose }: AddToListDialogProps)
   const loadLists = useCallback(async () => {
     setIsLoading(true);
     try {
-      const data = await fetchLists();
+      const data = await fetchLists(bookId);
       setLists(data);
-
-      // Determine which lists already contain this book by checking each list
-      // We use a lightweight approach: fetch all lists and for each, check items
-      const inListIds = new Set<string>();
-      for (const list of data) {
-        try {
-          const res = await fetch(`/api/lists/${list.id}`);
-          if (res.ok) {
-            const fullList = await res.json();
-            const items = fullList.items as Array<{ bookId: string }>;
-            if (items.some((item) => item.bookId === bookId)) {
-              inListIds.add(list.id);
-            }
-          }
-        } catch {
-          // Non-critical
-        }
-      }
-      setBookListIds(inListIds);
+      setBookListIds(
+        new Set(
+          data
+            .filter((list) => list.containsBook)
+            .map((list) => list.id),
+        ),
+      );
     } catch {
       // Non-critical
     } finally {

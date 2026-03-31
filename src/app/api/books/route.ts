@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { NextRequest } from "next/server";
+import { after, type NextRequest } from "next/server";
 import { BOOK_STATUS_VALUES } from "@/lib/types/book";
 import { createBookSchema } from "@/lib/schemas/book";
 import { requireAuth, UnauthorizedError } from "@/lib/auth/require-auth";
@@ -64,8 +64,12 @@ export async function POST(request: NextRequest): Promise<Response> {
     // Fire-and-forget enrichment — fill missing metadata from other providers
     const book = userBook.book;
     if (book.isbn13 && (!book.description || !book.coverUrl || !book.pageCount)) {
-      enrichBookMetadata(book.id, book.isbn13).catch(() => {
-        // Intentionally swallowed — enrichment is best-effort
+      after(async () => {
+        try {
+          await enrichBookMetadata(book.id, book.isbn13!);
+        } catch {
+          // Intentionally swallowed — enrichment is best-effort
+        }
       });
     }
 

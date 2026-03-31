@@ -29,7 +29,7 @@ export async function GET(): Promise<Response> {
     // ── Books read this year ───────────────────────────────────────────
     const startOfYear = new Date(new Date().getFullYear(), 0, 1);
     const booksReadThisYear = await prisma.userBook.count({
-      where: { userId, status: "READ", updatedAt: { gte: startOfYear } },
+      where: { userId, status: "READ", finishedAt: { gte: startOfYear } },
     });
 
     // ── Average rating ─────────────────────────────────────────────────
@@ -59,15 +59,16 @@ export async function GET(): Promise<Response> {
       where: {
         userId,
         status: "READ",
-        updatedAt: { gte: twelveMonthsAgo },
+        finishedAt: { gte: twelveMonthsAgo },
       },
-      select: { updatedAt: true },
+      select: { finishedAt: true },
     });
 
     // Group by YYYY-MM in JS
     const monthCounts = new Map<string, number>();
     for (const ub of readBooksLastYear) {
-      const d = new Date(ub.updatedAt);
+      if (!ub.finishedAt) continue;
+      const d = new Date(ub.finishedAt);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
       monthCounts.set(key, (monthCounts.get(key) ?? 0) + 1);
     }
@@ -104,11 +105,13 @@ export async function GET(): Promise<Response> {
     // the user marked at least one book as READ.
     const allReadDates = await prisma.userBook.findMany({
       where: { userId, status: "READ" },
-      select: { updatedAt: true },
-      orderBy: { updatedAt: "desc" },
+      select: { finishedAt: true },
+      orderBy: { finishedAt: "desc" },
     });
 
-    const readingStreak = computeWeeklyStreak(allReadDates.map((r) => r.updatedAt));
+    const readingStreak = computeWeeklyStreak(
+      allReadDates.flatMap((record) => (record.finishedAt ? [record.finishedAt] : [])),
+    );
 
     return Response.json({
       booksByStatus,
@@ -158,7 +161,6 @@ function computeWeeklyStreak(
   const now = new Date();
   const cursor = new Date(now);
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- loop exits via break
   while (true) {
     const key = getWeekKey(cursor);
     if (weekKeys.has(key)) {

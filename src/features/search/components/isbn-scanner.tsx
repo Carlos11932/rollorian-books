@@ -23,7 +23,6 @@ interface BarcodeDetectorClass {
 }
 
 declare global {
-  // eslint-disable-next-line no-var
   var BarcodeDetector: BarcodeDetectorClass | undefined;
 }
 
@@ -58,23 +57,24 @@ export function IsbnScanner({ onScan, onClose }: IsbnScannerProps) {
   }, []);
 
   useEffect(() => {
-    // Guard: BarcodeDetector must be available
-    if (typeof globalThis.BarcodeDetector === "undefined") {
-      setState("error");
-      setErrorMessage(t("cameraNotSupported"));
-      return;
-    }
-
     let cancelled = false;
-    const DetectorCtor = globalThis.BarcodeDetector;
-    if (!DetectorCtor) {
-      setState("error");
-      setErrorMessage(t("cameraNotSupported"));
-      return;
-    }
-    const detector = new DetectorCtor({ formats: ["ean_13"] });
+    const initializeUnsupportedState = window.setTimeout(() => {
+      const DetectorCtor = globalThis.BarcodeDetector;
+      if (!DetectorCtor) {
+        setState("error");
+        setErrorMessage(t("cameraNotSupported"));
+      }
+    }, 0);
 
     async function startScanning() {
+      const DetectorCtor = globalThis.BarcodeDetector;
+      if (!DetectorCtor) {
+        return;
+      }
+
+      clearTimeout(initializeUnsupportedState);
+      const detector = new DetectorCtor({ formats: ["ean_13"] });
+
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: "environment" },
@@ -130,6 +130,7 @@ export function IsbnScanner({ onScan, onClose }: IsbnScannerProps) {
 
     return () => {
       cancelled = true;
+      clearTimeout(initializeUnsupportedState);
       stopCamera();
     };
   }, [onScan, stopCamera, t]);

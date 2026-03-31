@@ -18,6 +18,17 @@ function normalizeQueryKey(query: string): string {
   return query.trim().toLowerCase();
 }
 
+function getCacheKey(query: string, options?: SearchOptions): string {
+  const normalizedQuery = normalizeQueryKey(query);
+  if (!options) return normalizedQuery;
+
+  return JSON.stringify({
+    query: normalizedQuery,
+    maxResults: options.maxResults ?? null,
+    language: options.language ?? null,
+  });
+}
+
 function getCachedResults(key: string): NormalizedBook[] | null {
   const entry = searchCache.get(key);
   if (!entry) return null;
@@ -49,7 +60,7 @@ export async function searchBooks(
   query: string,
   options?: SearchOptions
 ): Promise<NormalizedBook[]> {
-  const cacheKey = normalizeQueryKey(query);
+  const cacheKey = getCacheKey(query, options);
   const cached = getCachedResults(cacheKey);
   if (cached) return cached;
 

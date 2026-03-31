@@ -164,6 +164,7 @@ model UserBook {
   userId    String
   bookId    String
   status    BookStatus @default(WISHLIST)
+  finishedAt DateTime?
   rating    Int?
   notes     String?
   createdAt DateTime   @default(now())

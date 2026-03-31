@@ -48,6 +48,7 @@ export interface UserBook {
   userId: string;
   bookId: string;
   status: BookStatus;
+  finishedAt: Date | null;
   rating: number | null;
   notes: string | null;
   createdAt: Date;
@@ -86,4 +87,5 @@ export interface BookListWithItems extends BookList {
 
 export interface BookListSummary extends BookList {
   _count: { items: number };
+  containsBook?: boolean;
 }

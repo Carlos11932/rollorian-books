@@ -41,6 +41,7 @@ export async function saveLibraryEntry(
       userId,
       bookId: book.id,
       status,
+      ...(status === "READ" ? { finishedAt: new Date() } : {}),
       ...(rating !== undefined ? { rating } : {}),
       ...(notes !== undefined ? { notes } : {}),
     },

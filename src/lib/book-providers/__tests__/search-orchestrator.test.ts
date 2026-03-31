@@ -328,6 +328,23 @@ describe("searchBooks", () => {
 
     expect(results).toEqual([]);
   });
+
+  it("does not reuse cached results when search options differ", async () => {
+    const provider = makeProvider("google", {
+      search: vi.fn()
+        .mockResolvedValueOnce([makeBook({ externalId: "first" })])
+        .mockResolvedValueOnce([makeBook({ externalId: "second" })]),
+    });
+
+    vi.mocked(getProviders).mockReturnValue([provider]);
+
+    const firstResults = await searchBooks("clean architecture", { maxResults: 5 });
+    const secondResults = await searchBooks("clean architecture", { maxResults: 10 });
+
+    expect(firstResults[0]?.externalId).toBe("first");
+    expect(secondResults[0]?.externalId).toBe("second");
+    expect(provider.search).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe("fetchByIsbn", () => {

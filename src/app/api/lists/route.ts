@@ -9,12 +9,35 @@ import { requireAuth, UnauthorizedError } from "@/lib/auth/require-auth";
 export async function GET(_request: NextRequest): Promise<Response> {
   try {
     const { userId } = await requireAuth();
+    const bookId = _request.nextUrl.searchParams.get("bookId");
 
-    const lists: BookListSummary[] = await prisma.bookList.findMany({
+    const rawLists = await prisma.bookList.findMany({
       where: { userId },
-      include: { _count: { select: { items: true } } },
+      include: {
+        _count: { select: { items: true } },
+        ...(bookId
+          ? {
+              items: {
+                where: { bookId },
+                select: { id: true },
+                take: 1,
+              },
+            }
+          : {}),
+      },
       orderBy: { createdAt: "desc" },
     });
+
+    const lists: BookListSummary[] = rawLists.map((list) => ({
+      id: list.id,
+      name: list.name,
+      description: list.description,
+      userId: list.userId,
+      createdAt: list.createdAt,
+      updatedAt: list.updatedAt,
+      _count: list._count,
+      ...(bookId ? { containsBook: list.items.length > 0 } : {}),
+    }));
 
     return Response.json(lists);
   } catch (error) {

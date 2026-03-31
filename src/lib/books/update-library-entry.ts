@@ -17,11 +17,51 @@ export async function updateLibraryEntry(
   input: UpdateBookInput,
 ): Promise<UserBookWithBook> {
   try {
-    const userBook: UserBookWithBook = await prisma.userBook.update({
-      where: { userId_bookId: { userId, bookId } },
-      data: input,
-      include: { book: true },
-    });
+    const { status, ...rest } = input;
+    const where = { userId_bookId: { userId, bookId } };
+
+    let userBook: UserBookWithBook;
+
+    if (status === "READ") {
+      const transitionedToRead = await prisma.userBook.updateMany({
+        where: {
+          userId,
+          bookId,
+          status: { not: "READ" },
+        },
+        data: {
+          ...rest,
+          status,
+          finishedAt: new Date(),
+        },
+      });
+
+      userBook = transitionedToRead.count > 0
+        ? await prisma.userBook.findUniqueOrThrow({
+            where,
+            include: { book: true },
+          })
+        : await prisma.userBook.update({
+            where,
+            data: {
+              ...rest,
+              status,
+            },
+            include: { book: true },
+          });
+    } else {
+      userBook = await prisma.userBook.update({
+        where,
+        data: status === undefined
+          ? rest
+          : {
+              ...rest,
+              status,
+              finishedAt: null,
+            },
+        include: { book: true },
+      });
+    }
 
     revalidateBookCollectionPaths(bookId);
 
