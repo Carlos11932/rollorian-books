@@ -19,48 +19,39 @@ export default function PeoplePage() {
   const tCommon = useTranslations("common");
 
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<UserResult[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
+  const [allUsers, setAllUsers] = useState<UserResult[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [followingMap, setFollowingMap] = useState<Map<string, boolean>>(new Map());
 
-  const search = useCallback(async (q: string) => {
-    if (q.trim().length === 0) {
-      setResults([]);
-      setHasSearched(false);
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const res = await fetch(`/api/users/search?q=${encodeURIComponent(q.trim())}`);
-      if (res.ok) {
-        const data = (await res.json()) as { users: UserResult[] };
-        setResults(data.users);
+  // Load all users on mount
+  useEffect(() => {
+    void fetch("/api/users/search?q=")
+      .then((res) => (res.ok ? (res.json() as Promise<{ users: UserResult[] }>) : { users: [] }))
+      .then((data) => {
+        setAllUsers(data.users);
         setFollowingMap(new Map(data.users.map((u) => [u.id, u.isFollowing])));
-      }
-    } catch {
-      // Non-critical
-    } finally {
-      setIsLoading(false);
-      setHasSearched(true);
-    }
+      })
+      .catch(() => {})
+      .finally(() => setIsLoading(false));
   }, []);
 
-  // Debounced search
-  useEffect(() => {
-    if (query.trim().length === 0) {
-      setResults([]);
-      setHasSearched(false);
-      return;
-    }
+  // Client-side filter
+  const normalizedQuery = query
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
 
-    const timer = setTimeout(() => {
-      void search(query);
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [query, search]);
+  const results = normalizedQuery.length === 0
+    ? allUsers
+    : allUsers.filter((u) => {
+        if (!u.name) return false;
+        const normalized = u.name
+          .normalize("NFKD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase();
+        return normalized.includes(normalizedQuery);
+      });
 
   async function handleFollow(userId: string) {
     const isCurrentlyFollowing = followingMap.get(userId) ?? false;
@@ -117,7 +108,7 @@ export default function PeoplePage() {
       )}
 
       {/* No results */}
-      {hasSearched && !isLoading && results.length === 0 && (
+      {!isLoading && results.length === 0 && normalizedQuery.length > 0 && (
         <div className="flex flex-col items-center gap-3 py-16 text-center">
           <span
             className="material-symbols-outlined text-tertiary"
@@ -131,8 +122,8 @@ export default function PeoplePage() {
         </div>
       )}
 
-      {/* Empty state */}
-      {!hasSearched && !isLoading && (
+      {/* No users at all */}
+      {!isLoading && allUsers.length === 0 && (
         <div className="flex flex-col items-center gap-3 py-16 text-center">
           <span
             className="material-symbols-outlined text-tertiary"

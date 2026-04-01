@@ -9,13 +9,6 @@ export async function GET(request: NextRequest): Promise<Response> {
     const { userId } = await requireAuth();
     const q = request.nextUrl.searchParams.get("q")?.trim() ?? "";
 
-    if (q.length === 0) {
-      return Response.json({ users: [] });
-    }
-
-    // Normalize query: strip accents for broader matching
-    // PostgreSQL `insensitive` handles case but NOT accents,
-    // so we use `unaccent`-style approach via raw filtering after a broad fetch.
     const normalizedQ = q
       .normalize("NFKD")
       .replace(/[\u0300-\u036f]/g, "")
@@ -42,10 +35,11 @@ export async function GET(request: NextRequest): Promise<Response> {
       orderBy: { name: "asc" },
     });
 
-    // Filter in JS with accent-insensitive matching
+    // Filter in JS with accent-insensitive matching (no-op when query is empty)
     const results = users
       .filter((user) => {
         if (!user.name) return false;
+        if (normalizedQ.length === 0) return true;
         const normalizedName = user.name
           .normalize("NFKD")
           .replace(/[\u0300-\u036f]/g, "")
