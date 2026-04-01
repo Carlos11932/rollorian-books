@@ -35,132 +35,102 @@ export async function ReadingHero({ books, hasToRead }: ReadingHeroProps) {
     );
   }
 
-  const primary = books[0];
-  const extras = books.slice(1, 4);
-  const authorLine =
-    primary.authors.length > 0
-      ? primary.authors.join(", ")
-      : tCommon("unknownAuthor");
-  const isReading =
-    primary.status === "READING" || primary.status === "REREADING";
-
   return (
     <section>
-      <h2 className="text-lg font-bold text-on-surface mb-4">
-        {t("currentlyReading")}
-      </h2>
-
-      {/* Primary book — hero card */}
-      <div className="relative rounded-[var(--radius-xl)] border border-outline-variant/15 overflow-hidden min-h-[280px]">
-        {/* Blurred backdrop */}
-        {primary.coverUrl && (
-          <div className="absolute inset-0" aria-hidden="true">
-            <Image
-              src={primary.coverUrl}
-              alt=""
-              fill
-              sizes="100vw"
-              priority
-              className="object-cover"
-              style={{ opacity: 0.35, filter: "blur(40px) saturate(1.4)" }}
-            />
-          </div>
-        )}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          aria-hidden="true"
-          style={{
-            background:
-              "linear-gradient(to right, rgba(8,11,18,0.92) 0%, rgba(8,11,18,0.55) 60%, transparent 100%)",
-          }}
-        />
-
-        {/* Content */}
-        <div className="relative z-10 flex gap-6 p-6 md:p-8 items-end min-h-[280px]">
-          {/* Cover */}
-          {primary.coverUrl && (
-            <Link
-              href={`/books/${primary.id}`}
-              className="hidden sm:block shrink-0 w-[140px] md:w-[160px] aspect-[2/3] rounded-xl overflow-hidden shadow-2xl transition-transform hover:scale-105"
-            >
-              <Image
-                src={primary.coverUrl}
-                alt={primary.title}
-                width={160}
-                height={240}
-                className="object-cover w-full h-full"
-              />
-            </Link>
-          )}
-
-          {/* Text */}
-          <div className="flex flex-col gap-3 max-w-lg">
-            <Badge status={primary.status} />
-            <h3
-              className="text-2xl md:text-3xl font-bold text-on-surface leading-tight"
-              style={{ fontFamily: "var(--font-headline)" }}
-            >
-              {primary.title}
-            </h3>
-            <p className="text-sm text-tertiary">{authorLine}</p>
-            {primary.description && (
-              <p className="text-sm text-on-surface/70 line-clamp-2 max-w-md">
-                {primary.description}
-              </p>
-            )}
-            <div className="flex gap-3 mt-1">
-              <Link href={`/books/${primary.id}`}>
-                <Button variant="primary">
-                  {isReading ? t("continueReading") : t("viewDetails")}
-                </Button>
-              </Link>
-            </div>
-          </div>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <span
+            className="material-symbols-outlined text-primary text-[20px]"
+            style={{ fontVariationSettings: "'FILL' 1" }}
+          >
+            auto_stories
+          </span>
+          <h2 className="text-lg font-bold text-on-surface">
+            {t("currentlyReading")}
+          </h2>
+          <span className="text-xs text-tertiary tabular-nums">
+            {books.length}
+          </span>
         </div>
+        <Link
+          href="/library?status=READING"
+          className="text-primary text-sm font-semibold hover:underline"
+        >
+          {t("viewAll")}
+        </Link>
       </div>
 
-      {/* Extra books — thumbnails */}
-      {extras.length > 0 && (
-        <div className="flex gap-3 mt-4">
-          {extras.map((book) => (
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {books.map((book) => {
+          const authorLine =
+            book.authors.length > 0
+              ? book.authors.join(", ")
+              : tCommon("unknownAuthor");
+
+          return (
             <Link
               key={book.id}
               href={`/books/${book.id}`}
-              className="flex items-center gap-3 rounded-xl border border-outline-variant/15 bg-surface-container-low/40 p-3 flex-1 min-w-0 group hover:border-primary/30 transition-colors"
+              className="group relative flex gap-4 rounded-[var(--radius-xl)] border border-outline-variant/15 overflow-hidden p-4 transition-all duration-200 hover:border-primary/30 hover:shadow-lg"
+              style={{ backdropFilter: "blur(8px)" }}
             >
-              {book.coverUrl ? (
-                <Image
-                  src={book.coverUrl}
-                  alt={book.title}
-                  width={40}
-                  height={60}
-                  className="rounded-md object-cover shrink-0 w-10 h-[60px]"
-                />
-              ) : (
-                <div className="shrink-0 w-10 h-[60px] rounded-md bg-surface-container flex items-center justify-center">
-                  <span className="material-symbols-outlined text-tertiary text-lg">
-                    menu_book
-                  </span>
+              {/* Blurred cover backdrop */}
+              {book.coverUrl && (
+                <div className="absolute inset-0 -z-10" aria-hidden="true">
+                  <Image
+                    src={book.coverUrl}
+                    alt=""
+                    fill
+                    sizes="400px"
+                    className="object-cover"
+                    style={{
+                      opacity: 0.15,
+                      filter: "blur(30px) saturate(1.4)",
+                    }}
+                  />
                 </div>
               )}
-              <div className="min-w-0">
-                <p className="text-sm font-bold text-on-surface truncate group-hover:text-primary transition-colors">
+              <div className="absolute inset-0 -z-10 bg-surface-container-lowest/80" aria-hidden="true" />
+
+              {/* Cover */}
+              <div className="shrink-0 w-[80px] aspect-[2/3] rounded-lg overflow-hidden bg-surface-container-low shadow-md">
+                {book.coverUrl ? (
+                  <Image
+                    src={book.coverUrl}
+                    alt={book.title}
+                    width={80}
+                    height={120}
+                    className="object-cover w-full h-full transition-transform duration-200 group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <span className="material-symbols-outlined text-tertiary text-2xl">
+                      menu_book
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Info */}
+              <div className="flex flex-col gap-1.5 min-w-0 py-1">
+                <Badge status={book.status} className="self-start text-[10px] px-2 py-0.5" />
+                <h3
+                  className="text-sm font-bold text-on-surface leading-tight line-clamp-2 group-hover:text-primary transition-colors"
+                  style={{ fontFamily: "var(--font-headline)" }}
+                >
                   {book.title}
-                </p>
-                <p className="text-[10px] text-tertiary truncate">
-                  {book.authors.length > 0
-                    ? book.authors.join(", ")
-                    : tCommon("unknownAuthor")}
-                </p>
-                <Badge
-                  status={book.status}
-                  className="text-[9px] px-1.5 py-0 mt-1"
-                />
+                </h3>
+                <p className="text-xs text-tertiary truncate">{authorLine}</p>
+                {book.notes && (
+                  <p className="text-[11px] text-on-surface/50 line-clamp-1 mt-auto">
+                    {book.notes}
+                  </p>
+                )}
               </div>
             </Link>
-          ))}
-        </div>
-      )}
+          );
+        })}
+      </div>
     </section>
   );
 }
