@@ -43,7 +43,7 @@ export async function HeroBanner({ book }: HeroBannerProps) {
 
   const authorLine =
     book.authors.length > 0 ? book.authors.join(", ") : t('common.unknownAuthor');
-  const isReading = book.status === "READING";
+  const isReading = book.status === "READING" || book.status === "REREADING";
 
   return (
     <div

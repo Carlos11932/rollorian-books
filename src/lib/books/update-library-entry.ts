@@ -7,6 +7,7 @@ import type { UserBookWithBook } from "@/lib/types/book";
 import type { UpdateBookInput } from "@/lib/schemas/book";
 import { revalidateBookCollectionPaths } from "@/lib/revalidation";
 import { LibraryEntryNotFoundError } from "./errors";
+import { USER_BOOK_SELECT } from "./user-book-select";
 
 /**
  * Updates a user's library entry (status, rating, notes).
@@ -21,7 +22,7 @@ export async function updateLibraryEntry(
     const { status, ...rest } = input;
     const where = { userId_bookId: { userId, bookId } };
 
-    let userBook: UserBookWithBook;
+    let created;
 
     if (status === "READ") {
       const transitionedToRead = await prisma.userBook.updateMany({
@@ -37,10 +38,10 @@ export async function updateLibraryEntry(
         },
       });
 
-      userBook = transitionedToRead.count > 0
+      created = transitionedToRead.count > 0
         ? await prisma.userBook.findUniqueOrThrow({
             where,
-            include: { book: true },
+            select: USER_BOOK_SELECT,
           })
         : await prisma.userBook.update({
             where,
@@ -48,10 +49,10 @@ export async function updateLibraryEntry(
               ...rest,
               status,
             },
-            include: { book: true },
+            select: USER_BOOK_SELECT,
           });
     } else {
-      userBook = await prisma.userBook.update({
+      created = await prisma.userBook.update({
         where,
         data: status === undefined
           ? rest
@@ -60,28 +61,25 @@ export async function updateLibraryEntry(
               status,
               finishedAt: null,
             },
-        include: { book: true },
+        select: USER_BOOK_SELECT,
       });
     }
 
     revalidateBookCollectionPaths(bookId);
 
-    return userBook;
+    return { ...created, finishedAt: null };
   } catch (error) {
     if (isMissingFinishedAtError(error)) {
       const { status, ...rest } = input;
-      const legacyUserBook = await prisma.userBook.update({
+      const legacyCreated = await prisma.userBook.update({
         where: { userId_bookId: { userId, bookId } },
         data: status === undefined ? rest : { ...rest, status },
-        include: { book: true },
+        select: USER_BOOK_SELECT,
       });
 
       revalidateBookCollectionPaths(bookId);
 
-      return {
-        ...legacyUserBook,
-        finishedAt: null,
-      };
+      return { ...legacyCreated, finishedAt: null };
     }
 
     if (

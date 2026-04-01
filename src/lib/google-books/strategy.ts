@@ -193,8 +193,9 @@ function scoreBook(book: NormalizedBook, analysis: QueryAnalysis): number {
     score += 70;
   }
 
+  // Author name as full phrase match — strong signal the query IS an author
   if (authors.includes(analysis.normalizedQuery)) {
-    score += 40;
+    score += 80;
   }
 
   const titleMatches = countTokenMatches(analysis.tokens, title);
@@ -202,7 +203,12 @@ function scoreBook(book: NormalizedBook, analysis: QueryAnalysis): number {
   const totalMatches = countTokenMatches(analysis.tokens, totalText);
 
   score += titleMatches * 18;
-  score += authorMatches * 12;
+  score += authorMatches * 16;
+
+  // If ALL query tokens match the author, this is very likely an author search
+  if (analysis.tokens.length > 1 && authorMatches === analysis.tokens.length) {
+    score += 60;
+  }
 
   if (analysis.tokens.length > 1 && totalMatches === analysis.tokens.length) {
     score += 35;

@@ -108,7 +108,10 @@ export default async function GroupMembersPage({ params }: MembersPageProps) {
                 key={member.id}
                 className="flex items-center justify-between gap-4 py-2"
               >
-                <div className="flex items-center gap-3">
+                <Link
+                  href={`/users/${member.user.id}`}
+                  className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+                >
                   {/* Avatar */}
                   <div className="w-9 h-9 rounded-full overflow-hidden bg-surface-container-high shrink-0 relative">
                     {member.user.image != null ? (
@@ -150,7 +153,7 @@ export default async function GroupMembersPage({ params }: MembersPageProps) {
                       {member.role === 'ADMIN' ? t('roleAdmin') : t('roleMember')}
                     </span>
                   </div>
-                </div>
+                </Link>
 
                 {/* Actions */}
                 <div className="flex items-center gap-2">

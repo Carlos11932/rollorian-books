@@ -2,10 +2,8 @@ import "server-only";
 
 import { prisma } from "@/lib/prisma";
 import { type BookStatus, type UserBookWithBook, BOOK_STATUS_VALUES } from "@/lib/types/book";
-import {
-  isMissingFinishedAtError,
-  isMissingUserBookSchemaError,
-} from "@/lib/prisma-schema-compat";
+import { isMissingUserBookSchemaError } from "@/lib/prisma-schema-compat";
+import { USER_BOOK_SELECT } from "./user-book-select";
 
 const VALID_STATUSES = new Set<string>(BOOK_STATUS_VALUES);
 
@@ -36,39 +34,15 @@ export async function getLibrary(
   };
 
   try {
-    return await prisma.userBook.findMany({
+    // Use explicit select to avoid requesting columns that may not exist
+    const results = await prisma.userBook.findMany({
       where,
-      include: { book: true },
+      select: USER_BOOK_SELECT,
       orderBy: { createdAt: "desc" },
     });
+
+    return results.map((entry) => ({ ...entry, finishedAt: null }));
   } catch (error) {
-    // Check the more specific error FIRST — a missing `finishedAt` column
-    // produces a message containing both "UserBook" and "finishedAt", so the
-    // broader `isMissingUserBookSchemaError` would swallow it and return []
-    // instead of falling through to the working legacy query.
-    if (isMissingFinishedAtError(error)) {
-      const legacyUserBooks = await prisma.userBook.findMany({
-        where,
-        select: {
-          id: true,
-          userId: true,
-          bookId: true,
-          status: true,
-          rating: true,
-          notes: true,
-          createdAt: true,
-          updatedAt: true,
-          book: true,
-        },
-        orderBy: { createdAt: "desc" },
-      });
-
-      return legacyUserBooks.map((entry) => ({
-        ...entry,
-        finishedAt: null,
-      }));
-    }
-
     if (isMissingUserBookSchemaError(error)) {
       return [];
     }

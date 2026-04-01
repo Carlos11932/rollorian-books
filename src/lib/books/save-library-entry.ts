@@ -6,6 +6,7 @@ import type { UserBookWithBook } from "@/lib/types/book";
 import type { CreateBookInput } from "@/lib/schemas/book";
 import { revalidateBookCollectionPaths } from "@/lib/revalidation";
 import { DuplicateLibraryEntryError } from "./errors";
+import { USER_BOOK_SELECT } from "./user-book-select";
 
 /**
  * Saves a book to the user's library. Deduplicates by ISBN if possible,
@@ -28,19 +29,20 @@ export async function saveLibraryEntry(
     book = await prisma.book.create({ data: bookFields });
   }
 
-  // Check if user already has this book
+  // Check if user already has this book (select only id to avoid schema drift)
   const existingUserBook = await prisma.userBook.findUnique({
     where: { userId_bookId: { userId, bookId: book.id } },
+    select: { id: true },
   });
 
   if (existingUserBook) {
     throw new DuplicateLibraryEntryError();
   }
 
-  let userBook: UserBookWithBook;
+  let created;
 
   try {
-    userBook = await prisma.userBook.create({
+    created = await prisma.userBook.create({
       data: {
         userId,
         bookId: book.id,
@@ -49,14 +51,14 @@ export async function saveLibraryEntry(
         ...(rating !== undefined ? { rating } : {}),
         ...(notes !== undefined ? { notes } : {}),
       },
-      include: { book: true },
+      select: USER_BOOK_SELECT,
     });
   } catch (error) {
     if (!isMissingFinishedAtError(error)) {
       throw error;
     }
 
-    const legacyUserBook = await prisma.userBook.create({
+    created = await prisma.userBook.create({
       data: {
         userId,
         bookId: book.id,
@@ -64,14 +66,11 @@ export async function saveLibraryEntry(
         ...(rating !== undefined ? { rating } : {}),
         ...(notes !== undefined ? { notes } : {}),
       },
-      include: { book: true },
+      select: USER_BOOK_SELECT,
     });
-
-    userBook = {
-      ...legacyUserBook,
-      finishedAt: null,
-    };
   }
+
+  const userBook: UserBookWithBook = { ...created, finishedAt: null };
 
   revalidateBookCollectionPaths(book.id);
 

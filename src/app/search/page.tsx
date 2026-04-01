@@ -38,14 +38,23 @@ function toDisplayBook(book: NormalizedBook): LibraryEntryView {
 }
 
 async function saveBookToLibrary(book: NormalizedBook): Promise<void> {
+  // Ensure authors is never empty — Zod rejects min(1)
+  const authors = book.authors.length > 0 ? book.authors : ["Unknown"];
+
+  // Separate ISBN-10 from ISBN-13 — don't put a 10-digit ISBN in isbn13
+  const isbn = book.isbn ?? null;
+  const isbn13 = isbn && isbn.length === 13 ? isbn : undefined;
+  const isbn10 = isbn && isbn.length === 10 ? isbn : undefined;
+
   await saveBook({
     title: book.title,
-    authors: book.authors,
+    authors,
     coverUrl: book.coverUrl ?? undefined,
     publishedDate: book.publishedYear != null ? String(book.publishedYear) : undefined,
-    isbn13: book.isbn ?? undefined,
+    isbn13,
+    isbn10,
     status: "WISHLIST" as const,
-    genres: [],
+    genres: book.genres ?? [],
   });
 }
 
@@ -167,9 +176,13 @@ export default function SearchPage() {
           }
         }
         setLibraryIndex(index);
-        // Flatten UserBook + Book into LibraryEntryView shape for suggestions
+        // Only show READING / TO_READ as "continue reading" suggestions
+        // — showing READ books as suggestions makes no sense
+        const reading = entries.filter(
+          (e) => e.status === "READING" || e.status === "REREADING" || e.status === "TO_READ",
+        );
         setLibrarySuggestions(
-          entries.map((entry): LibraryEntryView => ({
+          reading.map((entry): LibraryEntryView => ({
             ...entry.book,
             status: entry.status,
             rating: entry.rating,
@@ -408,72 +421,6 @@ export default function SearchPage() {
       {/* ── Default state (no active search) ── */}
       {!hasSearched && !isLoading && (
         <>
-          {/* Archived Suggestions */}
-          {librarySuggestions.length > 0 && (
-            <section aria-label={t('search.archivedSuggestions')}>
-              <h2 className="text-xl md:text-2xl font-bold font-headline tracking-tight mb-8">
-                {t('search.archivedSuggestions')}
-              </h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
-                {librarySuggestions.map((book) => (
-                  <Link
-                    key={book.id}
-                    href={`/books/${book.id}`}
-                    className="group relative block rounded-lg overflow-hidden cursor-pointer"
-                    aria-label={`${book.title}${book.authors.length > 0 ? ` — ${book.authors.join(", ")}` : ""}`}
-                  >
-                    {/* Portrait cover */}
-                    <div className="aspect-[2/3] rounded-lg overflow-hidden bg-surface-container-high relative">
-                      {book.coverUrl != null ? (
-                        <Image
-                          src={book.coverUrl}
-                          alt={book.title}
-                          fill
-                          sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
-                          className="object-cover group-hover:scale-105 transition-transform duration-300 shadow-xl"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <span
-                            className="material-symbols-outlined text-on-surface-variant/40"
-                            style={{ fontSize: "48px" }}
-                          >
-                            menu_book
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Bookmark button */}
-                      <button
-                        type="button"
-                        tabIndex={-1}
-                        aria-hidden="true"
-                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150 bg-surface-container-highest/90 p-2 rounded-full text-secondary"
-                      >
-                        <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>
-                          bookmark
-                        </span>
-                      </button>
-                    </div>
-
-                    {/* Book info */}
-                    <div className="pt-2 px-1">
-                      <p
-                        className="text-on-surface font-bold text-sm truncate mb-1"
-                        title={book.title}
-                      >
-                        {book.title}
-                      </p>
-                      <p className="text-on-surface-variant text-xs truncate">
-                        {book.authors.length > 0 ? book.authors.join(", ") : t('common.unknownAuthor')}
-                      </p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </section>
-          )}
-
           {/* ── Genre discovery carousels ── */}
           {(isDiscoverLoading || discoverGenres.length > 0) && (
             <section aria-label={t('discover.heading')} className="mt-16 space-y-12">

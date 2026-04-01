@@ -9,8 +9,10 @@ export const MAX_GENRE_RAILS = 6
 export const AFFINITY_WEIGHTS: Record<BookStatus, number> = {
   READ: 4,
   READING: 3,
+  REREADING: 3,
   TO_READ: 2,
   WISHLIST: 1,
+  ON_HOLD: 1,
 }
 
 /**

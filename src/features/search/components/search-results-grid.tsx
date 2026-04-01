@@ -39,14 +39,18 @@ function toDisplayBook(book: NormalizedBook): LibraryEntryView {
 }
 
 async function saveBookToLibrary(book: NormalizedBook): Promise<void> {
+  const authors = book.authors.length > 0 ? book.authors : ["Unknown"];
+  const isbn = book.isbn ?? null;
+
   const payload = {
     title: book.title,
-    authors: book.authors,
+    authors,
     coverUrl: book.coverUrl ?? undefined,
     publishedDate: book.publishedYear != null ? String(book.publishedYear) : undefined,
-    isbn13: book.isbn ?? undefined,
+    isbn13: isbn && isbn.length === 13 ? isbn : undefined,
+    isbn10: isbn && isbn.length === 10 ? isbn : undefined,
     status: "WISHLIST" as const,
-    genres: [],
+    genres: book.genres ?? [],
   };
 
   const res = await fetch("/api/books", {

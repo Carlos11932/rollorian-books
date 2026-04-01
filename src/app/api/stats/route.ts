@@ -12,7 +12,9 @@ const EMPTY_STATS = {
     WISHLIST: 0,
     TO_READ: 0,
     READING: 0,
+    REREADING: 0,
     READ: 0,
+    ON_HOLD: 0,
   },
   totalBooks: 0,
   booksReadThisYear: 0,
@@ -42,15 +44,19 @@ async function getStats(userId: string) {
   try {
     return await getStatsUsingFinishedAt(userId);
   } catch (error) {
+    // Check the more specific error FIRST — a missing `finishedAt` column
+    // produces a message containing "UserBook", so the broader check
+    // would swallow it and return EMPTY_STATS instead of falling through
+    // to the working legacy function.
+    if (isMissingFinishedAtError(error)) {
+      return getLegacyStatsUsingUpdatedAt(userId);
+    }
+
     if (isMissingUserBookSchemaError(error)) {
       return EMPTY_STATS;
     }
 
-    if (!isMissingFinishedAtError(error)) {
-      throw error;
-    }
-
-    return getLegacyStatsUsingUpdatedAt(userId);
+    throw error;
   }
 }
 
@@ -67,7 +73,9 @@ async function getStatsUsingFinishedAt(userId: string) {
       WISHLIST: 0,
       TO_READ: 0,
       READING: 0,
+      REREADING: 0,
       READ: 0,
+      ON_HOLD: 0,
     };
     for (const group of statusGroups) {
       booksByStatus[group.status] = group._count;
@@ -185,7 +193,9 @@ async function getLegacyStatsUsingUpdatedAt(userId: string) {
     WISHLIST: 0,
     TO_READ: 0,
     READING: 0,
+    REREADING: 0,
     READ: 0,
+    ON_HOLD: 0,
   };
   for (const group of statusGroups) {
     booksByStatus[group.status] = group._count;

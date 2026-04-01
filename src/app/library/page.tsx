@@ -28,7 +28,7 @@ interface StatusCountRow {
   _count: { id: number };
 }
 
-const STATUS_ORDERED: BookStatus[] = ["READING", "TO_READ", "WISHLIST", "READ"];
+const STATUS_ORDERED: BookStatus[] = ["READING", "REREADING", "TO_READ", "READ", "ON_HOLD", "WISHLIST"];
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -98,7 +98,7 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
       acc[row.status] = row._count.id;
       return acc;
     },
-    { WISHLIST: 0, TO_READ: 0, READING: 0, READ: 0 },
+    { WISHLIST: 0, TO_READ: 0, READING: 0, REREADING: 0, READ: 0, ON_HOLD: 0 },
   );
 
   // Flatten UserBook + Book into the shape LibraryBookCard expects

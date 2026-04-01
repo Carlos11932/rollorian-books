@@ -9,7 +9,9 @@ const STATUS_TAB = {
   WISHLIST: "WISHLIST",
   TO_READ: "TO_READ",
   READING: "READING",
+  REREADING: "REREADING",
   READ: "READ",
+  ON_HOLD: "ON_HOLD",
 } as const;
 
 type StatusTabValue = (typeof STATUS_TAB)[keyof typeof STATUS_TAB];
@@ -18,7 +20,9 @@ interface StatusCounts {
   WISHLIST: number;
   TO_READ: number;
   READING: number;
+  REREADING: number;
   READ: number;
+  ON_HOLD: number;
 }
 
 interface StatusTabsProps {
@@ -30,10 +34,12 @@ interface StatusTabsProps {
 
 const ALL_TABS: StatusTabValue[] = [
   STATUS_TAB.ALL,
-  STATUS_TAB.WISHLIST,
-  STATUS_TAB.TO_READ,
   STATUS_TAB.READING,
+  STATUS_TAB.REREADING,
+  STATUS_TAB.TO_READ,
   STATUS_TAB.READ,
+  STATUS_TAB.ON_HOLD,
+  STATUS_TAB.WISHLIST,
 ];
 
 function getTabCount(tab: StatusTabValue, counts: StatusCounts): number | null {

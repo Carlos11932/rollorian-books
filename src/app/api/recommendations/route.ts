@@ -43,7 +43,7 @@ function getRecommendations(userId: string) {
 
       // Step 2: Find similar readers from three sources
 
-      // 2a: Users who share 2+ books with the current user
+      // 2a: Users who share 1+ books with the current user
       const sharedBookUsers = await prisma.userBook.groupBy({
         by: ["userId"],
         where: {
@@ -51,37 +51,49 @@ function getRecommendations(userId: string) {
           userId: { not: userId },
         },
         _count: true,
-        having: { userId: { _count: { gte: 2 } } },
+        having: { userId: { _count: { gte: 1 } } },
       });
 
       // 2b: Users the current user follows
-      const following = await prisma.follow.findMany({
-        where: { followerId: userId },
-        select: { followingId: true },
-      });
+      let followingIds: string[] = [];
+      try {
+        const following = await prisma.follow.findMany({
+          where: { followerId: userId },
+          select: { followingId: true },
+        });
+        followingIds = following.map((f) => f.followingId);
+      } catch (error) {
+        if (!isMissingSocialSchemaError(error)) throw error;
+      }
 
       // 2c: Users in the same groups (accepted members only)
-      const myGroups = await prisma.groupMember.findMany({
-        where: { userId, status: "ACCEPTED" },
-        select: { groupId: true },
-      });
-      const groupMembers =
-        myGroups.length > 0
-          ? await prisma.groupMember.findMany({
-              where: {
-                groupId: { in: myGroups.map((g) => g.groupId) },
-                userId: { not: userId },
-                status: "ACCEPTED",
-              },
-              select: { userId: true },
-            })
-          : [];
+      let groupMemberIds: string[] = [];
+      try {
+        const myGroups = await prisma.groupMember.findMany({
+          where: { userId, status: "ACCEPTED" },
+          select: { groupId: true },
+        });
+
+        if (myGroups.length > 0) {
+          const groupMembers = await prisma.groupMember.findMany({
+            where: {
+              groupId: { in: myGroups.map((g) => g.groupId) },
+              userId: { not: userId },
+              status: "ACCEPTED",
+            },
+            select: { userId: true },
+          });
+          groupMemberIds = groupMembers.map((m) => m.userId);
+        }
+      } catch (error) {
+        if (!isMissingSocialSchemaError(error)) throw error;
+      }
 
       // Combine all similar reader IDs (union)
       const similarReaderIds = new Set([
         ...sharedBookUsers.map((u) => u.userId),
-        ...following.map((f) => f.followingId),
-        ...groupMembers.map((m) => m.userId),
+        ...followingIds,
+        ...groupMemberIds,
       ]);
 
       const allowedReaderIds = (
@@ -96,7 +108,7 @@ function getRecommendations(userId: string) {
         return [];
       }
 
-      // Step 3: Get books those similar readers have (READ or READING) that I don't
+      // Step 3: Get books those similar readers have that I don't
       const myBookIdArray = [...myBookIds];
       const candidateBooks = await prisma.userBook.findMany({
         where: {
@@ -104,7 +116,8 @@ function getRecommendations(userId: string) {
           status: { in: ["READ", "READING"] },
           bookId: { notIn: myBookIdArray },
         },
-        include: {
+        select: {
+          bookId: true,
           book: {
             select: {
               id: true,
@@ -138,8 +151,8 @@ function getRecommendations(userId: string) {
         .slice(0, 20)
         .map(({ book, count }) => ({ book, readerCount: count }));
     },
-    [`recommendations-${userId}`],
-    { revalidate: 3600 },
+    [`recommendations-v2-${userId}`],
+    { revalidate: 300 },
   )();
 }
 
