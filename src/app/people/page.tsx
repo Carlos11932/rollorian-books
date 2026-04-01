@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Button } from "@/features/shared/components/button";
+
+const PAGE_SIZE = 40;
 
 interface UserResult {
   id: string;
@@ -14,50 +16,71 @@ interface UserResult {
   isFollowing: boolean;
 }
 
+async function fetchUsers(q: string, offset = 0): Promise<{ users: UserResult[]; hasMore: boolean }> {
+  const params = new URLSearchParams();
+  if (q.trim()) params.set("q", q.trim());
+  params.set("limit", String(PAGE_SIZE + 1));
+  params.set("offset", String(offset));
+
+  const res = await fetch(`/api/users/search?${params.toString()}`);
+  if (!res.ok) return { users: [], hasMore: false };
+
+  const data = (await res.json()) as { users: UserResult[] };
+  const hasMore = data.users.length > PAGE_SIZE;
+  return { users: data.users.slice(0, PAGE_SIZE), hasMore };
+}
+
 export default function PeoplePage() {
   const t = useTranslations("people");
   const tCommon = useTranslations("common");
 
   const [query, setQuery] = useState("");
-  const [allUsers, setAllUsers] = useState<UserResult[]>([]);
+  const [users, setUsers] = useState<UserResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
   const [followingMap, setFollowingMap] = useState<Map<string, boolean>>(new Map());
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
 
-  // Load all users on mount
+  // Initial load + search
   useEffect(() => {
-    void fetch("/api/users/search?q=")
-      .then((res) => (res.ok ? (res.json() as Promise<{ users: UserResult[] }>) : { users: [] }))
-      .then((data) => {
-        setAllUsers(data.users);
-        setFollowingMap(new Map(data.users.map((u) => [u.id, u.isFollowing])));
-      })
-      .catch(() => {})
-      .finally(() => setIsLoading(false));
-  }, []);
+    // Reset on every query change
+    setIsLoading(true);
 
-  // Client-side filter
-  const normalizedQuery = query
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim();
+    if (debounceRef.current) clearTimeout(debounceRef.current);
 
-  const results = normalizedQuery.length === 0
-    ? allUsers
-    : allUsers.filter((u) => {
-        if (!u.name) return false;
-        const normalized = u.name
-          .normalize("NFKD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .toLowerCase();
-        return normalized.includes(normalizedQuery);
+    debounceRef.current = setTimeout(async () => {
+      const result = await fetchUsers(query);
+      setUsers(result.users);
+      setHasMore(result.hasMore);
+      setFollowingMap((prev) => {
+        const next = new Map(prev);
+        for (const u of result.users) next.set(u.id, u.isFollowing);
+        return next;
       });
+      setIsLoading(false);
+    }, query.length > 0 ? 300 : 0);
+
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [query]);
+
+  async function loadMore() {
+    setIsLoadingMore(true);
+    const result = await fetchUsers(query, users.length);
+    setUsers((prev) => [...prev, ...result.users]);
+    setHasMore(result.hasMore);
+    setFollowingMap((prev) => {
+      const next = new Map(prev);
+      for (const u of result.users) next.set(u.id, u.isFollowing);
+      return next;
+    });
+    setIsLoadingMore(false);
+  }
 
   async function handleFollow(userId: string) {
     const isCurrentlyFollowing = followingMap.get(userId) ?? false;
     const newFollowing = !isCurrentlyFollowing;
 
-    // Optimistic update
     setFollowingMap((prev) => new Map(prev).set(userId, newFollowing));
 
     try {
@@ -65,7 +88,6 @@ export default function PeoplePage() {
         method: newFollowing ? "POST" : "DELETE",
       });
       if (!res.ok) {
-        // Revert
         setFollowingMap((prev) => new Map(prev).set(userId, isCurrentlyFollowing));
       }
     } catch {
@@ -107,13 +129,10 @@ export default function PeoplePage() {
         </div>
       )}
 
-      {/* No results */}
-      {!isLoading && results.length === 0 && normalizedQuery.length > 0 && (
+      {/* No results for search */}
+      {!isLoading && users.length === 0 && query.trim().length > 0 && (
         <div className="flex flex-col items-center gap-3 py-16 text-center">
-          <span
-            className="material-symbols-outlined text-tertiary"
-            style={{ fontSize: "48px" }}
-          >
+          <span className="material-symbols-outlined text-tertiary" style={{ fontSize: "48px" }}>
             person_search
           </span>
           <p className="text-on-surface-variant font-medium">
@@ -123,12 +142,9 @@ export default function PeoplePage() {
       )}
 
       {/* No users at all */}
-      {!isLoading && allUsers.length === 0 && (
+      {!isLoading && users.length === 0 && query.trim().length === 0 && (
         <div className="flex flex-col items-center gap-3 py-16 text-center">
-          <span
-            className="material-symbols-outlined text-tertiary"
-            style={{ fontSize: "48px" }}
-          >
+          <span className="material-symbols-outlined text-tertiary" style={{ fontSize: "48px" }}>
             group_add
           </span>
           <p className="text-on-surface-variant font-medium">{t("emptyState")}</p>
@@ -137,9 +153,9 @@ export default function PeoplePage() {
       )}
 
       {/* Results */}
-      {!isLoading && results.length > 0 && (
+      {!isLoading && users.length > 0 && (
         <div className="grid gap-3">
-          {results.map((user) => {
+          {users.map((user) => {
             const isFollowing = followingMap.get(user.id) ?? false;
 
             return (
@@ -148,7 +164,6 @@ export default function PeoplePage() {
                 className="flex items-center gap-4 rounded-[var(--radius-xl)] border border-outline-variant/15 bg-surface-container-low/40 p-4 transition-colors hover:border-outline-variant/30"
                 style={{ backdropFilter: "blur(8px)" }}
               >
-                {/* Avatar — clickable to profile */}
                 <Link href={`/users/${user.id}`} className="shrink-0">
                   {user.image ? (
                     <Image
@@ -167,7 +182,6 @@ export default function PeoplePage() {
                   )}
                 </Link>
 
-                {/* Info — clickable to profile */}
                 <Link href={`/users/${user.id}`} className="flex-1 min-w-0">
                   <p className="font-semibold text-on-surface truncate hover:text-primary transition-colors">
                     {user.name ?? tCommon("anonymous")}
@@ -177,7 +191,6 @@ export default function PeoplePage() {
                   </p>
                 </Link>
 
-                {/* Follow button */}
                 <button
                   type="button"
                   onClick={() => void handleFollow(user.id)}
@@ -192,6 +205,19 @@ export default function PeoplePage() {
               </div>
             );
           })}
+
+          {/* Load more */}
+          {hasMore && (
+            <div className="flex justify-center pt-4">
+              <Button
+                variant="secondary"
+                loading={isLoadingMore}
+                onClick={() => void loadMore()}
+              >
+                {tCommon("viewAll")}
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>
