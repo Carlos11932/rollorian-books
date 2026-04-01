@@ -11,6 +11,7 @@
     "clear": "Limpiar",
     "viewAll": "Ver todo",
     "notRated": "Sin valorar",
+    "anonymous": "Anónimo",
     "loading": "Cargando..."
   },
   "nav": {
@@ -25,7 +26,8 @@
     "tagline": "Colección Privada",
     "groups": "Grupos",
     "lists": "Listas",
-    "stats": "Estadísticas"
+    "stats": "Estadísticas",
+    "people": "Personas"
   },
   "settingsPage": {
     "title": "Los ajustes están en camino",
@@ -305,6 +307,17 @@
     "noStreak": "¡Empieza a leer para construir tu racha!",
     "noData": "Aún no hay datos de lectura",
     "startReading": "Añade libros para ver tus estadísticas"
+  },
+  "people": {
+    "heading": "Personas",
+    "description": "Encuentra lectores y descubre qué están leyendo.",
+    "searchPlaceholder": "Buscar por nombre...",
+    "noResults": "No se encontraron personas para \"{query}\"",
+    "emptyState": "Busca personas para seguir",
+    "emptyDescription": "Sigue a otros lectores para descubrir libros y ver recomendaciones basadas en sus gustos.",
+    "bookCount": "{count, plural, =0 {Sin libros} =1 {1 libro} other {# libros}}",
+    "follow": "Seguir",
+    "following": "Siguiendo"
   },
   "errors": {
     "notFoundTitle": "Página no encontrada",

@@ -13,6 +13,7 @@ const navItems = [
   { href: '/lists', key: 'lists', icon: 'playlist_add' },
   { href: '/stats', key: 'stats', icon: 'bar_chart' },
   { href: '/groups', key: 'groups', icon: 'group' },
+  { href: '/people', key: 'people', icon: 'person_search' },
 ] as const;
 
 interface NavLinksProps {

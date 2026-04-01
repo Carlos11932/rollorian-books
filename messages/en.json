@@ -11,6 +11,7 @@
     "clear": "Clear",
     "viewAll": "View All",
     "notRated": "Not rated",
+    "anonymous": "Anonymous",
     "loading": "Loading..."
   },
   "nav": {
@@ -25,7 +26,8 @@
     "tagline": "Private Collection",
     "groups": "Groups",
     "lists": "Lists",
-    "stats": "Stats"
+    "stats": "Stats",
+    "people": "People"
   },
   "settingsPage": {
     "title": "Settings are on the way",
@@ -305,6 +307,17 @@
     "noStreak": "Start reading to build your streak!",
     "noData": "No reading data yet",
     "startReading": "Add some books to see your stats"
+  },
+  "people": {
+    "heading": "People",
+    "description": "Find readers and discover what they're reading.",
+    "searchPlaceholder": "Search by name...",
+    "noResults": "No people found for \"{query}\"",
+    "emptyState": "Find people to follow",
+    "emptyDescription": "Follow other readers to discover books and get recommendations based on their taste.",
+    "bookCount": "{count, plural, =0 {No books} =1 {1 book} other {# books}}",
+    "follow": "Follow",
+    "following": "Following"
   },
   "errors": {
     "notFoundTitle": "Page not found",
