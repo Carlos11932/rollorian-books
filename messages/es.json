@@ -23,8 +23,13 @@
     "brand": "Rollorian-books",
     "appName": "The Archive",
     "tagline": "Colección Privada",
-    "addVolume": "Añadir volumen",
-    "groups": "Grupos"
+    "groups": "Grupos",
+    "lists": "Listas",
+    "stats": "Estadísticas"
+  },
+  "settingsPage": {
+    "title": "Los ajustes están en camino",
+    "description": "Esta sección aún no está implementada, pero la ruta ya resuelve correctamente para que la shell de la app no se rompa en las previews."
   },
   "admin": {
     "heading": "Panel de administración",
@@ -96,6 +101,12 @@
     "resultsLabel": "Resultados de búsqueda",
     "resultsCount": "{count} resultado(s) para \"{query}\"",
     "archivedSuggestions": "Sugerencias del Archivo",
+    "scanIsbn": "Escanear ISBN",
+    "scanning": "Apunta la cámara al código de barras",
+    "scanSuccess": "ISBN detectado!",
+    "cameraPermission": "Se necesita acceso a la cámara para escanear códigos de barras",
+    "cameraNotSupported": "El escaneo de códigos de barras no está disponible en este navegador. Usa Chrome o Safari.",
+    "closeScan": "Cerrar escáner",
     "genres": {
       "novel": "Novela",
       "history": "Historia",
@@ -225,6 +236,52 @@
     "forbidden": "No tienes acceso a este grupo.",
     "you": "(tú)",
     "noMembers": "Aún no hay miembros."
+  },
+  "lists": {
+    "title": "Mis Listas",
+    "create": "Crear Lista",
+    "name": "Nombre de la lista",
+    "description": "Descripción (opcional)",
+    "empty": "No hay listas",
+    "createFirst": "Crea tu primera lista para organizar tus libros",
+    "addToList": "Añadir a lista",
+    "removeFromList": "Quitar de lista",
+    "bookCount": "{count, plural, one {# libro} other {# libros}}",
+    "deleteConfirm": "¿Eliminar esta lista?",
+    "deleteWarning": "Esta acción no se puede deshacer. Los libros no se eliminarán de tu biblioteca.",
+    "created": "Lista creada",
+    "deleted": "Lista eliminada",
+    "bookAdded": "Libro añadido a la lista",
+    "bookRemoved": "Libro eliminado de la lista",
+    "alreadyInList": "Ya está en esta lista",
+    "editName": "Editar nombre",
+    "editDescription": "Editar descripción",
+    "backToLists": "Volver a listas",
+    "emptyList": "No hay libros en esta lista",
+    "emptyListDescription": "Añade libros desde tu biblioteca o los resultados de búsqueda",
+    "createNew": "Crear nueva lista",
+    "saving": "Guardando...",
+    "deleting": "Eliminando..."
+  },
+  "recommendations": {
+    "heading": "Otros Lectores Tambi\u00e9n Leyeron",
+    "readerCount": "{count, plural, one {# lector} other {# lectores}} de tu c\u00edrculo",
+    "noRecommendations": "Sigue a lectores o \u00fanete a grupos para obtener recomendaciones"
+  },
+  "stats": {
+    "title": "Estadísticas de Lectura",
+    "totalBooks": "Total de Libros",
+    "readThisYear": "Leídos Este Año",
+    "averageRating": "Valoración Media",
+    "pagesRead": "Páginas Leídas",
+    "booksPerMonth": "Libros Leídos por Mes",
+    "topGenres": "Géneros Favoritos",
+    "readingStreak": "Racha de Lectura",
+    "streakWeeks": "Racha de {count} semanas",
+    "streakDays": "Racha de {count} días",
+    "noStreak": "¡Empieza a leer para construir tu racha!",
+    "noData": "Aún no hay datos de lectura",
+    "startReading": "Añade libros para ver tus estadísticas"
   },
   "errors": {
     "notFoundTitle": "Página no encontrada",

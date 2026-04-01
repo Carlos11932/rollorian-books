@@ -11,6 +11,7 @@ import { BookCard } from "@/features/books/components/book-card";
 import { Skeleton } from "@/features/shared/components/skeleton";
 import { BookRailSection } from "@/features/shared/ui/book-rail-section";
 import { saveBook } from "@/lib/api/books";
+import { IsbnScanner } from "@/features/search/components/isbn-scanner";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -104,6 +105,26 @@ interface DiscoverResponse {
   genres: DiscoverGenre[];
 }
 
+// ── Recommendation types ────────────────────────────────────────────────────
+
+interface RecommendedBook {
+  id: string;
+  title: string;
+  authors: string[];
+  coverUrl: string | null;
+  isbn13: string | null;
+  genres: string[];
+}
+
+interface Recommendation {
+  book: RecommendedBook;
+  readerCount: number;
+}
+
+interface RecommendationsResponse {
+  recommendations: Recommendation[];
+}
+
 // ── Component ───────────────────────────────────────────────────────────────
 
 export default function SearchPage() {
@@ -114,6 +135,13 @@ export default function SearchPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showScanner, setShowScanner] = useState(false);
+  const [hasBarcodeApi, setHasBarcodeApi] = useState(false);
+
+  // Feature-detect BarcodeDetector on mount (client only)
+  useEffect(() => {
+    setHasBarcodeApi(typeof globalThis.BarcodeDetector !== "undefined");
+  }, []);
 
   // Library books indexed by isbn13 for fast lookup
   const [libraryIndex, setLibraryIndex] = useState<Map<string, BookStatus>>(new Map());
@@ -122,6 +150,10 @@ export default function SearchPage() {
   // Discover genre carousels
   const [discoverGenres, setDiscoverGenres] = useState<DiscoverGenre[]>([]);
   const [isDiscoverLoading, setIsDiscoverLoading] = useState(true);
+
+  // Social recommendations
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [isRecommendationsLoading, setIsRecommendationsLoading] = useState(true);
 
   // Load user's library on mount to detect already-saved books and show suggestions
   useEffect(() => {
@@ -168,6 +200,26 @@ export default function SearchPage() {
       });
   }, []);
 
+  // Load social recommendations on mount
+  useEffect(() => {
+    setIsRecommendationsLoading(true);
+    void fetch("/api/recommendations")
+      .then((res) =>
+        res.ok
+          ? (res.json() as Promise<RecommendationsResponse>)
+          : Promise.resolve({ recommendations: [] }),
+      )
+      .then((data) => {
+        setRecommendations(data.recommendations);
+      })
+      .catch(() => {
+        // Non-critical — page still works without recommendations
+      })
+      .finally(() => {
+        setIsRecommendationsLoading(false);
+      });
+  }, []);
+
   function getSavedStatus(book: NormalizedBook): BookStatus | null {
     if (book.isbn) {
       return libraryIndex.get(book.isbn) ?? null;
@@ -209,6 +261,12 @@ export default function SearchPage() {
     void handleSearch(inputValue);
   }
 
+  function handleIsbnScan(isbn: string) {
+    setShowScanner(false);
+    setInputValue(isbn);
+    void handleSearch(isbn);
+  }
+
   function handleQuickFilter(queryValue: string) {
     setInputValue(queryValue);
     void handleSearch(queryValue);
@@ -221,6 +279,28 @@ export default function SearchPage() {
     if (original.isbn) {
       setLibraryIndex((prev) => new Map(prev).set(original.isbn!, "WISHLIST"));
     }
+  }
+
+  function recommendationToDisplayBook(rec: Recommendation): LibraryEntryView {
+    return {
+      id: rec.book.id,
+      title: rec.book.title,
+      subtitle: null,
+      authors: rec.book.authors,
+      description: null,
+      coverUrl: rec.book.coverUrl,
+      publisher: null,
+      publishedDate: null,
+      pageCount: null,
+      isbn10: null,
+      isbn13: rec.book.isbn13,
+      status: "WISHLIST",
+      rating: null,
+      notes: null,
+      genres: rec.book.genres,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
   }
 
   async function handleDiscoverSave(displayBook: LibraryEntryView): Promise<void> {
@@ -276,15 +356,28 @@ export default function SearchPage() {
             className="w-full bg-surface-container-lowest border-none text-on-surface placeholder:text-outline text-lg py-5 pl-16 pr-16 rounded-full shadow-2xl focus:ring-2 focus:ring-primary/20 outline-none disabled:opacity-50 disabled:cursor-not-allowed"
           />
 
-          {/* Mic button — right (visual only) */}
-          <span
-            aria-hidden="true"
-            className="absolute inset-y-0 right-4 flex items-center pointer-events-none"
-          >
-            <span className="material-symbols-outlined text-outline" style={{ fontSize: "22px" }}>
-              mic
+          {/* Scan / Mic button — right */}
+          {hasBarcodeApi ? (
+            <button
+              type="button"
+              onClick={() => setShowScanner(true)}
+              className="absolute inset-y-0 right-4 flex items-center text-primary hover:text-primary/80 transition-colors cursor-pointer"
+              aria-label={t('search.scanIsbn')}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: "22px" }}>
+                qr_code_scanner
+              </span>
+            </button>
+          ) : (
+            <span
+              aria-hidden="true"
+              className="absolute inset-y-0 right-4 flex items-center pointer-events-none"
+            >
+              <span className="material-symbols-outlined text-outline" style={{ fontSize: "22px" }}>
+                mic
+              </span>
             </span>
-          </span>
+          )}
         </form>
 
         {/* Quick filter pills */}
@@ -440,6 +533,46 @@ export default function SearchPage() {
                 })}
             </section>
           )}
+
+          {/* ── Social recommendations carousel ── */}
+          {(isRecommendationsLoading || recommendations.length > 0) && (
+            <section aria-label={t('recommendations.heading')} className="mt-16 space-y-6">
+              {isRecommendationsLoading && (
+                <div className="space-y-4" aria-busy="true">
+                  <Skeleton variant="text" className="h-6 w-56" />
+                  <div className="flex gap-6 overflow-hidden">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <div key={i} className="shrink-0 space-y-2" style={{ width: "160px" }}>
+                        <Skeleton variant="card" className="h-[220px] w-[160px]" />
+                        <Skeleton variant="text" className="h-3 w-3/4" />
+                        <Skeleton variant="text" className="h-3 w-1/2" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {!isRecommendationsLoading && recommendations.length > 0 && (
+                <BookRailSection title={t('recommendations.heading')}>
+                  {recommendations.map((rec, index) => {
+                    const displayBook = recommendationToDisplayBook(rec);
+                    return (
+                      <div key={rec.book.id} className="shrink-0" style={{ width: "160px", minWidth: "160px", scrollSnapAlign: "start" }}>
+                        <BookCard
+                          variant="browse"
+                          book={displayBook}
+                          index={index}
+                        />
+                        <p className="text-xs text-tertiary mt-1 px-1">
+                          {t('recommendations.readerCount', { count: rec.readerCount })}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </BookRailSection>
+              )}
+            </section>
+          )}
         </>
       )}
 
@@ -495,6 +628,14 @@ export default function SearchPage() {
             ))}
           </div>
         </section>
+      )}
+
+      {/* ── ISBN barcode scanner overlay ── */}
+      {showScanner && (
+        <IsbnScanner
+          onScan={handleIsbnScan}
+          onClose={() => setShowScanner(false)}
+        />
       )}
 
     </div>

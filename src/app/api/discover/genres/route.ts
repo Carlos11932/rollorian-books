@@ -2,10 +2,9 @@ import "server-only";
 
 import { unstable_cache } from "next/cache";
 import type { NextRequest } from "next/server";
-import { fetchBooks } from "@/lib/google-books/client";
-import { normalizeSearchResults } from "@/lib/google-books/normalize";
+import { searchBooks } from "@/lib/book-providers/search-orchestrator";
 import { requireAuth, UnauthorizedError } from "@/lib/auth/require-auth";
-import type { NormalizedBook } from "@/lib/google-books/types";
+import type { NormalizedBook } from "@/lib/book-providers/types";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -24,16 +23,16 @@ const BOOKS_PER_GENRE = 12;
 // ── Cached fetcher ───────────────────────────────────────────────────────────
 
 /**
- * Fetches books for a single genre and caches the result for 6 hours.
+ * Fetches books for a single genre from all providers and caches for 6 hours.
  * Using per-genre caching so individual genres can revalidate independently.
  */
 function fetchGenreBooks(genre: string) {
   return unstable_cache(
     async (): Promise<NormalizedBook[]> => {
-      const volumes = await fetchBooks(`subject:${genre}`, {
+      const books = await searchBooks(`subject:${genre}`, {
         maxResults: BOOKS_PER_GENRE,
       });
-      return normalizeSearchResults(volumes);
+      return books.slice(0, BOOKS_PER_GENRE);
     },
     [`discover-genre-${genre}`],
     { revalidate: 21600, tags: [`discover-genre-${genre}`] },

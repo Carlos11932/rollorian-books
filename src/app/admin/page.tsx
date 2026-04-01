@@ -1,14 +1,13 @@
 import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
+import { requireSuperAdmin } from "@/lib/auth/require-auth";
 import { InviteForm } from "@/features/admin/components/invite-form";
 import { InvitationList } from "@/features/admin/components/invitation-list";
 import { UserList } from "@/features/admin/components/user-list";
 
 export default async function AdminPage() {
   const t = await getTranslations("admin");
-  const session = await auth();
-  const currentUserId = session?.user?.id ?? "";
+  const { userId: currentUserId } = await requireSuperAdmin();
 
   const [invitations, users] = await Promise.all([
     prisma.invitation.findMany({

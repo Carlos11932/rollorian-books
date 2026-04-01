@@ -3,6 +3,10 @@ import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
+import {
+  isMissingSocialSchemaError,
+  isMissingUserRoleError,
+} from "@/lib/prisma-schema-compat";
 
 const isE2ETestMode = process.env.E2E_TEST_MODE === "true";
 // VERCEL_ENV is set by Vercel infrastructure: "production" | "preview" | "development".
@@ -64,6 +68,7 @@ function getProviders() {
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
   providers: getProviders(),
+  trustHost: true,
   session: (isE2ETestMode || isPreviewEnv) ? { strategy: "jwt" } : undefined,
   pages: {
     signIn: "/login",
@@ -78,11 +83,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       session.user.id = userId;
 
       // Fetch role from DB — do NOT trust a stale cached value.
-      const dbUser = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { role: true },
-      });
-      session.user.role = dbUser?.role ?? "USER";
+      try {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { role: true },
+        });
+        session.user.role = dbUser?.role ?? "USER";
+      } catch (error) {
+        if (!isMissingUserRoleError(error)) {
+          throw error;
+        }
+
+        session.user.role = "USER";
+      }
 
       return session;
     },
@@ -109,14 +122,22 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (superadminEmail && email === superadminEmail) return true;
 
       // Allow if a valid PENDING non-expired invitation exists.
-      const invitation = await prisma.invitation.findFirst({
-        where: {
-          email,
-          status: "PENDING",
-          expiresAt: { gt: new Date() },
-        },
-        select: { id: true },
-      });
+      let invitation = null;
+      try {
+        invitation = await prisma.invitation.findFirst({
+          where: {
+            email,
+            status: "PENDING",
+            expiresAt: { gt: new Date() },
+          },
+          select: { id: true },
+        });
+      } catch (error) {
+        if (!isMissingSocialSchemaError(error)) {
+          throw error;
+        }
+      }
+
       if (invitation) return true;
 
       // No valid path to sign in — redirect with error.
@@ -141,14 +162,22 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
 
         // If there's a PENDING invitation, mark it accepted.
-        const invitation = await prisma.invitation.findFirst({
-          where: {
-            email,
-            status: "PENDING",
-            expiresAt: { gt: new Date() },
-          },
-          select: { id: true },
-        });
+        let invitation = null;
+        try {
+          invitation = await prisma.invitation.findFirst({
+            where: {
+              email,
+              status: "PENDING",
+              expiresAt: { gt: new Date() },
+            },
+            select: { id: true },
+          });
+        } catch (error) {
+          if (!isMissingSocialSchemaError(error)) {
+            throw error;
+          }
+        }
+
         if (invitation) {
           await prisma.invitation.update({
             where: { id: invitation.id },

@@ -1,6 +1,13 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isMissingUserRoleError } from "@/lib/prisma-schema-compat";
 import type { UserRole } from "@/lib/types/user";
+
+const E2E_TEST_USER = {
+  EMAIL: "carlos@rollorian.dev",
+} as const;
+
+const isE2ETestMode = process.env.E2E_TEST_MODE === "true";
 
 /**
  * Thrown when a request lacks a valid authenticated session.
@@ -24,6 +31,25 @@ export class ForbiddenError extends Error {
   }
 }
 
+export async function getAuthenticatedUserIdOrNull(): Promise<string | null> {
+  const session = await auth();
+
+  if (session?.user?.id) {
+    return session.user.id;
+  }
+
+  if (!isE2ETestMode) {
+    return null;
+  }
+
+  const e2eUser = await prisma.user.findUnique({
+    where: { email: E2E_TEST_USER.EMAIL },
+    select: { id: true },
+  });
+
+  return e2eUser?.id ?? null;
+}
+
 /**
  * Asserts that the current request has an authenticated session.
  *
@@ -31,13 +57,13 @@ export class ForbiddenError extends Error {
  * @throws {UnauthorizedError} if there is no session or user ID.
  */
 export async function requireAuth(): Promise<{ userId: string }> {
-  const session = await auth();
+  const userId = await getAuthenticatedUserIdOrNull();
 
-  if (!session?.user?.id) {
+  if (!userId) {
     throw new UnauthorizedError();
   }
 
-  return { userId: session.user.id };
+  return { userId };
 }
 
 /**
@@ -62,14 +88,26 @@ export async function requireSuperAdmin(): Promise<{
 
   const userId = session.user.id;
 
-  const dbUser = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { role: true },
-  });
+  try {
+    const dbUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true },
+    });
 
-  if (!dbUser || dbUser.role !== "SUPERADMIN") {
+    if (!dbUser || dbUser.role !== "SUPERADMIN") {
+      throw new ForbiddenError();
+    }
+
+    return { userId, role: dbUser.role };
+  } catch (error) {
+    if (!isMissingUserRoleError(error)) {
+      throw error;
+    }
+
+    if (session.user.email && process.env.SUPERADMIN_EMAIL === session.user.email) {
+      return { userId, role: "SUPERADMIN" };
+    }
+
     throw new ForbiddenError();
   }
-
-  return { userId, role: dbUser.role };
 }

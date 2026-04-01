@@ -66,6 +66,7 @@ describe("saveBook", () => {
       userId: "user-001",
       bookId: book.id,
       status: "WISHLIST",
+      finishedAt: null,
       rating: null,
       notes: null,
       createdAt: new Date("2024-01-01"),

@@ -10,6 +10,8 @@ const navItems = [
   { href: '/', key: 'home', icon: 'home' },
   { href: '/search', key: 'search', icon: 'search' },
   { href: '/library', key: 'library', icon: 'local_library' },
+  { href: '/lists', key: 'lists', icon: 'playlist_add' },
+  { href: '/stats', key: 'stats', icon: 'bar_chart' },
   { href: '/groups', key: 'groups', icon: 'group' },
 ] as const;
 

@@ -27,8 +27,10 @@ export default defineConfig({
         reuseExistingServer: false,
         timeout: 120000,
         env: {
+          AUTH_SECRET: process.env.AUTH_SECRET ?? 'e2e-test-secret',
           DATABASE_URL: process.env.DATABASE_URL ?? '',
           DIRECT_URL: process.env.DIRECT_URL ?? '',
+          E2E_TEST_MODE: 'true',
           GOOGLE_BOOKS_API_KEY: process.env.GOOGLE_BOOKS_API_KEY ?? '',
         },
       }
