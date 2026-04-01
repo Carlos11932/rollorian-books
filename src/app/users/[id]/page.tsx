@@ -5,6 +5,7 @@ import { canViewUserBooks } from "@/lib/privacy/can-view-user-books";
 import type { UserBookWithBook } from "@/lib/types/book";
 import { ProfileHeader } from "@/features/profile/components/profile-header";
 import { ProfileBookList } from "@/features/profile/components/profile-book-list";
+import { USER_BOOK_SELECT } from "@/lib/books/user-book-select";
 
 interface UserProfilePageProps {
   params: Promise<{ id: string }>;
@@ -78,11 +79,12 @@ export default async function UserProfilePage({
   }
 
   if (canView) {
-    books = await prisma.userBook.findMany({
+    const results = await prisma.userBook.findMany({
       where: { userId: targetUserId },
-      include: { book: true },
+      select: USER_BOOK_SELECT,
       orderBy: { createdAt: "desc" },
     });
+    books = results.map((r) => ({ ...r, finishedAt: null }));
   }
 
   return (

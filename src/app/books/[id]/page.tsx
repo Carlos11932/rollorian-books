@@ -9,6 +9,7 @@ import type { GoogleBooksVolume } from "@/lib/google-books/types";
 import type { GoogleBookView } from "@/features/books/types";
 import { LocalBookDetail } from "@/features/books/components/local-book-detail";
 import { GoogleBookDetail } from "@/features/books/components/google-book-detail";
+import { USER_BOOK_SELECT } from "@/lib/books/user-book-select";
 
 interface BookDetailPageProps {
   params: Promise<{ id: string }>;
@@ -18,12 +19,12 @@ type ResolvedBook = { source: "local"; userBook: UserBookWithBook } | GoogleBook
 
 const resolveBook = cache(async function resolveBook(id: string, userId: string): Promise<ResolvedBook | null> {
   try {
-    const userBook = await prisma.userBook.findUnique({
+    const result = await prisma.userBook.findUnique({
       where: { userId_bookId: { userId, bookId: id } },
-      include: { book: true },
+      select: USER_BOOK_SELECT,
     });
-    if (userBook) {
-      return { source: "local", userBook: userBook as UserBookWithBook };
+    if (result) {
+      return { source: "local", userBook: { ...result, finishedAt: null } };
     }
   } catch {
     // Invalid ID format for Prisma — fall through to Google Books

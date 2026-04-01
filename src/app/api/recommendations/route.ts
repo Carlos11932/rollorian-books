@@ -43,7 +43,7 @@ function getRecommendations(userId: string) {
 
       // Step 2: Find similar readers from three sources
 
-      // 2a: Users who share 2+ books with the current user
+      // 2a: Users who share 1+ books with the current user
       const sharedBookUsers = await prisma.userBook.groupBy({
         by: ["userId"],
         where: {
@@ -51,7 +51,7 @@ function getRecommendations(userId: string) {
           userId: { not: userId },
         },
         _count: true,
-        having: { userId: { _count: { gte: 2 } } },
+        having: { userId: { _count: { gte: 1 } } },
       });
 
       // 2b: Users the current user follows
@@ -96,12 +96,12 @@ function getRecommendations(userId: string) {
         return [];
       }
 
-      // Step 3: Get books those similar readers have (READ or READING) that I don't
+      // Step 3: Get books those similar readers have that I don't
       const myBookIdArray = [...myBookIds];
       const candidateBooks = await prisma.userBook.findMany({
         where: {
           userId: { in: allowedReaderIds },
-          status: { in: ["READ", "READING"] },
+          status: { in: ["READ", "READING", "REREADING"] },
           bookId: { notIn: myBookIdArray },
         },
         select: {
