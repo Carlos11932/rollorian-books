@@ -53,6 +53,8 @@ model User {
   followers     Follow[]      @relation("following")
   following     Follow[]      @relation("followers")
   bookLists     BookList[]
+  loansGiven    Loan[]        @relation("lender")
+  loansReceived Loan[]        @relation("borrower")
 }
 
 model Group {
@@ -157,8 +159,35 @@ model Book {
   updatedAt     DateTime       @updatedAt
   userBooks     UserBook[]
   listItems     BookListItem[]
+  loans         Loan[]
 
   @@index([createdAt])
+}
+
+enum LoanStatus {
+  REQUESTED
+  OFFERED
+  ACTIVE
+  RETURNED
+  DECLINED
+}
+
+model Loan {
+  id         String     @id @default(cuid())
+  lenderId   String
+  borrowerId String
+  bookId     String
+  status     LoanStatus @default(REQUESTED)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  lender     User       @relation("lender", fields: [lenderId], references: [id], onDelete: Cascade)
+  borrower   User       @relation("borrower", fields: [borrowerId], references: [id], onDelete: Cascade)
+  book       Book       @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@unique([lenderId, borrowerId, bookId])
+  @@index([lenderId, status])
+  @@index([borrowerId, status])
+  @@index([bookId])
 }
 
 model UserBook {

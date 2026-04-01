@@ -308,6 +308,24 @@
     "noData": "Aún no hay datos de lectura",
     "startReading": "Añade libros para ver tus estadísticas"
   },
+  "loans": {
+    "lentTo": "Prestado a {name}",
+    "borrowedFrom": "Prestado por {name}",
+    "requestLoan": "Pedir prestado",
+    "offerLoan": "Ofrecer prestar",
+    "accept": "Aceptar",
+    "decline": "Rechazar",
+    "return": "Devolver",
+    "pending": "Pendiente",
+    "active": "Activo",
+    "requestedBy": "{name} quiere que le prestes este libro",
+    "offeredBy": "{name} te ofrece prestar este libro",
+    "lentBooks": "Libros prestados",
+    "borrowedBooks": "Te han prestado",
+    "noLoans": "No tienes préstamos activos",
+    "requesting": "Solicitando...",
+    "offering": "Ofreciendo..."
+  },
   "people": {
     "heading": "Personas",
     "description": "Encuentra lectores y descubre qué están leyendo.",
