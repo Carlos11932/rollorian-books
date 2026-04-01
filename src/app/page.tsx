@@ -3,8 +3,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTranslations } from 'next-intl/server';
 import type { BookStatus } from "@/lib/types/book";
-import { auth } from "@/lib/auth";
 import { getLibrary } from "@/lib/books";
+import { getAuthenticatedUserIdOrNull } from "@/lib/auth/require-auth";
 import { EmptyState } from "@/features/shared/components/empty-state";
 import { Button } from "@/features/shared/components/button";
 import { toLibraryEntryView, type LibraryEntryView } from "@/features/books/types";
@@ -17,11 +17,10 @@ const STATUS_ORDER: BookStatus[] = ["READING", "READ", "TO_READ", "WISHLIST"];
 export default async function Home() {
   const t = await getTranslations();
 
-  const session = await auth();
-  if (!session?.user?.id) {
+  const userId = await getAuthenticatedUserIdOrNull();
+  if (!userId) {
     redirect("/login");
   }
-  const userId = session.user.id;
 
   const userBooks = await getLibrary(userId);
 

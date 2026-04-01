@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getTranslations } from 'next-intl/server';
 import { type BookStatus, BOOK_STATUS_VALUES } from "@/lib/types/book";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
+import { getAuthenticatedUserIdOrNull } from "@/lib/auth/require-auth";
 import { LibraryBookCard } from "@/features/books/components/library-book-card";
 import { StatusTabs, type StatusCounts, type StatusTabValue } from "@/features/books/components/status-tabs";
 import { EmptyState } from "@/features/shared/components/empty-state";
@@ -57,11 +57,10 @@ interface LibraryPageProps {
 }
 
 export default async function LibraryPage({ searchParams }: LibraryPageProps) {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const userId = await getAuthenticatedUserIdOrNull();
+  if (!userId) {
     redirect("/login");
   }
-  const userId = session.user.id;
 
   const params = await searchParams;
   const statusParam = typeof params.status === "string" ? params.status : undefined;

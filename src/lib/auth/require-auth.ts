@@ -3,6 +3,12 @@ import { prisma } from "@/lib/prisma";
 import { isMissingUserRoleError } from "@/lib/prisma-schema-compat";
 import type { UserRole } from "@/lib/types/user";
 
+const E2E_TEST_USER = {
+  EMAIL: "carlos@rollorian.dev",
+} as const;
+
+const isE2ETestMode = process.env.E2E_TEST_MODE === "true";
+
 /**
  * Thrown when a request lacks a valid authenticated session.
  * Callers (route handlers) should catch this and return 401.
@@ -25,6 +31,25 @@ export class ForbiddenError extends Error {
   }
 }
 
+export async function getAuthenticatedUserIdOrNull(): Promise<string | null> {
+  const session = await auth();
+
+  if (session?.user?.id) {
+    return session.user.id;
+  }
+
+  if (!isE2ETestMode) {
+    return null;
+  }
+
+  const e2eUser = await prisma.user.findUnique({
+    where: { email: E2E_TEST_USER.EMAIL },
+    select: { id: true },
+  });
+
+  return e2eUser?.id ?? null;
+}
+
 /**
  * Asserts that the current request has an authenticated session.
  *
@@ -32,13 +57,13 @@ export class ForbiddenError extends Error {
  * @throws {UnauthorizedError} if there is no session or user ID.
  */
 export async function requireAuth(): Promise<{ userId: string }> {
-  const session = await auth();
+  const userId = await getAuthenticatedUserIdOrNull();
 
-  if (!session?.user?.id) {
+  if (!userId) {
     throw new UnauthorizedError();
   }
 
-  return { userId: session.user.id };
+  return { userId };
 }
 
 /**
