@@ -41,11 +41,11 @@ export async function DiscoveredBookDetail({ book, owners }: DiscoveredBookDetai
       <div style={{ position: "relative", zIndex: 2 }} className="grid gap-6 pt-8 pb-12">
         <div>
           <Link
-            href="/"
+            href="/library"
             className="inline-flex items-center gap-1.5 text-sm text-on-surface/50 hover:text-on-surface transition-colors duration-150"
           >
             <span aria-hidden="true">←</span>
-            {t("book.backToHome")}
+            {t("book.backToLibrary")}
           </Link>
         </div>
 
