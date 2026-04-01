@@ -42,33 +42,37 @@ export async function getLibrary(
       orderBy: { createdAt: "desc" },
     });
   } catch (error) {
+    // Check the more specific error FIRST — a missing `finishedAt` column
+    // produces a message containing both "UserBook" and "finishedAt", so the
+    // broader `isMissingUserBookSchemaError` would swallow it and return []
+    // instead of falling through to the working legacy query.
+    if (isMissingFinishedAtError(error)) {
+      const legacyUserBooks = await prisma.userBook.findMany({
+        where,
+        select: {
+          id: true,
+          userId: true,
+          bookId: true,
+          status: true,
+          rating: true,
+          notes: true,
+          createdAt: true,
+          updatedAt: true,
+          book: true,
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      return legacyUserBooks.map((entry) => ({
+        ...entry,
+        finishedAt: null,
+      }));
+    }
+
     if (isMissingUserBookSchemaError(error)) {
       return [];
     }
 
-    if (!isMissingFinishedAtError(error)) {
-      throw error;
-    }
-
-    const legacyUserBooks = await prisma.userBook.findMany({
-      where,
-      select: {
-        id: true,
-        userId: true,
-        bookId: true,
-        status: true,
-        rating: true,
-        notes: true,
-        createdAt: true,
-        updatedAt: true,
-        book: true,
-      },
-      orderBy: { createdAt: "desc" },
-    });
-
-    return legacyUserBooks.map((entry) => ({
-      ...entry,
-      finishedAt: null,
-    }));
+    throw error;
   }
 }

@@ -72,9 +72,6 @@ export async function AppShell({ children }: AppShellProps) {
 
         {/* Sidebar footer */}
         <div className="px-6 flex flex-col gap-4">
-          <button className="bg-gradient-to-br from-primary to-primary-container text-on-primary py-3 px-4 rounded-xl font-bold text-sm w-full">
-            {t('addVolume')}
-          </button>
           <div className="pt-4 flex flex-col gap-2 border-t border-outline-variant/10">
             <Link
               href="/settings"
