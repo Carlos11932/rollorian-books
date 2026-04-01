@@ -11,6 +11,7 @@ import { ReadingHero } from "@/features/dashboard/components/reading-hero";
 import { DashboardBookRail } from "@/features/dashboard/components/dashboard-book-rail";
 import { DashboardStats } from "@/features/dashboard/components/dashboard-stats";
 import { DashboardRecommendations } from "@/features/dashboard/components/dashboard-recommendations";
+import { DashboardLoans } from "@/features/loans/components/dashboard-loans";
 
 export default async function Home() {
   const t = await getTranslations();
@@ -68,7 +69,10 @@ export default async function Home() {
       {/* 2. Quick Stats */}
       <DashboardStats />
 
-      {/* 3. Recommendations (client-side fetch) */}
+      {/* 3. Active loans */}
+      <DashboardLoans />
+
+      {/* 4. Recommendations (client-side fetch) */}
       <DashboardRecommendations />
 
       {/* 4. Up Next — TO_READ */}

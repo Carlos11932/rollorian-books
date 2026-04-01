@@ -308,6 +308,24 @@
     "noData": "No reading data yet",
     "startReading": "Add some books to see your stats"
   },
+  "loans": {
+    "lentTo": "Lent to {name}",
+    "borrowedFrom": "Borrowed from {name}",
+    "requestLoan": "Request to borrow",
+    "offerLoan": "Offer to lend",
+    "accept": "Accept",
+    "decline": "Decline",
+    "return": "Return",
+    "pending": "Pending",
+    "active": "Active",
+    "requestedBy": "{name} wants to borrow this book",
+    "offeredBy": "{name} is offering you this book",
+    "lentBooks": "Books you lent",
+    "borrowedBooks": "Books borrowed",
+    "noLoans": "No active loans",
+    "requesting": "Requesting...",
+    "offering": "Offering..."
+  },
   "people": {
     "heading": "People",
     "description": "Find readers and discover what they're reading.",

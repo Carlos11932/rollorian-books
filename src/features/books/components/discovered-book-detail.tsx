@@ -7,6 +7,7 @@ import { BookCover } from "@/features/books/components/book-cover";
 import { MetadataCard } from "@/features/books/components/metadata-card";
 import { BlurredBackground } from "@/features/shared/components/blurred-background";
 import { GoogleBookSaveClient } from "@/features/books/components/google-book-save-client";
+import { RequestLoanButton } from "@/features/loans/components/request-loan-button";
 import type { BookOwner } from "@/app/books/[id]/page";
 
 interface DiscoveredBookDetailProps {
@@ -108,36 +109,38 @@ export async function DiscoveredBookDetail({ book, owners }: DiscoveredBookDetai
             </div>
             <div className="flex flex-wrap gap-3">
               {owners.map((owner) => (
-                <Link
+                <div
                   key={owner.userId}
-                  href={`/users/${owner.userId}`}
-                  className="flex items-center gap-3 rounded-xl border border-outline-variant/15 bg-surface-container-low/40 px-4 py-3 hover:border-primary/30 transition-colors"
+                  className="flex items-center gap-3 rounded-xl border border-outline-variant/15 bg-surface-container-low/40 px-4 py-3"
                 >
-                  {owner.userImage ? (
-                    <Image
-                      src={owner.userImage}
-                      alt={owner.userName ?? ""}
-                      width={32}
-                      height={32}
-                      className="rounded-full object-cover w-8 h-8 shrink-0"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center shrink-0">
-                      <span className="material-symbols-outlined text-primary text-sm">person</span>
+                  <Link href={`/users/${owner.userId}`} className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-80 transition-opacity">
+                    {owner.userImage ? (
+                      <Image
+                        src={owner.userImage}
+                        alt={owner.userName ?? ""}
+                        width={32}
+                        height={32}
+                        className="rounded-full object-cover w-8 h-8 shrink-0"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center shrink-0">
+                        <span className="material-symbols-outlined text-primary text-sm">person</span>
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-on-surface truncate">
+                        {owner.userName ?? "Anonymous"}
+                      </p>
+                      <p className="text-[10px] text-tertiary">
+                        {t(`book.status.${owner.status}`)}
+                        {owner.rating != null && (
+                          <span className="ml-1">· ⭐ {owner.rating}</span>
+                        )}
+                      </p>
                     </div>
-                  )}
-                  <div>
-                    <p className="text-sm font-semibold text-on-surface">
-                      {owner.userName ?? "Anonymous"}
-                    </p>
-                    <p className="text-[10px] text-tertiary">
-                      {t(`book.status.${owner.status}`)}
-                      {owner.rating != null && (
-                        <span className="ml-1">· ⭐ {owner.rating}</span>
-                      )}
-                    </p>
-                  </div>
-                </Link>
+                  </Link>
+                  <RequestLoanButton lenderId={owner.userId} bookId={book.id} />
+                </div>
               ))}
             </div>
           </section>
