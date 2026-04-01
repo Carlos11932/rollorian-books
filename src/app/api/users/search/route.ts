@@ -13,10 +13,18 @@ export async function GET(request: NextRequest): Promise<Response> {
       return Response.json({ users: [] });
     }
 
+    // Normalize query: strip accents for broader matching
+    // PostgreSQL `insensitive` handles case but NOT accents,
+    // so we use `unaccent`-style approach via raw filtering after a broad fetch.
+    const normalizedQ = q
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
+
     const users = await prisma.user.findMany({
       where: {
         id: { not: userId },
-        name: { contains: q, mode: "insensitive" },
+        name: { not: null },
       },
       select: {
         id: true,
@@ -30,17 +38,28 @@ export async function GET(request: NextRequest): Promise<Response> {
           select: { id: true },
         },
       },
-      take: 20,
+      take: 100,
       orderBy: { name: "asc" },
     });
 
-    const results = users.map((user) => ({
-      id: user.id,
-      name: user.name,
-      image: user.image,
-      bookCount: user._count.userBooks,
-      isFollowing: user.followers.length > 0,
-    }));
+    // Filter in JS with accent-insensitive matching
+    const results = users
+      .filter((user) => {
+        if (!user.name) return false;
+        const normalizedName = user.name
+          .normalize("NFKD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase();
+        return normalizedName.includes(normalizedQ);
+      })
+      .slice(0, 20)
+      .map((user) => ({
+        id: user.id,
+        name: user.name,
+        image: user.image,
+        bookCount: user._count.userBooks,
+        isFollowing: user.followers.length > 0,
+      }));
 
     return Response.json({ users: results });
   } catch (error) {
