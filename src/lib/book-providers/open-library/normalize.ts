@@ -42,11 +42,15 @@ function normalizeDoc(doc: OpenLibraryDoc): NormalizedBook | null {
 
   const isbn = selectIsbn(doc.isbn);
 
+  // Strip leading "/works/" prefix from key so externalId is a clean
+  // single-segment identifier safe for URL routing (e.g. "OL17365W")
+  const cleanId = doc.key.replace(/^\/?works\//, "");
+
   return {
     externalSource: "open_library",
-    externalId: doc.key,
+    externalId: cleanId,
     title: doc.title,
-    authors: doc.author_name ?? [],
+    authors: doc.author_name?.length ? doc.author_name : ["Unknown"],
     publishedYear: doc.first_publish_year ?? null,
     isbn,
     coverUrl: buildCoverUrl(doc, isbn),

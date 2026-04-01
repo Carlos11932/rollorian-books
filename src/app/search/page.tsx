@@ -38,14 +38,23 @@ function toDisplayBook(book: NormalizedBook): LibraryEntryView {
 }
 
 async function saveBookToLibrary(book: NormalizedBook): Promise<void> {
+  // Ensure authors is never empty — Zod rejects min(1)
+  const authors = book.authors.length > 0 ? book.authors : ["Unknown"];
+
+  // Separate ISBN-10 from ISBN-13 — don't put a 10-digit ISBN in isbn13
+  const isbn = book.isbn ?? null;
+  const isbn13 = isbn && isbn.length === 13 ? isbn : undefined;
+  const isbn10 = isbn && isbn.length === 10 ? isbn : undefined;
+
   await saveBook({
     title: book.title,
-    authors: book.authors,
+    authors,
     coverUrl: book.coverUrl ?? undefined,
     publishedDate: book.publishedYear != null ? String(book.publishedYear) : undefined,
-    isbn13: book.isbn ?? undefined,
+    isbn13,
+    isbn10,
     status: "WISHLIST" as const,
-    genres: [],
+    genres: book.genres ?? [],
   });
 }
 
