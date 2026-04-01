@@ -134,7 +134,7 @@ async function getRecommendations(userId: string): Promise<{
   const candidateBooks = await prisma.userBook.findMany({
     where: {
       userId: { in: allowedReaderIds },
-      status: { in: ["READ", "READING", "REREADING"] },
+      status: { in: ["READ", "READING"] },
       bookId: { notIn: myBookIdArray },
     },
     select: {
