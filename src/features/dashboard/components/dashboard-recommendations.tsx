@@ -50,13 +50,24 @@ export function DashboardRecommendations() {
     );
   }
 
-  if (recommendations.length === 0) return null;
-
   return (
     <section>
       <h2 className="text-lg font-bold text-on-surface mb-4">
         {t("recommendations")}
       </h2>
+      {recommendations.length === 0 ? (
+        <div className="rounded-xl border border-outline-variant/15 bg-surface-container-low/40 p-6 text-center">
+          <span
+            className="material-symbols-outlined text-tertiary mb-2 block"
+            style={{ fontSize: "36px" }}
+          >
+            explore
+          </span>
+          <p className="text-sm text-tertiary">
+            {t("recommendationsEmpty")}
+          </p>
+        </div>
+      ) : (
       <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-3">
         {recommendations.map((rec) => {
           const authorLine =
@@ -95,6 +106,7 @@ export function DashboardRecommendations() {
           );
         })}
       </div>
+      )}
     </section>
   );
 }
