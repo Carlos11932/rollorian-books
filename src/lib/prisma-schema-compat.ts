@@ -12,7 +12,11 @@ export function isPrismaSchemaMismatchError(error: unknown): boolean {
 }
 
 export function isMissingFinishedAtError(error: unknown): boolean {
-  return isPrismaSchemaMismatchError(error) && /finishedAt/i.test(getErrorMessage(error));
+  if (!isPrismaSchemaMismatchError(error)) return false;
+  const msg = getErrorMessage(error);
+  // Prisma 7 may use "(not available)" instead of the actual column name,
+  // so also match that when the error is about a UserBook column.
+  return /finishedAt/i.test(msg) || /\(not available\)/i.test(msg);
 }
 
 export function isMissingUserBookSchemaError(error: unknown): boolean {

@@ -40,10 +40,24 @@ export async function saveLibraryEntry(
     throw new DuplicateLibraryEntryError();
   }
 
-  let userBook: UserBookWithBook;
+  // Use explicit `select` to avoid requesting columns (like finishedAt)
+  // that may not exist in preview databases with schema drift.
+  const userBookSelect = {
+    id: true,
+    userId: true,
+    bookId: true,
+    status: true,
+    rating: true,
+    notes: true,
+    createdAt: true,
+    updatedAt: true,
+    book: true,
+  } as const;
+
+  let created;
 
   try {
-    userBook = await prisma.userBook.create({
+    created = await prisma.userBook.create({
       data: {
         userId,
         bookId: book.id,
@@ -52,14 +66,14 @@ export async function saveLibraryEntry(
         ...(rating !== undefined ? { rating } : {}),
         ...(notes !== undefined ? { notes } : {}),
       },
-      include: { book: true },
+      select: userBookSelect,
     });
   } catch (error) {
     if (!isMissingFinishedAtError(error)) {
       throw error;
     }
 
-    const legacyUserBook = await prisma.userBook.create({
+    created = await prisma.userBook.create({
       data: {
         userId,
         bookId: book.id,
@@ -67,14 +81,11 @@ export async function saveLibraryEntry(
         ...(rating !== undefined ? { rating } : {}),
         ...(notes !== undefined ? { notes } : {}),
       },
-      include: { book: true },
+      select: userBookSelect,
     });
-
-    userBook = {
-      ...legacyUserBook,
-      finishedAt: null,
-    };
   }
+
+  const userBook: UserBookWithBook = { ...created, finishedAt: null };
 
   revalidateBookCollectionPaths(book.id);
 
