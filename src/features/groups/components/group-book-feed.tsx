@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/features/shared/components/button';
 
@@ -121,9 +122,10 @@ export function GroupBookFeed({ groupId, initialBooks, initialNextCursor }: Grou
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {memberRatings.map((mr) => (
-                      <span
+                      <Link
                         key={mr.userId}
-                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-high text-xs text-on-surface"
+                        href={`/users/${mr.userId}`}
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-high text-xs text-on-surface hover:bg-primary/15 hover:text-primary transition-colors"
                       >
                         <span className="font-medium">{mr.userName ?? mr.userId}</span>
                         {mr.rating != null ? (
@@ -145,7 +147,7 @@ export function GroupBookFeed({ groupId, initialBooks, initialNextCursor }: Grou
                             <span className="text-muted">{tCommon('notRated')}</span>
                           </>
                         )}
-                      </span>
+                      </Link>
                     ))}
                   </div>
                 </div>
