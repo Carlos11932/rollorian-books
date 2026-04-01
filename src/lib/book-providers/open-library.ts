@@ -11,11 +11,26 @@ export const openLibraryProvider: BookProvider = {
     query: string,
     options?: SearchOptions
   ): Promise<NormalizedBook[]> {
-    const docs = await searchOpenLibrary(query, {
-      limit: options?.maxResults ?? 20,
-      language: options?.language,
+    const limit = options?.maxResults ?? 20;
+    const searchOpts = { limit, language: options?.language };
+
+    // Search both as general query AND as author-specific query.
+    // This ensures "Santiago Posteguillo" finds books BY that author,
+    // not just books mentioning those words in the title.
+    const [generalDocs, authorDocs] = await Promise.all([
+      searchOpenLibrary(query, searchOpts),
+      searchOpenLibrary(`author:${query}`, { ...searchOpts, limit: 10 }),
+    ]);
+
+    // Merge and deduplicate by key
+    const seen = new Set<string>();
+    const merged = [...generalDocs, ...authorDocs].filter((doc) => {
+      if (seen.has(doc.key)) return false;
+      seen.add(doc.key);
+      return true;
     });
-    return normalizeOpenLibraryResults(docs);
+
+    return normalizeOpenLibraryResults(merged);
   },
   async fetchByIsbn(isbn: string): Promise<NormalizedBook | null> {
     const doc = await olFetchByIsbn(isbn);
