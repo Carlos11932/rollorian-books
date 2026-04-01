@@ -28,9 +28,12 @@ export async function saveLibraryEntry(
     book = await prisma.book.create({ data: bookFields });
   }
 
-  // Check if user already has this book
+  // Check if user already has this book.
+  // Use `select: { id: true }` to avoid requesting columns (like finishedAt)
+  // that may not exist in preview databases with schema drift.
   const existingUserBook = await prisma.userBook.findUnique({
     where: { userId_bookId: { userId, bookId: book.id } },
+    select: { id: true },
   });
 
   if (existingUserBook) {
