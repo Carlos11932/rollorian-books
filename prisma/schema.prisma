@@ -11,6 +11,8 @@ enum BookStatus {
   TO_READ
   READING
   READ
+  ON_HOLD
+  REREADING
 }
 
 enum UserRole {

@@ -1,0 +1,3 @@
+-- AlterEnum
+ALTER TYPE "BookStatus" ADD VALUE 'ON_HOLD';
+ALTER TYPE "BookStatus" ADD VALUE 'REREADING';

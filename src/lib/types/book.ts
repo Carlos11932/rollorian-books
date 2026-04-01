@@ -12,7 +12,9 @@ export const BookStatus = {
   WISHLIST: "WISHLIST",
   TO_READ: "TO_READ",
   READING: "READING",
+  REREADING: "REREADING",
   READ: "READ",
+  ON_HOLD: "ON_HOLD",
 } as const;
 
 export type BookStatus = (typeof BookStatus)[keyof typeof BookStatus];
@@ -22,7 +24,9 @@ export const BOOK_STATUS_VALUES: BookStatus[] = [
   BookStatus.WISHLIST,
   BookStatus.TO_READ,
   BookStatus.READING,
+  BookStatus.REREADING,
   BookStatus.READ,
+  BookStatus.ON_HOLD,
 ] as const;
 
 

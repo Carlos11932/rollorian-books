@@ -64,12 +64,28 @@
     "emptyTitle": "Tu archivo está vacío",
     "emptyDescription": "Busca libros y guárdalos en tu biblioteca personal.",
     "emptyAction": "Encuentra tu primer libro",
-    "browseByGenre": "Explorar por género",
-    "heroTitle": "Tu archivo te espera",
-    "heroDescription": "Empieza a construir tu colección de libros...",
-    "heroSearch": "Buscar libros",
-    "heroContinue": "Continuar leyendo",
-    "heroViewDetails": "Ver detalles"
+    "currentlyReading": "Leyendo ahora",
+    "currentlyReadingEmpty": "No estás leyendo nada. ¡Elige tu siguiente libro!",
+    "pickFromQueue": "Elegir de la cola",
+    "continueReading": "Continuar leyendo",
+    "viewDetails": "Ver detalles",
+    "quickStats": "Tu resumen",
+    "readThisYear": "Leídos este año",
+    "readingStreak": "Racha",
+    "avgRating": "Nota media",
+    "pagesRead": "Páginas leídas",
+    "weeks": "semanas",
+    "viewAllStats": "Ver estadísticas completas",
+    "recommendations": "Recomendado para ti",
+    "recommendationsEmpty": "Sigue a más personas o añade libros para recibir recomendaciones.",
+    "upNext": "Tu cola de lectura",
+    "upNextEmpty": "No tienes libros pendientes. ¡Busca algo nuevo!",
+    "onHold": "Lecturas en pausa",
+    "onHoldEmpty": "No tienes libros en pausa.",
+    "wishlist": "Lista de deseos",
+    "wishlistEmpty": "Tu lista de deseos está vacía.",
+    "viewAll": "Ver todo",
+    "seeMore": "Ver más"
   },
   "library": {
     "heading": "Tu Archivo",
@@ -82,13 +98,17 @@
       "WISHLIST": "Lista de deseos",
       "TO_READ": "Próximamente",
       "READING": "En progreso",
-      "READ": "Completados"
+      "REREADING": "Releyendo",
+      "READ": "Completados",
+      "ON_HOLD": "En pausa"
     },
     "statusEmpty": {
       "WISHLIST": "No hay libros en tu lista de deseos.",
       "TO_READ": "No tienes libros pendientes de leer.",
       "READING": "No estás leyendo ningún libro ahora mismo.",
-      "READ": "Aún no has marcado ningún libro como leído."
+      "REREADING": "No estás releyendo ningún libro.",
+      "READ": "Aún no has marcado ningún libro como leído.",
+      "ON_HOLD": "No tienes libros en pausa."
     }
   },
   "search": {
@@ -132,7 +152,9 @@
       "WISHLIST": "Lista de deseos",
       "TO_READ": "Por leer",
       "READING": "Leyendo",
-      "READ": "Leído"
+      "REREADING": "Releyendo",
+      "READ": "Leído",
+      "ON_HOLD": "En pausa"
     },
     "statusLabel": "Estado",
     "ratingLabel": "Valoración",

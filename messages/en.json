@@ -64,12 +64,28 @@
     "emptyTitle": "Your archive is empty",
     "emptyDescription": "Search for books and save them to your personal library.",
     "emptyAction": "Find your first book",
-    "browseByGenre": "Browse by Genre",
-    "heroTitle": "Your archive awaits",
-    "heroDescription": "Start building your book collection...",
-    "heroSearch": "Search for books",
-    "heroContinue": "Continue reading",
-    "heroViewDetails": "View details"
+    "currentlyReading": "Currently Reading",
+    "currentlyReadingEmpty": "You're not reading anything. Pick your next book!",
+    "pickFromQueue": "Pick from queue",
+    "continueReading": "Continue reading",
+    "viewDetails": "View details",
+    "quickStats": "Your summary",
+    "readThisYear": "Read this year",
+    "readingStreak": "Streak",
+    "avgRating": "Avg rating",
+    "pagesRead": "Pages read",
+    "weeks": "weeks",
+    "viewAllStats": "View full stats",
+    "recommendations": "Recommended for you",
+    "recommendationsEmpty": "Follow more people or add books to get recommendations.",
+    "upNext": "Your reading queue",
+    "upNextEmpty": "No books in your queue. Find something new!",
+    "onHold": "On hold",
+    "onHoldEmpty": "No books on hold.",
+    "wishlist": "Wishlist",
+    "wishlistEmpty": "Your wishlist is empty.",
+    "viewAll": "View all",
+    "seeMore": "See more"
   },
   "library": {
     "heading": "Your Archive",
@@ -82,13 +98,17 @@
       "WISHLIST": "Wishlist",
       "TO_READ": "Up next",
       "READING": "In progress",
-      "READ": "Completed"
+      "REREADING": "Rereading",
+      "READ": "Completed",
+      "ON_HOLD": "On hold"
     },
     "statusEmpty": {
       "WISHLIST": "No books in your wishlist.",
       "TO_READ": "No books waiting to be read.",
       "READING": "You're not reading anything right now.",
-      "READ": "You haven't marked any books as read yet."
+      "REREADING": "You're not rereading any books.",
+      "READ": "You haven't marked any books as read yet.",
+      "ON_HOLD": "No books on hold."
     }
   },
   "search": {
@@ -132,7 +152,9 @@
       "WISHLIST": "Wishlist",
       "TO_READ": "To Read",
       "READING": "Reading",
-      "READ": "Read"
+      "REREADING": "Rereading",
+      "READ": "Read",
+      "ON_HOLD": "On Hold"
     },
     "statusLabel": "Status",
     "ratingLabel": "Rating",
