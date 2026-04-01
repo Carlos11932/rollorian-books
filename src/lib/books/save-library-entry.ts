@@ -6,6 +6,7 @@ import type { UserBookWithBook } from "@/lib/types/book";
 import type { CreateBookInput } from "@/lib/schemas/book";
 import { revalidateBookCollectionPaths } from "@/lib/revalidation";
 import { DuplicateLibraryEntryError } from "./errors";
+import { USER_BOOK_SELECT } from "./user-book-select";
 
 /**
  * Saves a book to the user's library. Deduplicates by ISBN if possible,
@@ -28,9 +29,7 @@ export async function saveLibraryEntry(
     book = await prisma.book.create({ data: bookFields });
   }
 
-  // Check if user already has this book.
-  // Use `select: { id: true }` to avoid requesting columns (like finishedAt)
-  // that may not exist in preview databases with schema drift.
+  // Check if user already has this book (select only id to avoid schema drift)
   const existingUserBook = await prisma.userBook.findUnique({
     where: { userId_bookId: { userId, bookId: book.id } },
     select: { id: true },
@@ -39,20 +38,6 @@ export async function saveLibraryEntry(
   if (existingUserBook) {
     throw new DuplicateLibraryEntryError();
   }
-
-  // Use explicit `select` to avoid requesting columns (like finishedAt)
-  // that may not exist in preview databases with schema drift.
-  const userBookSelect = {
-    id: true,
-    userId: true,
-    bookId: true,
-    status: true,
-    rating: true,
-    notes: true,
-    createdAt: true,
-    updatedAt: true,
-    book: true,
-  } as const;
 
   let created;
 
@@ -66,7 +51,7 @@ export async function saveLibraryEntry(
         ...(rating !== undefined ? { rating } : {}),
         ...(notes !== undefined ? { notes } : {}),
       },
-      select: userBookSelect,
+      select: USER_BOOK_SELECT,
     });
   } catch (error) {
     if (!isMissingFinishedAtError(error)) {
@@ -81,7 +66,7 @@ export async function saveLibraryEntry(
         ...(rating !== undefined ? { rating } : {}),
         ...(notes !== undefined ? { notes } : {}),
       },
-      select: userBookSelect,
+      select: USER_BOOK_SELECT,
     });
   }
 

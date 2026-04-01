@@ -104,7 +104,8 @@ function getRecommendations(userId: string) {
           status: { in: ["READ", "READING"] },
           bookId: { notIn: myBookIdArray },
         },
-        include: {
+        select: {
+          bookId: true,
           book: {
             select: {
               id: true,

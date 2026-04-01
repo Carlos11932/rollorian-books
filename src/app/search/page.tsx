@@ -176,9 +176,13 @@ export default function SearchPage() {
           }
         }
         setLibraryIndex(index);
-        // Flatten UserBook + Book into LibraryEntryView shape for suggestions
+        // Only show READING / TO_READ as "continue reading" suggestions
+        // — showing READ books as suggestions makes no sense
+        const reading = entries.filter(
+          (e) => e.status === "READING" || e.status === "REREADING" || e.status === "TO_READ",
+        );
         setLibrarySuggestions(
-          entries.map((entry): LibraryEntryView => ({
+          reading.map((entry): LibraryEntryView => ({
             ...entry.book,
             status: entry.status,
             rating: entry.rating,

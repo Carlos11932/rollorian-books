@@ -21,7 +21,7 @@
     "settings": "Ajustes",
     "searchAriaLabel": "Buscar",
     "brand": "Rollorian-books",
-    "appName": "The Archive",
+    "appName": "Rollorian",
     "tagline": "Colección Privada",
     "groups": "Grupos",
     "lists": "Listas",
@@ -61,7 +61,7 @@
     "deleting": "Eliminando..."
   },
   "home": {
-    "emptyTitle": "Tu archivo está vacío",
+    "emptyTitle": "Tu biblioteca está vacía",
     "emptyDescription": "Busca libros y guárdalos en tu biblioteca personal.",
     "emptyAction": "Encuentra tu primer libro",
     "currentlyReading": "Leyendo ahora",
@@ -88,7 +88,7 @@
     "seeMore": "Ver más"
   },
   "library": {
-    "heading": "Tu Archivo",
+    "heading": "Tu Biblioteca",
     "description": "Gestiona tu colección personal de libros. Consulta lo que estás leyendo, lo que quieres leer y lo que ya has terminado.",
     "emptyAll": "Tu biblioteca está vacía",
     "emptyFilter": "No hay libros con este filtro.",
@@ -112,7 +112,7 @@
     }
   },
   "search": {
-    "heading": "Explora el Archivo",
+    "heading": "Explorar libros",
     "inputLabel": "Busca por título, autor o ISBN",
     "genresLabel": "Géneros",
     "loading": "Cargando resultados",
@@ -120,7 +120,7 @@
     "tryAnother": "Prueba con otro título...",
     "resultsLabel": "Resultados de búsqueda",
     "resultsCount": "{count} resultado(s) para \"{query}\"",
-    "archivedSuggestions": "Sugerencias del Archivo",
+    "archivedSuggestions": "Continúa leyendo",
     "scanIsbn": "Escanear ISBN",
     "scanning": "Apunta la cámara al código de barras",
     "scanSuccess": "ISBN detectado!",
