@@ -140,7 +140,7 @@ function getRecommendations(userId: string) {
         .map(({ book, count }) => ({ book, readerCount: count }));
     },
     [`recommendations-${userId}`],
-    { revalidate: 3600 },
+    { revalidate: 300 },
   )();
 }
 
