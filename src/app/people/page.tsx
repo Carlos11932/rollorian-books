@@ -42,11 +42,8 @@ export default function PeoplePage() {
   const [followingMap, setFollowingMap] = useState<Map<string, boolean>>(new Map());
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
 
-  // Initial load + search
+  // Debounced search — fires on every query change
   useEffect(() => {
-    // Reset on every query change
-    setIsLoading(true);
-
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
     debounceRef.current = setTimeout(async () => {
@@ -113,7 +110,7 @@ export default function PeoplePage() {
         <input
           type="text"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => { setIsLoading(true); setQuery(e.target.value); }}
           placeholder={t("searchPlaceholder")}
           className="w-full pl-12 pr-4 py-3 rounded-xl border border-outline-variant/20 bg-surface-container-low/60 text-on-surface text-sm placeholder:text-tertiary focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/30 transition-colors"
           style={{ backdropFilter: "blur(8px)" }}

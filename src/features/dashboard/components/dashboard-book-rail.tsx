@@ -16,7 +16,7 @@ interface DashboardBookRailProps {
 export async function DashboardBookRail({
   title,
   books,
-  emptyMessage,
+  emptyMessage: _emptyMessage,
   status,
   icon,
   maxVisible = 8,

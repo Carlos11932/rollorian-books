@@ -34,7 +34,7 @@ describe("normalizeOpenLibraryResults", () => {
 
     expect(result).toBeDefined();
     expect(result!.externalSource).toBe("open_library");
-    expect(result!.externalId).toBe("/works/OL456W");
+    expect(result!.externalId).toBe("OL456W");
     expect(result!.title).toBe("Clean Architecture");
     expect(result!.authors).toEqual(["Robert C. Martin"]);
     expect(result!.publishedYear).toBe(2017);
@@ -113,10 +113,10 @@ describe("normalizeOpenLibraryResults", () => {
     expect(results[0]!.title).toBe("Valid Book");
   });
 
-  it("returns empty authors array when author_name is undefined", () => {
+  it("returns fallback authors when author_name is undefined", () => {
     const doc = makeDoc({ author_name: undefined });
     const [result] = normalizeOpenLibraryResults([doc]);
-    expect(result!.authors).toEqual([]);
+    expect(result!.authors).toEqual(["Unknown"]);
   });
 
   it("returns null publishedYear when first_publish_year is undefined", () => {
@@ -153,9 +153,9 @@ describe("normalizeOpenLibraryResults", () => {
 
     expect(result).toBeDefined();
     expect(result!.externalSource).toBe("open_library");
-    expect(result!.externalId).toBe("/works/OL999W");
+    expect(result!.externalId).toBe("OL999W");
     expect(result!.title).toBe("Minimal Book");
-    expect(result!.authors).toEqual([]);
+    expect(result!.authors).toEqual(["Unknown"]);
     expect(result!.publishedYear).toBeNull();
     expect(result!.isbn).toBeNull();
     expect(result!.coverUrl).toBeNull();
