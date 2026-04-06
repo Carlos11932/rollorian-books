@@ -113,7 +113,14 @@
       "REREADING": "No estás releyendo ningún libro.",
       "READ": "Aún no has marcado ningún libro como leído.",
       "ON_HOLD": "No tienes libros en pausa."
-    }
+    },
+    "select": "Seleccionar",
+    "cancelSelection": "Cancelar",
+    "selectedCount": "{count, plural, one {# seleccionado} other {# seleccionados}}",
+    "moveTo": "Mover a",
+    "batchSuccess": "{count, plural, one {# libro movido} other {# libros movidos}}",
+    "selectAll": "Todos",
+    "deselectAll": "Ninguno"
   },
   "search": {
     "heading": "Explorar libros",
