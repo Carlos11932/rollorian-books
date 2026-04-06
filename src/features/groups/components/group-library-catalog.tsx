@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { BookRailSection } from "@/features/shared/ui/book-rail-section";
 import { EmptyState } from "@/features/shared/components/empty-state";
 import { GroupBookCard } from "./group-book-card";
+import { groupByNormalizedGenre } from "@/lib/book-providers/genre-normalizer";
 import { cn } from "@/lib/cn";
 
 // ---------------------------------------------------------------------------
@@ -26,30 +27,6 @@ type ReadFilter = "all" | "read" | "unread";
 
 interface GroupLibraryCatalogProps {
   books: CatalogBook[];
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function groupByGenre(books: CatalogBook[], noGenreLabel: string) {
-  const genreMap = new Map<string, CatalogBook[]>();
-
-  for (const book of books) {
-    const genres = book.genres.length > 0 ? book.genres : [noGenreLabel];
-    for (const genre of genres) {
-      const list = genreMap.get(genre) ?? [];
-      list.push(book);
-      genreMap.set(genre, list);
-    }
-  }
-
-  // Sort genres alphabetically, but push "no genre" to the end
-  return Array.from(genreMap.entries()).sort(([a], [b]) => {
-    if (a === noGenreLabel) return 1;
-    if (b === noGenreLabel) return -1;
-    return a.localeCompare(b);
-  });
 }
 
 // ---------------------------------------------------------------------------
@@ -98,9 +75,9 @@ export function GroupLibraryCatalog({ books }: GroupLibraryCatalogProps) {
     return books;
   }, [books, readFilter]);
 
-  // Group by genre for the genre view
+  // Group by normalized genre for the genre view
   const genreSections = useMemo(
-    () => groupByGenre(filteredBooks, t("noGenre")),
+    () => groupByNormalizedGenre(filteredBooks, t("noGenre")),
     [filteredBooks, t],
   );
 

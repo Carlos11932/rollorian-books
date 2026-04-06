@@ -63,7 +63,8 @@ export async function POST(request: NextRequest): Promise<Response> {
 
     // Fire-and-forget enrichment — fill missing metadata from other providers
     const book = userBook.book;
-    if (book.isbn13 && (!book.description || !book.coverUrl || !book.pageCount)) {
+    const hasGenres = Array.isArray(book.genres) && book.genres.length > 0;
+    if (book.isbn13 && (!book.description || !book.coverUrl || !book.pageCount || !hasGenres)) {
       after(async () => {
         try {
           await enrichBookMetadata(book.id, book.isbn13!);
@@ -104,6 +105,7 @@ async function enrichBookMetadata(
   if (enriched.pageCount) updates.pageCount = enriched.pageCount;
   if (enriched.publisher) updates.publisher = enriched.publisher;
   if (enriched.subtitle) updates.subtitle = enriched.subtitle;
+  if (enriched.genres && enriched.genres.length > 0) updates.genres = enriched.genres;
 
   if (Object.keys(updates).length > 0) {
     // Fetch current book to only fill missing fields, never overwrite
@@ -113,7 +115,9 @@ async function enrichBookMetadata(
     const filtered: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(updates)) {
       const existing = current[key as keyof typeof current];
-      if (existing === null || existing === undefined) {
+      // For arrays (genres), treat empty array as missing
+      const isEmpty = Array.isArray(existing) ? existing.length === 0 : false;
+      if (existing === null || existing === undefined || isEmpty) {
         filtered[key] = value;
       }
     }
