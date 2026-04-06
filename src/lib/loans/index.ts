@@ -133,6 +133,21 @@ export async function requestLoan(
 
   if (!lenderBook) throw new LoanBookNotInLibraryError();
 
+  // Prevent duplicate active/pending loans for the same book between same users
+  const existingActive = await prisma.loan.findFirst({
+    where: {
+      lenderId,
+      borrowerId,
+      bookId,
+      status: { in: ["REQUESTED", "OFFERED", "ACTIVE"] },
+    },
+    select: { id: true },
+  });
+
+  if (existingActive) {
+    throw new LoanInvalidTransitionError("An active loan already exists for this book between these users");
+  }
+
   const loan = await prisma.loan.create({
     data: {
       lenderId,
@@ -160,6 +175,21 @@ export async function offerLoan(
   });
 
   if (!lenderBook) throw new LoanBookNotInLibraryError();
+
+  // Prevent duplicate active/pending loans for the same book between same users
+  const existingActive = await prisma.loan.findFirst({
+    where: {
+      lenderId,
+      borrowerId,
+      bookId,
+      status: { in: ["REQUESTED", "OFFERED", "ACTIVE"] },
+    },
+    select: { id: true },
+  });
+
+  if (existingActive) {
+    throw new LoanInvalidTransitionError("An active loan already exists for this book between these users");
+  }
 
   const loan = await prisma.loan.create({
     data: {
@@ -198,22 +228,25 @@ export async function acceptLoan(
     throw new LoanInvalidTransitionError(`Cannot accept a loan with status ${loan.status}`);
   }
 
-  // Activate the loan
-  const updated = await prisma.loan.update({
-    where: { id: loanId },
-    data: { status: "ACTIVE" },
-    select: LOAN_SELECT,
-  });
+  // Activate loan + create borrower UserBook atomically
+  const updated = await prisma.$transaction(async (tx) => {
+    const activatedLoan = await tx.loan.update({
+      where: { id: loanId },
+      data: { status: "ACTIVE" },
+      select: LOAN_SELECT,
+    });
 
-  // Create UserBook for borrower if they don't have one
-  await prisma.userBook.upsert({
-    where: { userId_bookId: { userId: loan.borrowerId, bookId: loan.bookId } },
-    create: {
-      userId: loan.borrowerId,
-      bookId: loan.bookId,
-      status: "READING",
-    },
-    update: {},
+    await tx.userBook.upsert({
+      where: { userId_bookId: { userId: loan.borrowerId, bookId: loan.bookId } },
+      create: {
+        userId: loan.borrowerId,
+        bookId: loan.bookId,
+        status: "READING",
+      },
+      update: {},
+    });
+
+    return activatedLoan;
   });
 
   revalidateBookCollectionPaths(loan.bookId);
@@ -271,23 +304,28 @@ export async function returnLoan(
     throw new LoanInvalidTransitionError(`Cannot return a loan with status ${loan.status}`);
   }
 
-  const updated = await prisma.loan.update({
-    where: { id: loanId },
-    data: { status: "RETURNED" },
-    select: LOAN_SELECT,
-  });
-
-  // If borrower didn't finish (status != READ), remove their UserBook
-  const borrowerBook = await prisma.userBook.findUnique({
-    where: { userId_bookId: { userId: loan.borrowerId, bookId: loan.bookId } },
-    select: { id: true, status: true },
-  });
-
-  if (borrowerBook && borrowerBook.status !== "READ") {
-    await prisma.userBook.delete({
-      where: { id: borrowerBook.id },
+  // Return loan + clean up borrower UserBook atomically
+  const updated = await prisma.$transaction(async (tx) => {
+    const returnedLoan = await tx.loan.update({
+      where: { id: loanId },
+      data: { status: "RETURNED" },
+      select: LOAN_SELECT,
     });
-  }
+
+    // If borrower didn't finish (status != READ), remove their UserBook
+    const borrowerBook = await tx.userBook.findUnique({
+      where: { userId_bookId: { userId: loan.borrowerId, bookId: loan.bookId } },
+      select: { id: true, status: true },
+    });
+
+    if (borrowerBook && borrowerBook.status !== "READ") {
+      await tx.userBook.delete({
+        where: { id: borrowerBook.id },
+      });
+    }
+
+    return returnedLoan;
+  });
 
   revalidateBookCollectionPaths(loan.bookId);
   return toLoanView(updated);
