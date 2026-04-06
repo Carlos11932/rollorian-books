@@ -1,0 +1,26 @@
+{
+  "owner": {
+    "userId": "usr_123",
+    "email": "carlos@example.com",
+    "name": "Carlos"
+  },
+  "currentlyReading": [],
+  "recentlyFinished": [],
+  "wishlistHighlights": [],
+  "topGenres": [
+    { "genre": "Fantasy", "count": 12 }
+  ],
+  "topAuthors": [
+    { "author": "Brandon Sanderson", "count": 4 }
+  ],
+  "readingStreak": {
+    "current": 3,
+    "unit": "weeks"
+  },
+  "averageRating": 4.3,
+  "abandonedCount": 2,
+  "activeLists": [
+    { "id": "list_1", "name": "Sci-Fi", "description": null, "itemCount": 18 }
+  ],
+  "profileUpdatedAt": "2026-04-06T18:40:00.000Z"
+}

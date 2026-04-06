@@ -40,3 +40,10 @@ export function isMissingSocialSchemaError(error: unknown): boolean {
     && /(Invitation|invitation|GroupMember|groupMember|Follow|follow)/i.test(getErrorMessage(error))
   );
 }
+
+export function isMissingDonnaStateSchemaError(error: unknown): boolean {
+  return (
+    isPrismaSchemaMismatchError(error)
+    && /(DonnaBookState|donnaBookState|DonnaSemanticState|donnaSemanticState)/i.test(getErrorMessage(error))
+  );
+}

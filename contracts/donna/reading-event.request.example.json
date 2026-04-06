@@ -1,0 +1,15 @@
+{
+  "event": "finished",
+  "bookRef": {
+    "title": "Dune",
+    "authors": ["Frank Herbert"]
+  },
+  "payload": {
+    "rating": 5,
+    "notes": "Me ha encantado"
+  },
+  "source": {
+    "channel": "telegram",
+    "actor": "Donna"
+  }
+}

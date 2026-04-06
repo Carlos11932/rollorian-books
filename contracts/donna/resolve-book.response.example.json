@@ -1,0 +1,27 @@
+{
+  "matchStatus": "strong",
+  "matchedBook": {
+    "book": {
+      "id": "book_123",
+      "title": "Dune",
+      "subtitle": null,
+      "authors": ["Frank Herbert"],
+      "description": null,
+      "coverUrl": null,
+      "publisher": null,
+      "publishedDate": null,
+      "pageCount": null,
+      "isbn10": null,
+      "isbn13": "9780441172719",
+      "genres": ["Science Fiction"]
+    },
+    "status": "TO_READ",
+    "semanticState": "to_read",
+    "rating": null,
+    "notes": null,
+    "createdAt": "2026-04-01T10:00:00.000Z",
+    "updatedAt": "2026-04-01T10:00:00.000Z",
+    "finishedAt": null
+  },
+  "suggestions": []
+}
