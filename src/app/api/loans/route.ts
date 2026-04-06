@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { NextRequest } from "next/server";
+import { z } from "zod";
 import { requireAuth, UnauthorizedError } from "@/lib/auth/require-auth";
 import {
   getUserLoans,
@@ -8,6 +8,12 @@ import {
   offerLoan,
   LoanBookNotInLibraryError,
 } from "@/lib/loans";
+
+const createLoanSchema = z.object({
+  type: z.enum(["request", "offer"]),
+  targetUserId: z.string().min(1),
+  bookId: z.string().min(1),
+});
 
 export async function GET(): Promise<Response> {
   try {
@@ -23,22 +29,24 @@ export async function GET(): Promise<Response> {
   }
 }
 
-export async function POST(request: NextRequest): Promise<Response> {
+export async function POST(request: Request): Promise<Response> {
   try {
     const { userId } = await requireAuth();
-    const body = (await request.json()) as {
-      type: "request" | "offer";
-      targetUserId: string;
-      bookId: string;
-    };
+    const body: unknown = await request.json();
+    const result = createLoanSchema.safeParse(body);
 
-    if (!body.type || !body.targetUserId || !body.bookId) {
-      return Response.json({ error: "Missing type, targetUserId, or bookId" }, { status: 400 });
+    if (!result.success) {
+      return Response.json(
+        { error: "Invalid request", details: result.error.flatten() },
+        { status: 400 },
+      );
     }
 
-    const loan = body.type === "request"
-      ? await requestLoan(userId, body.targetUserId, body.bookId)
-      : await offerLoan(userId, body.targetUserId, body.bookId);
+    const { type, targetUserId, bookId } = result.data;
+
+    const loan = type === "request"
+      ? await requestLoan(userId, targetUserId, bookId)
+      : await offerLoan(userId, targetUserId, bookId);
 
     return Response.json(loan, { status: 201 });
   } catch (error) {
@@ -48,8 +56,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     if (error instanceof LoanBookNotInLibraryError) {
       return Response.json({ error: error.message }, { status: 400 });
     }
-    const message = error instanceof Error ? error.message : "Internal server error";
     console.error("[POST /api/loans]", error);
-    return Response.json({ error: message }, { status: 500 });
+    return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

@@ -7,40 +7,11 @@
 
 import type { UserBookWithBook } from "@/lib/types/book";
 import type { CreateBookInput, UpdateBookInput } from "@/lib/schemas/book";
+import { apiFetch } from "./client";
 
-// Re-export input types for consumers
+// Re-export shared error + input types for consumers
+export { ApiError } from "./client";
 export type { CreateBookInput, UpdateBookInput };
-
-// ── Error class ──────────────────────────────────────────────────────────────
-
-export class ApiError extends Error {
-  constructor(
-    public readonly status: number,
-    message: string,
-  ) {
-    super(message);
-    this.name = "ApiError";
-  }
-}
-
-// ── Internal fetch helper ────────────────────────────────────────────────────
-
-async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(url, options);
-
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    const message = (body as { error?: string }).error ?? `HTTP ${res.status}`;
-    throw new ApiError(res.status, message);
-  }
-
-  // 204 No Content — return undefined cast to T (callers that use void are safe)
-  if (res.status === 204) {
-    return undefined as T;
-  }
-
-  return res.json() as Promise<T>;
-}
 
 // ── Public API ───────────────────────────────────────────────────────────────
 

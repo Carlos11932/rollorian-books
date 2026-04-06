@@ -11,7 +11,7 @@ import { LocalBookDetail } from "@/features/books/components/local-book-detail";
 import { GoogleBookDetail } from "@/features/books/components/google-book-detail";
 import { DiscoveredBookDetail } from "@/features/books/components/discovered-book-detail";
 import { USER_BOOK_SELECT } from "@/lib/books/user-book-select";
-import { canViewUserBooks } from "@/lib/privacy/can-view-user-books";
+import { getViewableUserIds } from "@/lib/privacy/can-view-user-books";
 
 interface BookDetailPageProps {
   params: Promise<{ id: string }>;
@@ -59,20 +59,19 @@ const resolveBook = cache(async function resolveBook(id: string, userId: string)
         },
       });
 
-      // Filter to only connections the user can see
-      const visibleOwners: BookOwner[] = [];
-      for (const owner of allOwners) {
-        const canView = await canViewUserBooks(userId, owner.userId);
-        if (canView) {
-          visibleOwners.push({
-            userId: owner.userId,
-            userName: owner.user.name,
-            userImage: owner.user.image,
-            status: owner.status,
-            rating: owner.rating,
-          });
-        }
-      }
+      // Bulk visibility check — 2 queries instead of N per owner
+      const ownerIds = allOwners.map((o) => o.userId);
+      const viewableIds = await getViewableUserIds(userId, ownerIds);
+
+      const visibleOwners: BookOwner[] = allOwners
+        .filter((o) => viewableIds.has(o.userId))
+        .map((owner) => ({
+          userId: owner.userId,
+          userName: owner.user.name,
+          userImage: owner.user.image,
+          status: owner.status,
+          rating: owner.rating,
+        }));
 
       return { source: "discovered", book, owners: visibleOwners };
     }

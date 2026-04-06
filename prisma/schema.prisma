@@ -162,6 +162,8 @@ model Book {
   loans         Loan[]
 
   @@index([createdAt])
+  @@index([isbn13])
+  @@index([isbn10])
 }
 
 enum LoanStatus {
@@ -184,7 +186,9 @@ model Loan {
   borrower   User       @relation("borrower", fields: [borrowerId], references: [id], onDelete: Cascade)
   book       Book       @relation(fields: [bookId], references: [id], onDelete: Cascade)
 
-  @@unique([lenderId, borrowerId, bookId])
+  // No @@unique — allows loan history (re-lending after RETURNED/DECLINED).
+  // Uniqueness for active loans is enforced at application level.
+  @@index([lenderId, borrowerId, bookId])
   @@index([lenderId, status])
   @@index([borrowerId, status])
   @@index([bookId])

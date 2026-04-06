@@ -17,13 +17,13 @@ export async function GET(
     const { userId } = await requireAuth();
     const { id: groupId } = await params;
 
-    // Verify caller is a member
+    // Verify caller is an ACCEPTED member — pending invites must not see group data
     const membership = await prisma.groupMember.findUnique({
       where: { groupId_userId: { groupId, userId } },
-      select: { id: true },
+      select: { status: true },
     });
 
-    if (!membership) {
+    if (!membership || membership.status !== "ACCEPTED") {
       return Response.json({ error: "Forbidden" }, { status: 403 });
     }
 

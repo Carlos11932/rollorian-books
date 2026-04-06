@@ -38,7 +38,8 @@ const e2eCredentialsProvider = Credentials({
 
 // Preview auth — allows signing in by email on Vercel preview deployments.
 // Unlike E2E, this does NOT create users — you must already exist in the DB.
-// Activated automatically by Vercel's VERCEL_ENV=preview.
+// Additionally restricted to PREVIEW_ALLOWED_EMAILS (comma-separated allowlist)
+// to prevent impersonation on publicly accessible preview URLs.
 const previewCredentialsProvider = Credentials({
   id: "preview",
   name: "Preview Login",
@@ -49,6 +50,14 @@ const previewCredentialsProvider = Credentials({
     if (!isPreviewEnv) return null;
     const email = credentials?.email as string | undefined;
     if (!email) return null;
+
+    // Enforce allowlist if configured — reject unknown emails
+    const allowlist = process.env.PREVIEW_ALLOWED_EMAILS;
+    if (allowlist) {
+      const allowed = allowlist.split(",").map((e) => e.trim().toLowerCase());
+      if (!allowed.includes(email.toLowerCase())) return null;
+    }
+
     // Only allow existing users — no account creation in previews
     const user = await prisma.user.findUnique({
       where: { email },
