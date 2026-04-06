@@ -28,7 +28,7 @@ export default function Error({ error, reset }: ErrorProps) {
           {t('errorTitle')}
         </h2>
         <p className="text-muted text-sm max-w-sm">
-          {error.message || t('errorDescription')}
+          {t('errorDescription')}
         </p>
       </div>
       <button

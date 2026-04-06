@@ -1,27 +1,25 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { auth } from "@/lib/auth";
 
 const isE2ETestMode = process.env.E2E_TEST_MODE === "true";
 
-export default function middleware(request: NextRequest) {
-  if (isE2ETestMode) {
-    return NextResponse.next();
+/**
+ * Middleware using NextAuth's `auth()` wrapper.
+ * Validates the session properly (JWT verification for preview/E2E,
+ * database session for production) instead of just checking cookie existence.
+ */
+export default auth((req) => {
+  if (isE2ETestMode) return;
+
+  // `req.auth` is the validated session — null if not authenticated
+  if (!req.auth) {
+    const loginUrl = new URL("/login", req.url);
+    loginUrl.searchParams.set(
+      "callbackUrl",
+      `${req.nextUrl.pathname}${req.nextUrl.search}`,
+    );
+    return Response.redirect(loginUrl);
   }
-
-  const token = request.cookies.get("authjs.session-token")?.value
-    || request.cookies.get("__Secure-authjs.session-token")?.value;
-
-  if (token) {
-    return NextResponse.next();
-  }
-
-  const loginUrl = new URL("/login", request.url);
-  loginUrl.searchParams.set(
-    "callbackUrl",
-    `${request.nextUrl.pathname}${request.nextUrl.search}`,
-  );
-
-  return NextResponse.redirect(loginUrl);
-}
+});
 
 export const config = {
   matcher: [
