@@ -21,6 +21,16 @@ import type { NormalizedBook } from "./types";
  * "El Ojo del Mundo: La Rueda del Tiempo 1 — Edición especial" → "el ojo del mundo"
  * "The Eye of the World - Hardcover Edition" → "the eye of the world"
  */
+/**
+ * Extracts a "core title" for dedup comparison.
+ *
+ * IMPORTANT: Does NOT strip subtitles after `:` or `—` because series
+ * volumes often use them as identifiers:
+ *   "The Dark Tower: The Gunslinger" vs "The Dark Tower: The Drawing of the Three"
+ * Stripping after `:` would merge them — a critical false positive.
+ *
+ * Instead, only strips: parentheticals, edition markers, and noise chars.
+ */
 function coreTitle(rawTitle: string): string {
   return rawTitle
     .toLowerCase()
@@ -28,14 +38,12 @@ function coreTitle(rawTitle: string): string {
     .replace(/[\u0300-\u036f]/g, "") // strip diacritics
     // Remove parenthetical content: (Wheel of Time, #1)
     .replace(/\([^)]*\)/g, "")
-    // Remove everything after common subtitle separators
-    .replace(/\s*[:—–\-|]\s*.*/g, "")
-    // Remove edition markers
+    // Remove edition markers (but keep subtitle content)
     .replace(
       /\b(edition|edicion|hardcover|paperback|tapa dura|tapa blanda|pocket|special|anniversary|illustrated|omnibus|deluxe|collector|revised|reprint)\b.*/gi,
       "",
     )
-    // Collapse whitespace
+    // Collapse non-alphanum to spaces (keeps subtitle separators as spaces)
     .replace(/[^a-z0-9\s]/g, " ")
     .replace(/\s+/g, " ")
     .trim();

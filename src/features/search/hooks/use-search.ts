@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type { NormalizedBook } from "@/lib/google-books/types";
 import type { BookStatus } from "@/lib/types/book";
 import type { LibraryEntryView } from "@/features/books/types";
@@ -151,10 +151,14 @@ export function useSearch(): SearchState {
     }
   }, []);
 
-  const handleLoadMore = useCallback(async () => {
-    if (!query || isLoadingMore || !hasMore) return;
+  // Ref guard prevents same-tick re-entry on rapid clicks
+  const loadMoreLock = useRef(false);
 
+  const handleLoadMore = useCallback(async () => {
+    if (!query || !hasMore || loadMoreLock.current) return;
+    loadMoreLock.current = true;
     setIsLoadingMore(true);
+
     try {
       const res = await fetch(
         `/api/search/books?q=${encodeURIComponent(query)}&offset=${nextOffset}`,
@@ -169,8 +173,9 @@ export function useSearch(): SearchState {
       // Silent fail for load more — user can retry
     } finally {
       setIsLoadingMore(false);
+      loadMoreLock.current = false;
     }
-  }, [query, isLoadingMore, hasMore, nextOffset]);
+  }, [query, hasMore, nextOffset]);
 
   const getSavedStatus = useCallback(
     (book: NormalizedBook): BookStatus | null => {

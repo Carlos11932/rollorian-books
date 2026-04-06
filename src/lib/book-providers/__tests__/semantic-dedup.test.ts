@@ -16,8 +16,8 @@ function makeBook(overrides: Partial<NormalizedBook> = {}): NormalizedBook {
 }
 
 describe("coreTitle", () => {
-  it("strips subtitles after colon", () => {
-    expect(_coreTitle("The Eye of the World: Book One")).toBe("the eye of the world");
+  it("preserves subtitles after colon (avoids collapsing series volumes)", () => {
+    expect(_coreTitle("The Eye of the World: Book One")).toBe("the eye of the world book one");
   });
 
   it("strips parenthetical content", () => {
@@ -26,6 +26,12 @@ describe("coreTitle", () => {
 
   it("strips edition markers", () => {
     expect(_coreTitle("Clean Code — Special Edition")).toBe("clean code");
+  });
+
+  it("preserves series volume subtitles (does NOT merge different volumes)", () => {
+    const gunslinger = _coreTitle("The Dark Tower: The Gunslinger");
+    const drawing = _coreTitle("The Dark Tower: The Drawing of the Three");
+    expect(gunslinger).not.toBe(drawing);
   });
 
   it("strips diacritics", () => {

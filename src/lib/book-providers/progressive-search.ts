@@ -15,9 +15,37 @@ import type { NormalizedBook, SearchOptions } from "./types";
 import { getProviders } from "./registry";
 import { semanticDedup } from "./semantic-dedup";
 import { normalizeGenres } from "./genre-normalizer";
+import { analyzeQuery, rankSearchResults } from "../google-books/strategy";
 
 const TARGET_COUNT = 40;
 const MAX_RELAXATION_ROUNDS = 3;
+
+// ---------------------------------------------------------------------------
+// Result cache — prevents re-hitting external APIs on "load more"
+// ---------------------------------------------------------------------------
+
+interface ProgressiveCache {
+  query: string;
+  books: NormalizedBook[];
+  timestamp: number;
+}
+
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+let progressiveCache: ProgressiveCache | null = null;
+
+function getCachedProgress(query: string): NormalizedBook[] | null {
+  if (!progressiveCache) return null;
+  if (progressiveCache.query !== query) return null;
+  if (Date.now() - progressiveCache.timestamp > CACHE_TTL) {
+    progressiveCache = null;
+    return null;
+  }
+  return progressiveCache.books;
+}
+
+function setCachedProgress(query: string, books: NormalizedBook[]): void {
+  progressiveCache = { query, books, timestamp: Date.now() };
+}
 
 // ---------------------------------------------------------------------------
 // Core search (single round against all providers)
@@ -109,43 +137,64 @@ export async function progressiveSearch(
   query: string,
   offset: number = 0,
 ): Promise<ProgressiveSearchResult> {
-  const usedQueries = new Set<string>();
-  let allBooks: NormalizedBook[] = [];
-
-  // Round 0: Primary search
   const primaryQuery = query.trim();
-  usedQueries.add(primaryQuery);
 
-  const primaryResults = await rawSearch(primaryQuery, { maxResults: 40 });
-  allBooks.push(...primaryResults);
-  allBooks = semanticDedup(allBooks);
-
-  // Progressive relaxation if we don't have enough
-  const topResult = allBooks[0] ?? null;
-  const ctx: RelaxationContext = {
-    originalQuery: primaryQuery,
-    topResult,
-    usedQueries,
-  };
-
-  let round = 0;
-  while (allBooks.length < TARGET_COUNT + offset && round < MAX_RELAXATION_ROUNDS) {
-    const relaxedQueries = generateRelaxedQueries(ctx);
-    if (relaxedQueries.length === 0) break;
-
-    for (const rq of relaxedQueries) {
-      if (allBooks.length >= TARGET_COUNT + offset) break;
-      usedQueries.add(rq);
-
-      const relaxedResults = await rawSearch(rq, { maxResults: 40 });
-      allBooks.push(...relaxedResults);
-      allBooks = semanticDedup(allBooks);
-    }
-
-    round++;
+  // Check cache first — "load more" reuses previous full result set
+  const cached = getCachedProgress(primaryQuery);
+  if (cached && cached.length >= offset + TARGET_COUNT) {
+    const page = cached.slice(offset, offset + TARGET_COUNT);
+    return {
+      books: page,
+      hasMore: cached.length > offset + TARGET_COUNT,
+      nextOffset: offset + TARGET_COUNT,
+    };
   }
 
-  // Apply offset + limit for pagination
+  // Build from cached partial results or from scratch
+  let allBooks: NormalizedBook[] = cached ? [...cached] : [];
+  const usedQueries = new Set<string>();
+
+  if (allBooks.length === 0) {
+    // Round 0: Primary search
+    usedQueries.add(primaryQuery);
+    const primaryResults = await rawSearch(primaryQuery, { maxResults: 40 });
+    allBooks.push(...primaryResults);
+    allBooks = semanticDedup(allBooks);
+
+    // Rank so topResult is the BEST match, not arbitrary provider order
+    const analysis = analyzeQuery(primaryQuery);
+    allBooks = rankSearchResults(allBooks, analysis);
+
+    // Progressive relaxation
+    const topResult = allBooks[0] ?? null;
+    const ctx: RelaxationContext = {
+      originalQuery: primaryQuery,
+      topResult,
+      usedQueries,
+    };
+
+    let round = 0;
+    while (allBooks.length < TARGET_COUNT + offset && round < MAX_RELAXATION_ROUNDS) {
+      const relaxedQueries = generateRelaxedQueries(ctx);
+      if (relaxedQueries.length === 0) break;
+
+      for (const rq of relaxedQueries) {
+        if (allBooks.length >= TARGET_COUNT + offset) break;
+        usedQueries.add(rq);
+
+        const relaxedResults = await rawSearch(rq, { maxResults: 40 });
+        allBooks.push(...relaxedResults);
+        allBooks = semanticDedup(allBooks);
+      }
+
+      round++;
+    }
+  }
+
+  // Cache full result set for subsequent "load more" requests
+  setCachedProgress(primaryQuery, allBooks);
+
+  // Slice page
   const page = allBooks.slice(offset, offset + TARGET_COUNT);
   const hasMore = allBooks.length > offset + TARGET_COUNT;
 

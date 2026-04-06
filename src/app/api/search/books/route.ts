@@ -26,8 +26,10 @@ export async function GET(request: NextRequest): Promise<Response> {
     const { q } = result.data;
     const analysis = analyzeQuery(q);
 
-    // Use progressive search with semantic dedup and relaxation
-    const searchResult = await progressiveSearch(analysis.googleQuery, offset);
+    // Use progressive search with the user's ORIGINAL query for relaxation,
+    // not analysis.googleQuery which may contain intitle:/inauthor: operators
+    // that break when words are removed progressively.
+    const searchResult = await progressiveSearch(q, offset);
 
     // Rank results using the existing scoring system
     const ranked = rankSearchResults(searchResult.books, analysis);
