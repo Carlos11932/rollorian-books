@@ -66,14 +66,14 @@ export function StatusTabs({ activeStatus, counts, basePath = "/library", search
   const t = useTranslations();
 
   function getTabLabel(tab: StatusTabValue): string {
-    if (tab === STATUS_TAB.ALL) return 'All';
+    if (tab === STATUS_TAB.ALL) return t('library.tabAll');
     return t(`book.status.${tab}`);
   }
 
   return (
     <nav
       role="tablist"
-      aria-label="Library statuses"
+      aria-label={t('library.statusesAriaLabel')}
       className="flex flex-wrap gap-2"
     >
       {ALL_TABS.map((tab) => {
