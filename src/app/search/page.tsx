@@ -30,10 +30,13 @@ export default function SearchPage() {
         query={search.query}
         results={search.results}
         isLoading={search.isLoading}
+        isLoadingMore={search.isLoadingMore}
         hasSearched={search.hasSearched}
+        hasMore={search.hasMore}
         error={search.error}
         getSavedStatus={search.getSavedStatus}
         onSave={search.handleSave}
+        onLoadMore={() => void search.handleLoadMore()}
       />
 
       {!search.hasSearched && !search.isLoading && (

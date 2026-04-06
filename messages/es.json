@@ -131,6 +131,8 @@
     "loading": "Cargando resultados",
     "noResults": "No encontramos nada para \"{query}\"",
     "tryAnother": "Prueba con otro título...",
+    "loadMore": "Cargar más resultados",
+    "loadingMore": "Cargando...",
     "resultsLabel": "Resultados de búsqueda",
     "resultsCount": "{count} resultado(s) para \"{query}\"",
     "archivedSuggestions": "Continúa leyendo",

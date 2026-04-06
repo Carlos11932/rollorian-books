@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import type { BookStatus } from "@/lib/types/book";
@@ -33,22 +33,35 @@ const STATUS_ORDERED: BookStatus[] = [
 
 const VISIBILITY_STORAGE_KEY = "library-section-visibility";
 
-function loadVisibility(): Record<string, boolean> {
+type VisibilityMap = Partial<Record<string, boolean>>;
+
+function loadVisibility(): VisibilityMap {
   if (typeof window === "undefined") return {};
   try {
     const raw = localStorage.getItem(VISIBILITY_STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as Record<string, boolean>) : {};
+    return raw ? (JSON.parse(raw) as VisibilityMap) : {};
   } catch {
     return {};
   }
 }
 
-function saveVisibility(visibility: Record<string, boolean>): void {
+function saveVisibility(visibility: VisibilityMap): void {
   try {
     localStorage.setItem(VISIBILITY_STORAGE_KEY, JSON.stringify(visibility));
+    // Dispatch storage event so useSyncExternalStore re-reads
+    window.dispatchEvent(new StorageEvent("storage", { key: VISIBILITY_STORAGE_KEY }));
   } catch {
     // localStorage unavailable — silent fail
   }
+}
+
+/** Subscribe to localStorage changes for useSyncExternalStore */
+function subscribeToVisibility(callback: () => void): () => void {
+  function handler(e: StorageEvent) {
+    if (e.key === VISIBILITY_STORAGE_KEY || e.key === null) callback();
+  }
+  window.addEventListener("storage", handler);
+  return () => window.removeEventListener("storage", handler);
 }
 
 // ---------------------------------------------------------------------------
@@ -66,15 +79,21 @@ export function LibraryView({
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  // Section visibility toggle — persisted in localStorage (lazy init)
-  const [sectionVisibility, setSectionVisibility] = useState<Record<string, boolean>>(loadVisibility);
+  // Section visibility toggle — synced with localStorage via useSyncExternalStore
+  // Server snapshot returns {} (all visible) to match SSR output — no hydration mismatch.
+  const emptyVisibility: VisibilityMap = {};
+  const sectionVisibility = useSyncExternalStore(
+    subscribeToVisibility,
+    loadVisibility,       // client snapshot
+    () => emptyVisibility, // server snapshot — all sections visible
+  );
+  const [, forceUpdate] = useState(0);
 
   function toggleSectionVisibility(status: BookStatus) {
-    setSectionVisibility((prev) => {
-      const next = { ...prev, [status]: !(prev[status] ?? true) };
-      saveVisibility(next);
-      return next;
-    });
+    const current = loadVisibility();
+    const next = { ...current, [status]: !(current[status] ?? true) };
+    saveVisibility(next);
+    forceUpdate((n) => n + 1); // trigger re-read from useSyncExternalStore
   }
 
   function isSectionVisible(status: BookStatus): boolean {
@@ -253,7 +272,7 @@ export function LibraryView({
                     type="button"
                     onClick={() => toggleSectionVisibility(status)}
                     className="text-muted hover:text-text transition-colors p-1"
-                    aria-label={visible ? t("library.hideSection") : t("library.showSection")}
+                    aria-label={`${visible ? t("library.hideSection") : t("library.showSection")} — ${t(`library.statusEyebrow.${status}`)}`}
                   >
                     <span className="material-symbols-outlined text-[18px]">
                       {visible ? "visibility" : "visibility_off"}

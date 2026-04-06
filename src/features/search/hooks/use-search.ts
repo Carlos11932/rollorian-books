@@ -19,6 +19,12 @@ interface RecommendationsResponse {
   recommendations: Recommendation[];
 }
 
+interface SearchApiResponse {
+  books: NormalizedBook[];
+  hasMore: boolean;
+  nextOffset: number;
+}
+
 export interface SearchState {
   // Search
   inputValue: string;
@@ -26,9 +32,12 @@ export interface SearchState {
   query: string;
   results: NormalizedBook[];
   isLoading: boolean;
+  isLoadingMore: boolean;
   hasSearched: boolean;
+  hasMore: boolean;
   error: string | null;
   handleSearch: (q: string) => Promise<void>;
+  handleLoadMore: () => Promise<void>;
 
   // Library index
   libraryIndex: Map<string, BookStatus>;
@@ -57,7 +66,10 @@ export function useSearch(): SearchState {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<NormalizedBook[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [nextOffset, setNextOffset] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [showScanner, setShowScanner] = useState(false);
   const [hasBarcodeApi, setHasBarcodeApi] = useState(false);
@@ -114,6 +126,8 @@ export function useSearch(): SearchState {
     setQuery(trimmed);
     setIsLoading(true);
     setError(null);
+    setResults([]);
+    setHasMore(false);
 
     try {
       const res = await fetch(`/api/search/books?q=${encodeURIComponent(trimmed)}`);
@@ -122,19 +136,41 @@ export function useSearch(): SearchState {
       if (!res.ok) {
         const errData = data as { error?: string };
         setError(errData.error ?? "Search failed. Please try again.");
-        setResults([]);
         return;
       }
 
-      setResults(data as NormalizedBook[]);
+      const response = data as SearchApiResponse;
+      setResults(response.books);
+      setHasMore(response.hasMore);
+      setNextOffset(response.nextOffset);
     } catch {
       setError("Network error. Please check your connection and try again.");
-      setResults([]);
     } finally {
       setIsLoading(false);
       setHasSearched(true);
     }
   }, []);
+
+  const handleLoadMore = useCallback(async () => {
+    if (!query || isLoadingMore || !hasMore) return;
+
+    setIsLoadingMore(true);
+    try {
+      const res = await fetch(
+        `/api/search/books?q=${encodeURIComponent(query)}&offset=${nextOffset}`,
+      );
+      if (!res.ok) return;
+
+      const data = (await res.json()) as SearchApiResponse;
+      setResults((prev) => [...prev, ...data.books]);
+      setHasMore(data.hasMore);
+      setNextOffset(data.nextOffset);
+    } catch {
+      // Silent fail for load more — user can retry
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [query, isLoadingMore, hasMore, nextOffset]);
 
   const getSavedStatus = useCallback(
     (book: NormalizedBook): BookStatus | null => {
@@ -175,9 +211,12 @@ export function useSearch(): SearchState {
     query,
     results,
     isLoading,
+    isLoadingMore,
     hasSearched,
+    hasMore,
     error,
     handleSearch,
+    handleLoadMore,
     libraryIndex,
     getSavedStatus,
     discoverGenres,

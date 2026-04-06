@@ -1,8 +1,8 @@
 import "server-only";
 
 import type { NextRequest } from "next/server";
-import { searchBooks } from "@/lib/book-providers/search-orchestrator";
 import { analyzeQuery, rankSearchResults } from "@/lib/google-books/strategy";
+import { progressiveSearch } from "@/lib/book-providers/progressive-search";
 import { searchQuerySchema } from "@/lib/schemas/book";
 import { requireAuth, UnauthorizedError } from "@/lib/auth/require-auth";
 
@@ -12,23 +12,31 @@ export async function GET(request: NextRequest): Promise<Response> {
 
     const searchParams = request.nextUrl.searchParams;
     const rawQ = searchParams.get("q");
+    const offset = Math.max(Number(searchParams.get("offset") ?? 0), 0);
 
     const result = searchQuerySchema.safeParse({ q: rawQ });
 
     if (!result.success) {
       return Response.json(
         { error: result.error.issues.map((i) => i.message).join(", ") },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const { q } = result.data;
     const analysis = analyzeQuery(q);
 
-    const allResults = await searchBooks(analysis.googleQuery);
-    const ranked = rankSearchResults(allResults, analysis);
+    // Use progressive search with semantic dedup and relaxation
+    const searchResult = await progressiveSearch(analysis.googleQuery, offset);
 
-    return Response.json(ranked);
+    // Rank results using the existing scoring system
+    const ranked = rankSearchResults(searchResult.books, analysis);
+
+    return Response.json({
+      books: ranked,
+      hasMore: searchResult.hasMore,
+      nextOffset: searchResult.nextOffset,
+    });
   } catch (error) {
     if (error instanceof UnauthorizedError) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
