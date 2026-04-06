@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useEffect, type FormEvent } from "react";
-import Image from "next/image";
-import Link from "next/link";
 import { useTranslations } from 'next-intl';
 import type { NormalizedBook } from "@/lib/google-books/types";
 import type { LibraryEntryView } from "@/features/books/types";
@@ -154,7 +152,7 @@ export default function SearchPage() {
 
   // Library books indexed by isbn13 for fast lookup
   const [libraryIndex, setLibraryIndex] = useState<Map<string, BookStatus>>(new Map());
-  const [librarySuggestions, setLibrarySuggestions] = useState<LibraryEntryView[]>([]);
+  const [_librarySuggestions, setLibrarySuggestions] = useState<LibraryEntryView[]>([]);
 
   // Discover genre carousels
   const [discoverGenres, setDiscoverGenres] = useState<DiscoverGenre[]>([]);
