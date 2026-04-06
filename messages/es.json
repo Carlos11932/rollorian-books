@@ -92,6 +92,8 @@
   "library": {
     "heading": "Tu Biblioteca",
     "description": "Gestiona tu colección personal de libros. Consulta lo que estás leyendo, lo que quieres leer y lo que ya has terminado.",
+    "tabAll": "Todos",
+    "statusesAriaLabel": "Estados de la biblioteca",
     "emptyAll": "Tu biblioteca está vacía",
     "emptyFilter": "No hay libros con este filtro.",
     "searchPlaceholder": "Busca en el catálogo...",

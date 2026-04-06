@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 
 // Default locale is "es" — visible text uses Spanish translations.
-// StatusTabs hardcodes "All" and aria-label="Library statuses" in English.
+// StatusTabs uses t('library.tabAll') and t('library.statusesAriaLabel').
 // Other tabs use t('book.status.XXX') → Spanish.
 
 test.describe('Library', () => {
@@ -13,20 +13,20 @@ test.describe('Library', () => {
 
   test('library page shows status tabs navigation', async ({ page }) => {
     await page.goto('/library')
-    // StatusTabs renders <nav role="tablist" aria-label="Library statuses">
-    const tablist = page.getByRole('tablist', { name: /Library statuses/i })
+    // StatusTabs renders <nav role="tablist"> with i18n aria-label
+    const tablist = page.getByRole('tablist', { name: /Estados de la biblioteca/i })
     await expect(tablist).toBeVisible()
-    // "All" is hardcoded English; others use book.status translations
-    await expect(page.getByRole('tab', { name: 'All' })).toBeVisible()
+    // library.tabAll → "Todos"; others use book.status translations
+    await expect(page.getByRole('tab', { name: /Todos/i })).toBeVisible()
     await expect(page.getByRole('tab', { name: /Lista de deseos/i })).toBeVisible()
     await expect(page.getByRole('tab', { name: /Por leer/i })).toBeVisible()
     await expect(page.locator('[role="tab"][href*="status=READING"]')).toBeVisible()
     await expect(page.locator('[role="tab"][href*="status=READ"]').first()).toBeVisible()
   })
 
-  test('All tab is selected by default', async ({ page }) => {
+  test('Todos tab is selected by default', async ({ page }) => {
     await page.goto('/library')
-    const allTab = page.getByRole('tab', { name: 'All' })
+    const allTab = page.getByRole('tab', { name: /Todos/i })
     await expect(allTab).toHaveAttribute('aria-selected', 'true')
   })
 
@@ -38,9 +38,9 @@ test.describe('Library', () => {
     await expect(page.getByRole('tab', { name: /Lista de deseos/i })).toHaveAttribute('aria-selected', 'true')
   })
 
-  test('clicking All tab after a status filter removes status from URL', async ({ page }) => {
+  test('clicking Todos tab after a status filter removes status from URL', async ({ page }) => {
     await page.goto('/library?status=WISHLIST')
-    await page.getByRole('tab', { name: 'All' }).click()
+    await page.getByRole('tab', { name: /Todos/i }).click()
     await expect(page).not.toHaveURL(/status=/)
   })
 
