@@ -15,9 +15,16 @@ export function DashboardLoansClient({ initialLoans }: DashboardLoansClientProps
   const t = useTranslations("loans");
   const [loans, setLoans] = useState<LoanView[]>(initialLoans);
 
+  // Prevent concurrent mutations — tracks which loan IDs have in-flight requests
+  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
+
   async function handleAction(loanId: string, action: "accept" | "decline" | "return") {
-    // Optimistic: save previous state for rollback
-    const previousLoans = loans;
+    // Block concurrent mutations on the same loan
+    if (pendingIds.has(loanId)) return;
+    setPendingIds((prev) => new Set(prev).add(loanId));
+
+    // Capture current state for rollback BEFORE optimistic update
+    const snapshot = [...loans];
 
     // Optimistic update
     if (action === "decline" || action === "return") {
@@ -28,22 +35,33 @@ export function DashboardLoansClient({ initialLoans }: DashboardLoansClientProps
       );
     }
 
-    const res = await fetch(`/api/loans/${loanId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action }),
-    });
+    try {
+      const res = await fetch(`/api/loans/${loanId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
 
-    if (!res.ok) {
-      // Rollback on failure — DB state did not change
-      setLoans(previousLoans);
-      return;
-    }
+      if (!res.ok) {
+        // Server rejected — rollback optimistic update
+        setLoans(snapshot);
+        return;
+      }
 
-    // Sync with server response for accept (get actual updated loan)
-    if (action === "accept") {
-      const updated = (await res.json()) as LoanView;
-      setLoans((prev) => prev.map((l) => (l.id === loanId ? updated : l)));
+      // Sync with actual server response for accept
+      if (action === "accept") {
+        const updated = (await res.json()) as LoanView;
+        setLoans((prev) => prev.map((l) => (l.id === loanId ? updated : l)));
+      }
+    } catch {
+      // Network error — rollback optimistic update
+      setLoans(snapshot);
+    } finally {
+      setPendingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(loanId);
+        return next;
+      });
     }
   }
 

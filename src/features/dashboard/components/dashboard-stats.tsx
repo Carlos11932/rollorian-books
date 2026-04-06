@@ -3,10 +3,11 @@ import { getTranslations } from "next-intl/server";
 import type { StatsSnapshot } from "@/lib/stats/get-stats";
 
 interface DashboardStatsProps {
-  stats: StatsSnapshot;
+  stats: StatsSnapshot | null;
 }
 
 export async function DashboardStats({ stats }: DashboardStatsProps) {
+  if (!stats) return null;
   const t = await getTranslations("home");
 
   const formattedRating =

@@ -43,12 +43,16 @@ export default async function Home() {
     );
   }
 
-  // Fetch dashboard data server-side in parallel — no client round-trips
-  const [stats, recommendations, { loans }] = await Promise.all([
+  // Fetch dashboard data server-side in parallel — per-widget fault isolation
+  const [statsResult, recsResult, loansResult] = await Promise.allSettled([
     getStats(userId),
     getRecommendationsSafe(userId),
-    getUserLoans(userId).then((loans) => ({ loans })),
+    getUserLoans(userId),
   ]);
+
+  const stats = statsResult.status === "fulfilled" ? statsResult.value : null;
+  const recommendations = recsResult.status === "fulfilled" ? recsResult.value : [];
+  const loans = loansResult.status === "fulfilled" ? loansResult.value : [];
 
   // Group books by status
   const serialized: LibraryEntryView[] = userBooks.map(toLibraryEntryView);
