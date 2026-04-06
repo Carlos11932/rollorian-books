@@ -120,7 +120,9 @@
     "moveTo": "Move to",
     "batchSuccess": "{count, plural, one {# book moved} other {# books moved}}",
     "selectAll": "All",
-    "deselectAll": "None"
+    "deselectAll": "None",
+    "hideSection": "Hide section",
+    "showSection": "Show section"
   },
   "search": {
     "heading": "Explore books",

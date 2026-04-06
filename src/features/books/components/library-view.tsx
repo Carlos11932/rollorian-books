@@ -22,9 +22,34 @@ interface LibraryViewProps {
   searchParams: Record<string, string>;
 }
 
+// Issue #34: Preferred order — Reading, Rereading, Wishlist, To Read, On Hold, Read
 const STATUS_ORDERED: BookStatus[] = [
-  "READING", "REREADING", "TO_READ", "READ", "ON_HOLD", "WISHLIST",
+  "READING", "REREADING", "WISHLIST", "TO_READ", "ON_HOLD", "READ",
 ];
+
+// ---------------------------------------------------------------------------
+// Section visibility persistence (localStorage)
+// ---------------------------------------------------------------------------
+
+const VISIBILITY_STORAGE_KEY = "library-section-visibility";
+
+function loadVisibility(): Record<string, boolean> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(VISIBILITY_STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as Record<string, boolean>) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveVisibility(visibility: Record<string, boolean>): void {
+  try {
+    localStorage.setItem(VISIBILITY_STORAGE_KEY, JSON.stringify(visibility));
+  } catch {
+    // localStorage unavailable — silent fail
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Component
@@ -40,6 +65,21 @@ export function LibraryView({
   const t = useTranslations();
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  // Section visibility toggle — persisted in localStorage (lazy init)
+  const [sectionVisibility, setSectionVisibility] = useState<Record<string, boolean>>(loadVisibility);
+
+  function toggleSectionVisibility(status: BookStatus) {
+    setSectionVisibility((prev) => {
+      const next = { ...prev, [status]: !(prev[status] ?? true) };
+      saveVisibility(next);
+      return next;
+    });
+  }
+
+  function isSectionVisible(status: BookStatus): boolean {
+    return sectionVisibility[status] ?? true;
+  }
 
   // Toggle selection of a single book
   const toggleSelect = useCallback((bookId: string) => {
@@ -195,30 +235,54 @@ export function LibraryView({
         <div className="grid gap-4">
           {STATUS_ORDERED.map((status) => {
             const statusBooks = books.filter((b) => b.status === status);
+            // Issue #34: hide empty sections
+            if (statusBooks.length === 0) return null;
+            const visible = isSectionVisible(status);
+
             return (
-              <BookRailSection
-                key={status}
-                title={t(`library.statusEyebrow.${status}`)}
-                eyebrow={t(`book.status.${status}`)}
-                count={statusBooks.length}
-                emptyTitle={getFilterTitle(status)}
-                emptyCopy={t(`library.statusEmpty.${status}`)}
-              >
-                {statusBooks.map((book) => (
-                  <div
-                    key={book.id}
-                    className="shrink-0 w-[clamp(260px,32vw,340px)]"
-                    style={{ scrollSnapAlign: "start" }}
+              <div key={status}>
+                {/* Section header with toggle */}
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-bold text-muted uppercase tracking-wider">
+                    {t(`library.statusEyebrow.${status}`)}
+                    <span className="ml-2 text-xs font-normal text-muted/60">
+                      {statusBooks.length}
+                    </span>
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => toggleSectionVisibility(status)}
+                    className="text-muted hover:text-text transition-colors p-1"
+                    aria-label={visible ? t("library.hideSection") : t("library.showSection")}
                   >
-                    <BookCardWithSelection
-                      book={book}
-                      selectionMode={selectionMode}
-                      selected={selectedIds.has(book.id)}
-                      onToggle={toggleSelect}
-                    />
-                  </div>
-                ))}
-              </BookRailSection>
+                    <span className="material-symbols-outlined text-[18px]">
+                      {visible ? "visibility" : "visibility_off"}
+                    </span>
+                  </button>
+                </div>
+
+                {visible && (
+                  <BookRailSection
+                    title={t(`book.status.${status}`)}
+                    count={statusBooks.length}
+                  >
+                    {statusBooks.map((book) => (
+                      <div
+                        key={book.id}
+                        className="shrink-0 w-[clamp(260px,32vw,340px)]"
+                        style={{ scrollSnapAlign: "start" }}
+                      >
+                        <BookCardWithSelection
+                          book={book}
+                          selectionMode={selectionMode}
+                          selected={selectedIds.has(book.id)}
+                          onToggle={toggleSelect}
+                        />
+                      </div>
+                    ))}
+                  </BookRailSection>
+                )}
+              </div>
             );
           })}
         </div>
