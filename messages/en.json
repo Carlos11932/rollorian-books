@@ -113,7 +113,14 @@
       "REREADING": "You're not rereading any books.",
       "READ": "You haven't marked any books as read yet.",
       "ON_HOLD": "No books on hold."
-    }
+    },
+    "select": "Select",
+    "cancelSelection": "Cancel",
+    "selectedCount": "{count, plural, one {# selected} other {# selected}}",
+    "moveTo": "Move to",
+    "batchSuccess": "{count, plural, one {# book moved} other {# books moved}}",
+    "selectAll": "All",
+    "deselectAll": "None"
   },
   "search": {
     "heading": "Explore books",
