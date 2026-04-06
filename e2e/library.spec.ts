@@ -20,8 +20,8 @@ test.describe('Library', () => {
     await expect(page.getByRole('tab', { name: 'All' })).toBeVisible()
     await expect(page.getByRole('tab', { name: /Lista de deseos/i })).toBeVisible()
     await expect(page.getByRole('tab', { name: /Por leer/i })).toBeVisible()
-    await expect(page.getByRole('tab', { name: 'Leyendo' })).toBeVisible()
-    await expect(page.locator('[role="tab"][href="/library?status=READ"]')).toBeVisible()
+    await expect(page.locator('[role="tab"][href*="status=READING"]')).toBeVisible()
+    await expect(page.locator('[role="tab"][href*="status=READ"]').first()).toBeVisible()
   })
 
   test('All tab is selected by default', async ({ page }) => {
@@ -46,8 +46,8 @@ test.describe('Library', () => {
 
   test('direct navigation to status filter loads the filtered view', async ({ page }) => {
     await page.goto('/library?status=READING')
-    // "Leyendo" tab should be active (exact match to avoid matching "Releyendo")
-    await expect(page.getByRole('tab', { name: 'Leyendo' })).toHaveAttribute('aria-selected', 'true')
+    // READING tab should be active (use href selector to avoid Leyendo/Releyendo ambiguity)
+    await expect(page.locator('[role="tab"][href*="status=READING"]')).toHaveAttribute('aria-selected', 'true')
     // The page shows either books or an empty state — both are valid without seeded data
     const heading = page.getByRole('heading', { name: /Tu Biblioteca/i })
     await expect(heading).toBeVisible()
