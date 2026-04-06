@@ -1,0 +1,221 @@
+"use client";
+
+import { useState, useMemo } from "react";
+import { useTranslations } from "next-intl";
+import { BookRailSection } from "@/features/shared/ui/book-rail-section";
+import { EmptyState } from "@/features/shared/components/empty-state";
+import { GroupBookCard } from "./group-book-card";
+import { cn } from "@/lib/cn";
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+interface CatalogBook {
+  id: string;
+  title: string;
+  authors: string[];
+  coverUrl: string | null;
+  genres: string[];
+  currentUserStatus: string | null;
+  isRead: boolean;
+}
+
+type ViewMode = "genre" | "all";
+type ReadFilter = "all" | "read" | "unread";
+
+interface GroupLibraryCatalogProps {
+  books: CatalogBook[];
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function groupByGenre(books: CatalogBook[], noGenreLabel: string) {
+  const genreMap = new Map<string, CatalogBook[]>();
+
+  for (const book of books) {
+    const genres = book.genres.length > 0 ? book.genres : [noGenreLabel];
+    for (const genre of genres) {
+      const list = genreMap.get(genre) ?? [];
+      list.push(book);
+      genreMap.set(genre, list);
+    }
+  }
+
+  // Sort genres alphabetically, but push "no genre" to the end
+  return Array.from(genreMap.entries()).sort(([a], [b]) => {
+    if (a === noGenreLabel) return 1;
+    if (b === noGenreLabel) return -1;
+    return a.localeCompare(b);
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Filter pill component
+// ---------------------------------------------------------------------------
+
+function FilterPill({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "inline-flex items-center px-4 py-2 rounded-full text-sm font-bold transition-all duration-200",
+        "focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent",
+        active
+          ? "bg-gradient-to-br from-accent to-accent-strong text-white border border-transparent"
+          : "bg-white/6 text-muted border border-white/12 hover:text-text hover:-translate-y-px",
+      )}
+    >
+      {label}
+    </button>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
+
+export function GroupLibraryCatalog({ books }: GroupLibraryCatalogProps) {
+  const t = useTranslations("groups");
+  const [viewMode, setViewMode] = useState<ViewMode>("genre");
+  const [readFilter, setReadFilter] = useState<ReadFilter>("all");
+
+  // Apply read filter
+  const filteredBooks = useMemo(() => {
+    if (readFilter === "read") return books.filter((b) => b.isRead);
+    if (readFilter === "unread") return books.filter((b) => !b.isRead);
+    return books;
+  }, [books, readFilter]);
+
+  // Group by genre for the genre view
+  const genreSections = useMemo(
+    () => groupByGenre(filteredBooks, t("noGenre")),
+    [filteredBooks, t],
+  );
+
+  // Empty states
+  if (books.length === 0) {
+    return (
+      <EmptyState
+        title={t("emptyCatalog")}
+        description={t("emptyCatalogDescription")}
+      />
+    );
+  }
+
+  if (filteredBooks.length === 0) {
+    return (
+      <>
+        <CatalogFilters
+          viewMode={viewMode}
+          readFilter={readFilter}
+          onViewModeChange={setViewMode}
+          onReadFilterChange={setReadFilter}
+        />
+        <EmptyState title={t("emptyFiltered")} />
+      </>
+    );
+  }
+
+  return (
+    <div className="grid gap-6">
+      <CatalogFilters
+        viewMode={viewMode}
+        readFilter={readFilter}
+        onViewModeChange={setViewMode}
+        onReadFilterChange={setReadFilter}
+      />
+
+      {viewMode === "genre" ? (
+        <div className="grid gap-8">
+          {genreSections.map(([genre, genreBooks]) => (
+            <BookRailSection
+              key={genre}
+              title={genre}
+              count={genreBooks.length}
+            >
+              {genreBooks.map((book, i) => (
+                <GroupBookCard key={book.id} book={book} index={i} />
+              ))}
+            </BookRailSection>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-[repeat(auto-fill,118px)] gap-4 justify-center">
+          {filteredBooks.map((book, i) => (
+            <GroupBookCard key={book.id} book={book} index={i} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Filters bar
+// ---------------------------------------------------------------------------
+
+function CatalogFilters({
+  viewMode,
+  readFilter,
+  onViewModeChange,
+  onReadFilterChange,
+}: {
+  viewMode: ViewMode;
+  readFilter: ReadFilter;
+  onViewModeChange: (v: ViewMode) => void;
+  onReadFilterChange: (f: ReadFilter) => void;
+}) {
+  const t = useTranslations("groups");
+
+  return (
+    <div className="flex flex-wrap items-center gap-3">
+      {/* View mode toggle */}
+      <div className="flex gap-1.5">
+        <FilterPill
+          label={t("viewByGenre")}
+          active={viewMode === "genre"}
+          onClick={() => onViewModeChange("genre")}
+        />
+        <FilterPill
+          label={t("viewAll")}
+          active={viewMode === "all"}
+          onClick={() => onViewModeChange("all")}
+        />
+      </div>
+
+      {/* Separator */}
+      <div className="w-px h-6 bg-line" aria-hidden="true" />
+
+      {/* Read filter */}
+      <div className="flex gap-1.5">
+        <FilterPill
+          label={t("filterAll")}
+          active={readFilter === "all"}
+          onClick={() => onReadFilterChange("all")}
+        />
+        <FilterPill
+          label={t("filterRead")}
+          active={readFilter === "read"}
+          onClick={() => onReadFilterChange("read")}
+        />
+        <FilterPill
+          label={t("filterUnread")}
+          active={readFilter === "unread"}
+          onClick={() => onReadFilterChange("unread")}
+        />
+      </div>
+    </div>
+  );
+}

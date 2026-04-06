@@ -262,7 +262,21 @@
     "notFound": "Group not found.",
     "forbidden": "You don't have access to this group.",
     "you": "(you)",
-    "noMembers": "No members yet."
+    "noMembers": "No members yet.",
+    "catalog": "Catalog",
+    "catalogDescription": "All books from group members.",
+    "viewByGenre": "By genre",
+    "viewAll": "See all",
+    "filterAll": "All",
+    "filterRead": "Read",
+    "filterUnread": "Unread",
+    "noGenre": "Uncategorized",
+    "readCheck": "Read by you",
+    "emptyGenre": "No books in this category.",
+    "emptyCatalog": "The shared library is empty.",
+    "emptyCatalogDescription": "Members need to add books to their library first.",
+    "emptyFiltered": "No books match this filter.",
+    "bookCount": "{count, plural, one {# book} other {# books}}"
   },
   "lists": {
     "title": "My Lists",
