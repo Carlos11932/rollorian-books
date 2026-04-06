@@ -12,20 +12,26 @@ interface SearchResultsProps {
   query: string;
   results: NormalizedBook[];
   isLoading: boolean;
+  isLoadingMore: boolean;
   hasSearched: boolean;
+  hasMore: boolean;
   error: string | null;
   getSavedStatus: (book: NormalizedBook) => BookStatus | null;
   onSave: (book: LibraryEntryView) => Promise<void>;
+  onLoadMore: () => void;
 }
 
 export function SearchResults({
   query,
   results,
   isLoading,
+  isLoadingMore,
   hasSearched,
+  hasMore,
   error,
   getSavedStatus,
   onSave,
+  onLoadMore,
 }: SearchResultsProps) {
   const t = useTranslations();
 
@@ -93,6 +99,30 @@ export function SearchResults({
             />
           ))}
         </div>
+
+        {/* Load more button */}
+        {hasMore && (
+          <div className="flex justify-center mt-8">
+            <button
+              type="button"
+              onClick={onLoadMore}
+              disabled={isLoadingMore}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/10 text-text border border-line font-bold text-sm transition-all hover:-translate-y-px disabled:opacity-50 disabled:cursor-wait"
+            >
+              {isLoadingMore ? (
+                <>
+                  <span className="w-4 h-4 rounded-full border-2 border-line border-t-accent animate-spin" />
+                  {t("search.loadingMore")}
+                </>
+              ) : (
+                <>
+                  <span className="material-symbols-outlined text-[18px]">expand_more</span>
+                  {t("search.loadMore")}
+                </>
+              )}
+            </button>
+          </div>
+        )}
       </section>
     );
   }

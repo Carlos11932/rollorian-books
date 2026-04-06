@@ -120,7 +120,9 @@
     "moveTo": "Move to",
     "batchSuccess": "{count, plural, one {# book moved} other {# books moved}}",
     "selectAll": "All",
-    "deselectAll": "None"
+    "deselectAll": "None",
+    "hideSection": "Hide section",
+    "showSection": "Show section"
   },
   "search": {
     "heading": "Explore books",
@@ -129,6 +131,8 @@
     "loading": "Loading results",
     "noResults": "Nothing found for \"{query}\"",
     "tryAnother": "Try another title...",
+    "loadMore": "Load more results",
+    "loadingMore": "Loading...",
     "resultsLabel": "Search results",
     "resultsCount": "{count} result(s) for \"{query}\"",
     "archivedSuggestions": "Continue reading",

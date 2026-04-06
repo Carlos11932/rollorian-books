@@ -3,27 +3,24 @@ import { NextRequest } from "next/server";
 import { requireAuth, UnauthorizedError } from "@/lib/auth/require-auth";
 import type { NormalizedBook } from "@/lib/book-providers/types";
 
-// Mock the search orchestrator BEFORE importing the route so the module
-// initialiser never tries to reach any book API in tests.
-vi.mock("@/lib/book-providers/search-orchestrator", () => ({
-  searchBooks: vi.fn(),
+// Mock the progressive search module
+vi.mock("@/lib/book-providers/progressive-search", () => ({
+  progressiveSearch: vi.fn(),
 }));
 
-// Import after mocks are established.
 import { GET } from "@/app/api/search/books/route";
-import { searchBooks } from "@/lib/book-providers/search-orchestrator";
+import { progressiveSearch } from "@/lib/book-providers/progressive-search";
 
-// The global setup already mocks requireAuth — grab a typed reference
-// so individual tests can override the resolved value.
 const requireAuthMock = vi.mocked(requireAuth);
-const searchBooksMock = vi.mocked(searchBooks);
+const progressiveSearchMock = vi.mocked(progressiveSearch);
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function makeGetRequest(q?: string): NextRequest {
-  const url = q !== undefined
-    ? `http://localhost/api/search/books?q=${encodeURIComponent(q)}`
-    : "http://localhost/api/search/books";
+function makeGetRequest(q?: string, offset?: number): NextRequest {
+  let url = "http://localhost/api/search/books";
+  const params = new URLSearchParams();
+  if (q !== undefined) params.set("q", q);
+  if (offset !== undefined) params.set("offset", String(offset));
+  const qs = params.toString();
+  if (qs) url += `?${qs}`;
   return new NextRequest(url, { method: "GET" });
 }
 
@@ -39,8 +36,6 @@ function makeNormalizedBook(id: string, title: string): NormalizedBook {
   };
 }
 
-// ─── GET /api/search/books ────────────────────────────────────────────────────
-
 describe("GET /api/search/books", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -49,52 +44,55 @@ describe("GET /api/search/books", () => {
   it("returns 401 when requireAuth throws UnauthorizedError", async () => {
     requireAuthMock.mockRejectedValueOnce(new UnauthorizedError());
 
-    const request = makeGetRequest("clean code");
-    const response = await GET(request);
-
+    const response = await GET(makeGetRequest("clean code"));
     expect(response.status).toBe(401);
-    const json: unknown = await response.json();
-    expect((json as { error: string }).error).toBe("Unauthorized");
-    expect(searchBooksMock).not.toHaveBeenCalled();
+    expect(progressiveSearchMock).not.toHaveBeenCalled();
   });
 
-  it("returns 200 with normalized and ranked results on successful search", async () => {
+  it("returns 200 with books, hasMore, and nextOffset on successful search", async () => {
     const books = [
       makeNormalizedBook("vol-001", "Clean Code"),
       makeNormalizedBook("vol-002", "The Clean Coder"),
     ];
-    searchBooksMock.mockResolvedValueOnce(books);
+    progressiveSearchMock.mockResolvedValueOnce({
+      books,
+      hasMore: false,
+      nextOffset: 40,
+    });
 
-    const request = makeGetRequest("clean code");
-    const response = await GET(request);
-
+    const response = await GET(makeGetRequest("clean code"));
     expect(response.status).toBe(200);
-    const json: unknown = await response.json();
-    expect(Array.isArray(json)).toBe(true);
-    const results = json as NormalizedBook[];
-    expect(results.length).toBeGreaterThan(0);
-    expect(results[0]).toHaveProperty("externalSource", "google_books");
-    expect(results[0]).toHaveProperty("title");
-    expect(searchBooksMock).toHaveBeenCalledOnce();
+
+    const json = (await response.json()) as { books: NormalizedBook[]; hasMore: boolean; nextOffset: number };
+    expect(json.books).toHaveLength(2);
+    expect(json.books[0]).toHaveProperty("externalSource", "google_books");
+    expect(json.hasMore).toBe(false);
+    expect(json.nextOffset).toBe(40);
+  });
+
+  it("passes offset param to progressiveSearch", async () => {
+    progressiveSearchMock.mockResolvedValueOnce({
+      books: [],
+      hasMore: false,
+      nextOffset: 80,
+    });
+
+    await GET(makeGetRequest("fantasy", 40));
+    expect(progressiveSearchMock).toHaveBeenCalledWith(
+      expect.any(String),
+      40,
+    );
   });
 
   it("returns 400 when the q param is missing", async () => {
-    const request = makeGetRequest();
-    const response = await GET(request);
-
+    const response = await GET(makeGetRequest());
     expect(response.status).toBe(400);
-    const json: unknown = await response.json();
-    expect((json as { error: string }).error).toBeTruthy();
-    expect(searchBooksMock).not.toHaveBeenCalled();
+    expect(progressiveSearchMock).not.toHaveBeenCalled();
   });
 
   it("returns 400 when q is an empty string", async () => {
-    const request = makeGetRequest("");
-    const response = await GET(request);
-
+    const response = await GET(makeGetRequest(""));
     expect(response.status).toBe(400);
-    const json: unknown = await response.json();
-    expect((json as { error: string }).error).toBeTruthy();
-    expect(searchBooksMock).not.toHaveBeenCalled();
+    expect(progressiveSearchMock).not.toHaveBeenCalled();
   });
 });

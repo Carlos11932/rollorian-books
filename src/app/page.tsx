@@ -4,6 +4,9 @@ import { getTranslations } from "next-intl/server";
 import type { BookStatus } from "@/lib/types/book";
 import { getLibrary } from "@/lib/books";
 import { getAuthenticatedUserIdOrNull } from "@/lib/auth/require-auth";
+import { getStats } from "@/lib/stats/get-stats";
+import { getRecommendationsSafe } from "@/lib/recommendations/get-recommendations";
+import { getUserLoans } from "@/lib/loans";
 import { EmptyState } from "@/features/shared/components/empty-state";
 import { Button } from "@/features/shared/components/button";
 import { toLibraryEntryView, type LibraryEntryView } from "@/features/books/types";
@@ -23,7 +26,7 @@ export default async function Home() {
 
   const userBooks = await getLibrary(userId);
 
-  // ── Global empty state (brand new user) ──────────────────────────────
+  // Global empty state (brand new user)
   if (userBooks.length === 0) {
     return (
       <EmptyState
@@ -40,16 +43,22 @@ export default async function Home() {
     );
   }
 
-  // ── Group books by status ────────────────────────────────────────────
+  // Fetch dashboard data server-side in parallel — per-widget fault isolation
+  const [statsResult, recsResult, loansResult] = await Promise.allSettled([
+    getStats(userId),
+    getRecommendationsSafe(userId),
+    getUserLoans(userId),
+  ]);
+
+  const stats = statsResult.status === "fulfilled" ? statsResult.value : null;
+  const recommendations = recsResult.status === "fulfilled" ? recsResult.value : [];
+  const loans = loansResult.status === "fulfilled" ? loansResult.value : [];
+
+  // Group books by status
   const serialized: LibraryEntryView[] = userBooks.map(toLibraryEntryView);
 
   const byStatus: Record<BookStatus, LibraryEntryView[]> = {
-    READING: [],
-    REREADING: [],
-    TO_READ: [],
-    READ: [],
-    ON_HOLD: [],
-    WISHLIST: [],
+    READING: [], REREADING: [], TO_READ: [], READ: [], ON_HOLD: [], WISHLIST: [],
   };
 
   for (const book of serialized) {
@@ -60,46 +69,24 @@ export default async function Home() {
 
   return (
     <div className="px-6 md:px-12 lg:px-20 pt-8 pb-24 space-y-10 max-w-7xl">
-      {/* 1. Hero — Currently Reading */}
-      <ReadingHero
-        books={currentlyReading}
-        hasToRead={byStatus.TO_READ.length > 0}
-      />
+      <ReadingHero books={currentlyReading} hasToRead={byStatus.TO_READ.length > 0} />
 
-      {/* 2. Quick Stats */}
-      <DashboardStats />
+      {/* Server-rendered — no client HTTP round-trips */}
+      <DashboardStats stats={stats} />
+      <DashboardLoans loans={loans} />
+      <DashboardRecommendations recommendations={recommendations} />
 
-      {/* 3. Active loans */}
-      <DashboardLoans />
-
-      {/* 4. Recommendations (client-side fetch) */}
-      <DashboardRecommendations />
-
-      {/* 4. Up Next — TO_READ */}
       <DashboardBookRail
-        title={t("home.upNext")}
-        books={byStatus.TO_READ}
-        emptyMessage={t("home.upNextEmpty")}
-        status="TO_READ"
-        icon="playlist_play"
+        title={t("home.upNext")} books={byStatus.TO_READ}
+        emptyMessage={t("home.upNextEmpty")} status="TO_READ" icon="playlist_play"
       />
-
-      {/* 5. On Hold — conditional */}
       <DashboardBookRail
-        title={t("home.onHold")}
-        books={byStatus.ON_HOLD}
-        emptyMessage={t("home.onHoldEmpty")}
-        status="ON_HOLD"
-        icon="pause_circle"
+        title={t("home.onHold")} books={byStatus.ON_HOLD}
+        emptyMessage={t("home.onHoldEmpty")} status="ON_HOLD" icon="pause_circle"
       />
-
-      {/* 6. Wishlist — conditional */}
       <DashboardBookRail
-        title={t("home.wishlist")}
-        books={byStatus.WISHLIST}
-        emptyMessage={t("home.wishlistEmpty")}
-        status="WISHLIST"
-        icon="favorite"
+        title={t("home.wishlist")} books={byStatus.WISHLIST}
+        emptyMessage={t("home.wishlistEmpty")} status="WISHLIST" icon="favorite"
       />
     </div>
   );
