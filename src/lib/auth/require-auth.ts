@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { env } from "@/lib/env";
 import { isMissingUserRoleError } from "@/lib/prisma-schema-compat";
 import type { UserRole } from "@/lib/types/user";
 
@@ -7,7 +8,7 @@ const E2E_TEST_USER = {
   EMAIL: "carlos@rollorian.dev",
 } as const;
 
-const isE2ETestMode = process.env.E2E_TEST_MODE === "true";
+const isE2ETestMode = env.E2E_TEST_MODE === "true";
 
 /**
  * Thrown when a request lacks a valid authenticated session.
@@ -104,7 +105,7 @@ export async function requireSuperAdmin(): Promise<{
       throw error;
     }
 
-    if (session.user.email && process.env.SUPERADMIN_EMAIL === session.user.email) {
+    if (session.user.email && env.SUPERADMIN_EMAIL === session.user.email) {
       return { userId, role: "SUPERADMIN" };
     }
 

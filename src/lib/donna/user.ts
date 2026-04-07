@@ -1,6 +1,7 @@
 import "server-only";
 
 import { prisma } from "@/lib/prisma";
+import { env } from "@/lib/env";
 
 export class DonnaUserNotConfiguredError extends Error {
   constructor(message = "DONNA_USER_EMAIL or SUPERADMIN_EMAIL must be configured") {
@@ -21,7 +22,7 @@ export async function getDonnaUserContext(): Promise<{
   email: string;
   name: string | null;
 }> {
-  const email = process.env.DONNA_USER_EMAIL ?? process.env.SUPERADMIN_EMAIL;
+  const email = env.DONNA_USER_EMAIL ?? env.SUPERADMIN_EMAIL;
 
   if (!email) {
     throw new DonnaUserNotConfiguredError();

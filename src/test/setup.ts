@@ -4,6 +4,13 @@
 // Mock `server-only` so files importing it don't throw in the test environment
 vi.mock("server-only", () => ({}));
 
+// Stub required env vars so that env.ts Zod validation doesn't throw
+// during test runs where real secrets are not available.
+process.env.AUTH_SECRET ??= "test-secret-placeholder-do-not-use-in-production";
+process.env.AUTH_GOOGLE_ID ??= "test-google-id";
+process.env.AUTH_GOOGLE_SECRET ??= "test-google-secret";
+process.env.DATABASE_URL ??= "postgresql://localhost:5432/test";
+
 // Mock `next/cache` so revalidatePath/revalidateTag don't throw outside Next.js
 vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),

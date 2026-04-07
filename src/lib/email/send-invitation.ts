@@ -2,6 +2,7 @@ import "server-only";
 
 import { Resend } from "resend";
 import { InvitationEmail } from "./invitation-email";
+import { env } from "@/lib/env";
 
 // Lazy singleton — avoids "Missing API key" crash at build time
 // when RESEND_API_KEY is not in the build environment (e.g., Vercel previews).
@@ -9,7 +10,7 @@ import { InvitationEmail } from "./invitation-email";
 let _resend: Resend | null = null;
 function getResend(): Resend {
   if (!_resend) {
-    const key = process.env.RESEND_API_KEY;
+    const key = env.RESEND_API_KEY;
     if (!key) throw new Error("RESEND_API_KEY is not configured");
     _resend = new Resend(key);
   }
@@ -19,8 +20,8 @@ function getResend(): Resend {
 // Deferred to call time — VERCEL_URL is only available at runtime, not during build.
 function getAppUrl(): string {
   return (
-    process.env.NEXTAUTH_URL ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://rollorian-books.vercel.app")
+    env.NEXTAUTH_URL ||
+    (env.VERCEL_URL ? `https://${env.VERCEL_URL}` : "https://rollorian-books.vercel.app")
   );
 }
 

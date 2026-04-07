@@ -1,9 +1,10 @@
 import type { NextRequest } from "next/server";
 import crypto from "node:crypto";
+import { env } from "@/lib/env";
 
 export function validateInternalApiKey(request: NextRequest): boolean {
   const key = request.headers.get("x-api-key") ?? "";
-  const expected = process.env["INTERNAL_API_KEY"] ?? "";
+  const expected = env.INTERNAL_API_KEY ?? "";
 
   if (expected.length === 0) {
     return false;
