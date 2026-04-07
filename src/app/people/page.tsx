@@ -18,7 +18,7 @@ export default function PeoplePage() {
   } = usePeopleSearch();
 
   return (
-    <div className="px-6 md:px-12 lg:px-20 pt-8 pb-24 max-w-3xl">
+    <div className="px-12 md:px-20 pt-8 pb-24 max-w-3xl">
       <PeopleSearchHeader query={query} onQueryChange={setQuery} />
       <PeopleList
         users={users}
