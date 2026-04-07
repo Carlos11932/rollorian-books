@@ -2,6 +2,7 @@ import "server-only";
 
 import { z } from "zod";
 import { requireAuth, UnauthorizedError } from "@/lib/auth/require-auth";
+import { logger } from "@/lib/logger";
 import {
   getUserLoans,
   requestLoan,
@@ -24,7 +25,7 @@ export async function GET(): Promise<Response> {
     if (error instanceof UnauthorizedError) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
-    console.error("[GET /api/loans]", error);
+    logger.error("Request failed", error, { endpoint: "GET /api/loans" });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
@@ -56,7 +57,7 @@ export async function POST(request: Request): Promise<Response> {
     if (error instanceof LoanBookNotInLibraryError) {
       return Response.json({ error: error.message }, { status: 400 });
     }
-    console.error("[POST /api/loans]", error);
+    logger.error("Request failed", error, { endpoint: "POST /api/loans" });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

@@ -4,6 +4,7 @@ import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import { env } from "@/lib/env";
+import { logger } from "@/lib/logger";
 import {
   isMissingSocialSchemaError,
   isMissingUserRoleError,
@@ -194,9 +195,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             data: { status: "ACCEPTED" },
           });
         }
-      } catch {
+      } catch (err) {
         // Errors must NOT break signup — log only.
-        console.error("[auth] createUser event failed for:", email);
+        logger.error("createUser event failed", err, { email });
       }
     },
   },

@@ -4,6 +4,7 @@ import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { updateMemberStatusSchema } from "@/lib/schemas/group";
 import { requireAuth, UnauthorizedError } from "@/lib/auth/require-auth";
+import { logger } from "@/lib/logger";
 
 type RouteContext = {
   params: Promise<{ id: string; userId: string }>;
@@ -63,7 +64,7 @@ export async function PATCH(
     if (error instanceof UnauthorizedError) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
-    console.error("[PATCH /api/groups/[id]/members/[userId]]", error);
+    logger.error("Request failed", error, { endpoint: "PATCH /api/groups/[id]/members/[userId]" });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
@@ -128,7 +129,7 @@ export async function DELETE(
     if (error instanceof UnauthorizedError) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
-    console.error("[DELETE /api/groups/[id]/members/[userId]]", error);
+    logger.error("Request failed", error, { endpoint: "DELETE /api/groups/[id]/members/[userId]" });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

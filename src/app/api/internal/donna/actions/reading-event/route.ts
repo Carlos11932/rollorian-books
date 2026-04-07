@@ -3,6 +3,7 @@ import { applyDonnaReadingEvent } from "@/lib/donna/books";
 import { readingEventRequestSchema } from "@/lib/donna/contracts";
 import { DonnaUserNotConfiguredError, DonnaUserNotFoundError } from "@/lib/donna/user";
 import { validateInternalApiKey } from "@/lib/internal-api";
+import { logger } from "@/lib/logger";
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   if (!validateInternalApiKey(request)) {
@@ -24,7 +25,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: error.message }, { status: 503 });
     }
 
-    console.error("[POST /api/internal/donna/actions/reading-event]", error);
+    logger.error("Request failed", error, { endpoint: "POST /api/internal/donna/actions/reading-event" });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

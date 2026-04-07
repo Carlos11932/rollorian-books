@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin, UnauthorizedError, ForbiddenError } from "@/lib/auth/require-auth";
 import { z } from "zod";
 import { sendInvitationEmail } from "@/lib/email/send-invitation";
+import { logger } from "@/lib/logger";
 
 const createInvitationSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -31,7 +32,7 @@ export async function GET(): Promise<Response> {
     if (error instanceof ForbiddenError) {
       return Response.json({ error: "Forbidden" }, { status: 403 });
     }
-    console.error("[GET /api/admin/invitations]", error);
+    logger.error("Request failed", error, { endpoint: "GET /api/admin/invitations" });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
@@ -97,7 +98,7 @@ export async function POST(request: NextRequest): Promise<Response> {
 
     // Fire-and-forget: don't block response on email delivery
     sendInvitationEmail(email).catch((err) => {
-      console.error("[POST /api/admin/invitations] email failed:", err);
+      logger.error("email failed", err, { endpoint: "POST /api/admin/invitations" });
     });
 
     return Response.json(invitation, { status: 201 });
@@ -108,7 +109,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     if (error instanceof ForbiddenError) {
       return Response.json({ error: "Forbidden" }, { status: 403 });
     }
-    console.error("[POST /api/admin/invitations]", error);
+    logger.error("Request failed", error, { endpoint: "POST /api/admin/invitations" });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

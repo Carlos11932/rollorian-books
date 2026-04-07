@@ -1,6 +1,7 @@
 import "server-only";
 
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 export async function GET(): Promise<Response> {
   try {
@@ -8,7 +9,7 @@ export async function GET(): Promise<Response> {
 
     return Response.json({ status: "ok" });
   } catch (error) {
-    console.error("[GET /api/health]", error);
+    logger.error("Request failed", error, { endpoint: "GET /api/health" });
     return Response.json(
       { status: "error", message: "Database unreachable" },
       { status: 503 }

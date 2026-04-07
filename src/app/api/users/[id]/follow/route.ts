@@ -3,6 +3,7 @@ import "server-only";
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, UnauthorizedError } from "@/lib/auth/require-auth";
+import { logger } from "@/lib/logger";
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -58,7 +59,7 @@ export async function POST(
     if (error instanceof UnauthorizedError) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
-    console.error("[POST /api/users/[id]/follow]", error);
+    logger.error("Request failed", error, { endpoint: "POST /api/users/[id]/follow" });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
@@ -98,7 +99,7 @@ export async function DELETE(
     if (error instanceof UnauthorizedError) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
-    console.error("[DELETE /api/users/[id]/follow]", error);
+    logger.error("Request failed", error, { endpoint: "DELETE /api/users/[id]/follow" });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

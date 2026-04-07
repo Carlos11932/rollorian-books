@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, UnauthorizedError } from "@/lib/auth/require-auth";
 import { BOOK_STATUS_VALUES, type BookStatus } from "@/lib/types/book";
 import { revalidateBookCollectionPaths } from "@/lib/revalidation";
+import { logger } from "@/lib/logger";
 
 const batchUpdateSchema = z.object({
   bookIds: z.array(z.string().min(1)).min(1).max(100),
@@ -56,7 +57,7 @@ export async function PATCH(request: Request): Promise<Response> {
     if (error instanceof UnauthorizedError) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
-    console.error("[PATCH /api/books/batch]", error);
+    logger.error("Request failed", error, { endpoint: "PATCH /api/books/batch" });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

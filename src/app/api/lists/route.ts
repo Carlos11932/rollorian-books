@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { isMissingListsSchemaError } from "@/lib/prisma-schema-compat";
 import { createListSchema } from "@/lib/schemas/list";
 import { requireAuth, UnauthorizedError } from "@/lib/auth/require-auth";
+import { logger } from "@/lib/logger";
 
 export async function GET(_request: NextRequest): Promise<Response> {
   try {
@@ -48,7 +49,7 @@ export async function GET(_request: NextRequest): Promise<Response> {
     if (isMissingListsSchemaError(error)) {
       return Response.json([]);
     }
-    console.error("[GET /api/lists]", error);
+    logger.error("Request failed", error, { endpoint: "GET /api/lists" });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
@@ -84,7 +85,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     if (isMissingListsSchemaError(error)) {
       return Response.json({ error: "Lists feature unavailable until database schema is updated" }, { status: 503 });
     }
-    console.error("[POST /api/lists]", error);
+    logger.error("Request failed", error, { endpoint: "POST /api/lists" });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

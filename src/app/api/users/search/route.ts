@@ -3,6 +3,7 @@ import "server-only";
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, UnauthorizedError } from "@/lib/auth/require-auth";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest): Promise<Response> {
   try {
@@ -52,7 +53,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     if (error instanceof UnauthorizedError) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
-    console.error("[GET /api/users/search]", error);
+    logger.error("Request failed", error, { endpoint: "GET /api/users/search" });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

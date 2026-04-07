@@ -5,6 +5,7 @@ import type { NextRequest } from "next/server";
 import { searchBooks } from "@/lib/book-providers/search-orchestrator";
 import { requireAuth, UnauthorizedError } from "@/lib/auth/require-auth";
 import type { NormalizedBook } from "@/lib/book-providers/types";
+import { logger } from "@/lib/logger";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -63,7 +64,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     if (error instanceof UnauthorizedError) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
-    console.error("[GET /api/discover/genres]", error);
+    logger.error("Request failed", error, { endpoint: "GET /api/discover/genres" });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

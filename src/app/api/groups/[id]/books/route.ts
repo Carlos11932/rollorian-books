@@ -3,6 +3,7 @@ import "server-only";
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, UnauthorizedError } from "@/lib/auth/require-auth";
+import { logger } from "@/lib/logger";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -89,7 +90,7 @@ export async function GET(
     if (error instanceof UnauthorizedError) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
-    console.error("[GET /api/groups/[id]/books]", error);
+    logger.error("Request failed", error, { endpoint: "GET /api/groups/[id]/books" });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

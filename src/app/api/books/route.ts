@@ -13,6 +13,7 @@ import {
 } from "@/lib/books";
 import { fetchByIsbn } from "@/lib/book-providers/search-orchestrator";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest): Promise<Response> {
   try {
@@ -40,7 +41,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     if (error instanceof InvalidStatusError) {
       return Response.json({ error: error.message }, { status: 400 });
     }
-    console.error("[GET /api/books]", error);
+    logger.error("Request failed", error, { endpoint: "GET /api/books" });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
@@ -82,7 +83,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     if (error instanceof DuplicateLibraryEntryError) {
       return Response.json({ error: error.message }, { status: 409 });
     }
-    console.error("[POST /api/books]", error);
+    logger.error("Request failed", error, { endpoint: "POST /api/books" });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
