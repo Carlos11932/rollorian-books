@@ -2,22 +2,26 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Prisma } from "@prisma/client";
 
 // ---------------------------------------------------------------------------
-// Mocks
+// Mocks — interactive transaction pattern
 // ---------------------------------------------------------------------------
 
-const mockTransaction = vi.fn();
-const mockDonnaDeleteMany = vi.fn();
-const mockBookListItemDeleteMany = vi.fn();
-const mockLoanUpdateMany = vi.fn();
-const mockUserBookDelete = vi.fn();
+const mockDonnaDeleteMany = vi.fn().mockResolvedValue({ count: 0 });
+const mockBookListFindMany = vi.fn().mockResolvedValue([]);
+const mockBookListItemDeleteMany = vi.fn().mockResolvedValue({ count: 0 });
+const mockLoanUpdateMany = vi.fn().mockResolvedValue({ count: 0 });
+const mockUserBookDelete = vi.fn().mockResolvedValue({});
+
+const txClient = {
+  donnaBookState: { deleteMany: mockDonnaDeleteMany },
+  bookList: { findMany: mockBookListFindMany },
+  bookListItem: { deleteMany: mockBookListItemDeleteMany },
+  loan: { updateMany: mockLoanUpdateMany },
+  userBook: { delete: mockUserBookDelete },
+};
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
-    $transaction: (ops: unknown[]) => mockTransaction(ops),
-    donnaBookState: { deleteMany: (args: unknown) => mockDonnaDeleteMany(args) },
-    bookListItem: { deleteMany: (args: unknown) => mockBookListItemDeleteMany(args) },
-    loan: { updateMany: (args: unknown) => mockLoanUpdateMany(args) },
-    userBook: { delete: (args: unknown) => mockUserBookDelete(args) },
+    $transaction: (fn: (tx: typeof txClient) => Promise<void>) => fn(txClient),
   },
 }));
 
@@ -42,16 +46,11 @@ describe("deleteLibraryEntry", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockTransaction.mockResolvedValue(undefined);
-  });
-
-  it("executes all cleanup operations in a single transaction", async () => {
-    await deleteLibraryEntry(userId, bookId);
-
-    expect(mockTransaction).toHaveBeenCalledOnce();
-    const operations = mockTransaction.mock.calls[0]?.[0] as unknown[];
-    // Transaction should contain 4 operations
-    expect(operations).toHaveLength(4);
+    mockDonnaDeleteMany.mockResolvedValue({ count: 0 });
+    mockBookListFindMany.mockResolvedValue([]);
+    mockBookListItemDeleteMany.mockResolvedValue({ count: 0 });
+    mockLoanUpdateMany.mockResolvedValue({ count: 0 });
+    mockUserBookDelete.mockResolvedValue({});
   });
 
   it("deletes DonnaBookState for the user+book", async () => {
@@ -62,12 +61,32 @@ describe("deleteLibraryEntry", () => {
     });
   });
 
-  it("deletes BookListItems from the user's lists", async () => {
+  it("queries user lists and deletes BookListItems with scalar filter", async () => {
+    mockBookListFindMany.mockResolvedValue([
+      { id: "list-1" },
+      { id: "list-2" },
+    ]);
+
     await deleteLibraryEntry(userId, bookId);
 
-    expect(mockBookListItemDeleteMany).toHaveBeenCalledWith({
-      where: { bookId, list: { userId } },
+    expect(mockBookListFindMany).toHaveBeenCalledWith({
+      where: { userId },
+      select: { id: true },
     });
+    expect(mockBookListItemDeleteMany).toHaveBeenCalledWith({
+      where: {
+        bookId,
+        listId: { in: ["list-1", "list-2"] },
+      },
+    });
+  });
+
+  it("skips BookListItem deletion when user has no lists", async () => {
+    mockBookListFindMany.mockResolvedValue([]);
+
+    await deleteLibraryEntry(userId, bookId);
+
+    expect(mockBookListItemDeleteMany).not.toHaveBeenCalled();
   });
 
   it("declines active loans where user is lender", async () => {
@@ -96,7 +115,7 @@ describe("deleteLibraryEntry", () => {
       code: "P2025",
       clientVersion: "5.0.0",
     });
-    mockTransaction.mockRejectedValueOnce(p2025);
+    mockUserBookDelete.mockRejectedValueOnce(p2025);
 
     await expect(deleteLibraryEntry(userId, bookId)).rejects.toThrow(
       LibraryEntryNotFoundError,
@@ -105,7 +124,7 @@ describe("deleteLibraryEntry", () => {
 
   it("re-throws unexpected errors", async () => {
     const unexpected = new Error("DB connection lost");
-    mockTransaction.mockRejectedValueOnce(unexpected);
+    mockUserBookDelete.mockRejectedValueOnce(unexpected);
 
     await expect(deleteLibraryEntry(userId, bookId)).rejects.toThrow(
       "DB connection lost",
