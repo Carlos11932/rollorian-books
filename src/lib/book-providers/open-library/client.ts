@@ -64,3 +64,65 @@ export async function fetchByIsbn(
   const docs = await searchOpenLibrary(`isbn:${isbn}`, { limit: 1 });
   return docs[0] ?? null;
 }
+
+/**
+ * Fetches a single work by OpenLibrary work ID (e.g. "OL34942758W").
+ * Uses the Works API: https://openlibrary.org/works/OL34942758W.json
+ * Then enriches with author names from the search API.
+ */
+export async function fetchWorkById(
+  workId: string,
+): Promise<OpenLibraryDoc | null> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+    // Fetch work data
+    const workUrl = `https://openlibrary.org/works/${encodeURIComponent(workId)}.json`;
+    const workRes = await fetch(workUrl, {
+      headers: { Accept: "application/json" },
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeout);
+    if (!workRes.ok) return null;
+
+    const work = (await workRes.json()) as {
+      title?: string;
+      covers?: number[];
+      subjects?: string[];
+      description?: string | { value: string };
+      authors?: { author: { key: string } }[];
+    };
+
+    if (!work.title) return null;
+
+    // Resolve author names from author keys
+    let authorNames: string[] = [];
+    if (work.authors && work.authors.length > 0) {
+      const authorPromises = work.authors.slice(0, 3).map(async (a) => {
+        try {
+          const authorRes = await fetch(`https://openlibrary.org${a.author.key}.json`, {
+            headers: { Accept: "application/json" },
+          });
+          if (!authorRes.ok) return null;
+          const author = (await authorRes.json()) as { name?: string };
+          return author.name ?? null;
+        } catch {
+          return null;
+        }
+      });
+      authorNames = (await Promise.all(authorPromises)).filter((n): n is string => n !== null);
+    }
+
+    return {
+      key: `/works/${workId}`,
+      title: work.title,
+      author_name: authorNames.length > 0 ? authorNames : undefined,
+      cover_i: work.covers?.[0],
+      subject: work.subjects?.slice(0, 10),
+    };
+  } catch {
+    return null;
+  }
+}

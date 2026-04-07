@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { getTranslations } from 'next-intl/server';
-import type { GoogleBookView } from "@/features/books/types";
+import type { GoogleBookView, ExternalBookView } from "@/features/books/types";
 import { BookCover } from "@/features/books/components/book-cover";
 import { GoogleBookSaveClient } from "@/features/books/components/google-book-save-client";
 import { MetadataCard } from "@/features/books/components/metadata-card";
 import { BlurredBackground } from "@/features/shared/components/blurred-background";
 
 interface GoogleBookDetailProps {
-  view: GoogleBookView;
+  view: GoogleBookView | ExternalBookView;
 }
 
 export async function GoogleBookDetail({ view }: GoogleBookDetailProps) {
@@ -63,7 +63,9 @@ export async function GoogleBookDetail({ view }: GoogleBookDetailProps) {
             </div>
 
             <div className="flex flex-col gap-5 min-w-0 flex-1">
-              <p className="text-xs font-bold uppercase tracking-widest text-primary">{t('book.googlePreview')}</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-primary">
+                {view.source === "google" ? t('book.googlePreview') : t('book.externalPreview')}
+              </p>
 
               <div className="grid gap-2">
                 <h1

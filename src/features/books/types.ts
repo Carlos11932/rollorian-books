@@ -21,6 +21,26 @@ export interface GoogleBookView {
 }
 
 /**
+ * View model for an external book (OpenLibrary, etc.) used in the book detail page.
+ * Similar shape to GoogleBookView but without the raw volume object.
+ */
+export interface ExternalBookView {
+  source: "external";
+  externalId: string;
+  title: string;
+  subtitle: string | null;
+  authors: string[];
+  description: string | null;
+  coverUrl: string | null;
+  publisher: string | null;
+  publishedDate: string | null;
+  pageCount: number | null;
+  isbn10: string | null;
+  isbn13: string | null;
+  genres: string[];
+}
+
+/**
  * Serializable version combining Book fields with UserBook reading-state fields.
  * Date fields are converted to ISO strings for passing from Server to Client components.
  *
