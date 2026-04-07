@@ -4,10 +4,10 @@ import type { NextRequest } from "next/server";
 import { updateBookSchema } from "@/lib/schemas/book";
 import { requireAuth, UnauthorizedError } from "@/lib/auth/require-auth";
 import { logger } from "@/lib/logger";
-import { prisma } from "@/lib/prisma";
 import {
   getLibraryEntry,
   updateLibraryEntry,
+  deleteLibraryEntry,
   LibraryEntryNotFoundError,
 } from "@/lib/books";
 
@@ -79,24 +79,17 @@ export async function DELETE(
     const { userId } = await requireAuth();
     const { id: bookId } = await params;
 
-    // Inline delete — bypass deleteLibraryEntry to isolate the issue.
-    const result = await prisma.userBook.deleteMany({
-      where: { userId, bookId },
-    });
-
-    if (result.count === 0) {
-      return Response.json({ error: "Book not found" }, { status: 404 });
-    }
+    await deleteLibraryEntry(userId, bookId);
 
     return new Response(null, { status: 204 });
   } catch (error) {
     if (error instanceof UnauthorizedError) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
+    if (error instanceof LibraryEntryNotFoundError) {
+      return Response.json({ error: "Book not found" }, { status: 404 });
+    }
     logger.error("Request failed", error, { endpoint: "DELETE /api/books/[id]" });
-    return Response.json(
-      { error: "Internal server error", v: "inline-v3" },
-      { status: 500 },
-    );
+    return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

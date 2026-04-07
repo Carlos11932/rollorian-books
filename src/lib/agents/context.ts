@@ -2,8 +2,7 @@ import "server-only";
 
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import type { AgentScope, AgentClientKind } from "./constants";
-import { isAgentScope } from "./constants";
+import { isAgentScope, type AgentClientKind, type AgentScope } from "./constants";
 import { AgentAuthError, AgentScopeError } from "./errors";
 import { hashAgentToken } from "./tokens";
 
@@ -107,4 +106,3 @@ export function requireAgentScope(context: AgentContext, scope: AgentScope): voi
     throw new AgentScopeError(`Missing required scope: ${scope}`);
   }
 }
-

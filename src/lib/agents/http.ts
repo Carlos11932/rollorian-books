@@ -1,9 +1,11 @@
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { logger } from "@/lib/logger";
 import { recordAgentAuditEvent, getAuditOutcomeFromStatus } from "./audit";
-import type { AgentContext } from "./context";
-import { requireAgentScope, resolveAgentRequestContext } from "./context";
+import {
+  requireAgentScope,
+  resolveAgentRequestContext,
+  type AgentContext,
+} from "./context";
 import type { AgentScope } from "./constants";
 import { AgentInputError, getErrorStatus, getPublicErrorMessage } from "./errors";
 
@@ -111,4 +113,3 @@ export async function handleAgentRoute(
     return NextResponse.json({ error: getPublicErrorMessage(error) }, { status });
   }
 }
-

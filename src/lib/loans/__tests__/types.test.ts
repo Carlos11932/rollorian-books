@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { toLoanView, LOAN_SELECT } from "../types";
-import type { LoanView } from "../types";
+import { toLoanView, LOAN_SELECT, type LoanView } from "../types";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

@@ -3,8 +3,7 @@ import "server-only";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { CreateAgentClientInput, IssueAgentCredentialInput } from "./contracts";
-import type { AgentScope } from "./constants";
-import { AGENT_SCOPES } from "./constants";
+import { AGENT_SCOPES, type AgentScope } from "./constants";
 import { AgentInputError, AgentNotFoundError } from "./errors";
 import { createAgentToken } from "./tokens";
 import type {

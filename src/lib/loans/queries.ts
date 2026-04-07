@@ -1,8 +1,7 @@
 import "server-only";
 
 import { prisma } from "@/lib/prisma";
-import { LOAN_SELECT, toLoanView } from "./types";
-import type { LoanView } from "./types";
+import { LOAN_SELECT, toLoanView, type LoanView } from "./types";
 
 // ── Get loans for a user ────────────────────────────────────────────────────
 

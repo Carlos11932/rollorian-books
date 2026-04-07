@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { ReadingEventRequest } from "@/lib/donna/contracts";
+import type { DonnaBookRef, ReadingEventRequest } from "@/lib/donna/contracts";
 import {
   applyReadingEventForUser,
   getLibrarySnapshotForOwner,
@@ -10,7 +10,6 @@ import {
   getSummaryForOwner,
   resolveUserBookByReference,
 } from "@/lib/donna";
-import type { DonnaBookRef } from "@/lib/donna/contracts";
 import type { AgentReadingEventRequest } from "./contracts";
 import type { AgentContext } from "./context";
 
@@ -62,4 +61,3 @@ export async function applyAgentReadingEvent(context: AgentContext, input: Agent
 
   return applyReadingEventForUser(context.owner, request);
 }
-
