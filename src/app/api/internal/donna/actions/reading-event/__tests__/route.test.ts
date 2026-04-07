@@ -12,7 +12,7 @@ vi.mock("@/lib/internal-api", () => ({
   validateInternalApiKey: validateInternalApiKeyMock,
 }));
 
-vi.mock("@/lib/donna/books", () => ({
+vi.mock("@/lib/donna", () => ({
   applyDonnaReadingEvent: applyDonnaReadingEventMock,
 }));
 

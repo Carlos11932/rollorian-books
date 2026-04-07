@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { resolveDonnaBook } from "@/lib/donna/books";
+import { resolveDonnaBook } from "@/lib/donna";
 import { resolveBookRequestSchema } from "@/lib/donna/contracts";
 import { DonnaUserNotConfiguredError, DonnaUserNotFoundError } from "@/lib/donna/user";
 import { validateInternalApiKey } from "@/lib/internal-api";
