@@ -6,10 +6,11 @@ import { auth } from "@/lib/auth";
 import { fetchBookById } from "@/lib/google-books/client";
 import { stripHtml } from "@/lib/utils/text";
 import type { GoogleBooksVolume } from "@/lib/google-books/types";
-import type { GoogleBookView } from "@/features/books/types";
+import type { GoogleBookView, ExternalBookView } from "@/features/books/types";
 import { LocalBookDetail } from "@/features/books/components/local-book-detail";
 import { GoogleBookDetail } from "@/features/books/components/google-book-detail";
 import { DiscoveredBookDetail } from "@/features/books/components/discovered-book-detail";
+import { fetchWorkById } from "@/lib/book-providers/open-library/client";
 import { USER_BOOK_SELECT } from "@/lib/books/user-book-select";
 import { getViewableUserIds } from "@/lib/privacy/can-view-user-books";
 
@@ -28,7 +29,8 @@ export interface BookOwner {
 type ResolvedBook =
   | { source: "local"; userBook: UserBookWithBook }
   | { source: "discovered"; book: Book; owners: BookOwner[] }
-  | GoogleBookView;
+  | GoogleBookView
+  | ExternalBookView;
 
 const resolveBook = cache(async function resolveBook(id: string, userId: string): Promise<ResolvedBook | null> {
   // 1. Check if the current user has this book
@@ -89,6 +91,36 @@ const resolveBook = cache(async function resolveBook(id: string, userId: string)
     // Google Books unreachable — treat as not found
   }
 
+  // 4. Try OpenLibrary by work ID (e.g. "OL34942758W")
+  if (/^OL\d+[A-Z]$/.test(id)) {
+    try {
+      const olDoc = await fetchWorkById(id);
+      if (olDoc) {
+        const coverUrl = olDoc.cover_i
+          ? `https://covers.openlibrary.org/b/id/${olDoc.cover_i}-L.jpg`
+          : null;
+
+        return {
+          source: "external",
+          externalId: id,
+          title: olDoc.title,
+          subtitle: olDoc.subtitle ?? null,
+          authors: olDoc.author_name ?? ["Unknown"],
+          description: null,
+          coverUrl,
+          publisher: null,
+          publishedDate: olDoc.first_publish_year ? String(olDoc.first_publish_year) : null,
+          pageCount: olDoc.number_of_pages_median ?? null,
+          isbn10: null,
+          isbn13: null,
+          genres: olDoc.subject?.slice(0, 5) ?? [],
+        } satisfies ExternalBookView;
+      }
+    } catch {
+      // OpenLibrary unreachable — treat as not found
+    }
+  }
+
   return null;
 });
 
@@ -146,6 +178,7 @@ export async function generateMetadata({ params }: BookDetailPageProps) {
     };
   }
 
+  // "google" or "external" — both have title and authors at top level
   return {
     title: `${resolved.title} — Rollorian`,
     description: `Book detail for ${resolved.title} by ${resolved.authors.join(", ")}`,
@@ -173,5 +206,6 @@ export default async function BookDetailPage({ params }: BookDetailPageProps) {
     return <DiscoveredBookDetail book={resolved.book} owners={resolved.owners} />;
   }
 
+  // Both "google" and "external" sources use the same detail layout
   return <GoogleBookDetail view={resolved} />;
 }

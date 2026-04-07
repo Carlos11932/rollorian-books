@@ -1,6 +1,6 @@
 import "server-only";
 
-import { Prisma, type DonnaSemanticState as PrismaDonnaSemanticState } from "@prisma/client";
+import { type Prisma, type DonnaSemanticState as PrismaDonnaSemanticState } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { USER_BOOK_SELECT } from "@/lib/books/user-book-select";
 import { getViewableUserIds } from "@/lib/privacy/can-view-user-books";

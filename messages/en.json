@@ -187,6 +187,7 @@
     "ownedByConnections": "Who has this book",
     "backToSearch": "Back to search",
     "googlePreview": "Google Books preview",
+    "externalPreview": "Book preview",
     "notInLibrary": "Not in your library",
     "trackQuestion": "Want to track this book?",
     "trackDescription": "Save it to your library to keep track of your reading progress.",
