@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/cn";
 
@@ -21,7 +21,7 @@ export function IsbnScanner({ onScan, onClose }: IsbnScannerProps) {
   const [state, setState] = useState<ScannerState>("initializing");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const stopCamera = useCallback(() => {
+  function stopCamera() {
     if (rafRef.current) {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = 0;
@@ -32,7 +32,7 @@ export function IsbnScanner({ onScan, onClose }: IsbnScannerProps) {
       }
       streamRef.current = null;
     }
-  }, []);
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -111,7 +111,8 @@ export function IsbnScanner({ onScan, onClose }: IsbnScannerProps) {
       clearTimeout(initializeUnsupportedState);
       stopCamera();
     };
-  }, [onScan, stopCamera, t]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onScan, t]);
 
   // Close handler — stop camera then call parent
   function handleClose() {

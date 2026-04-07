@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import type { BookListSummary } from "@/lib/types/book";
@@ -15,7 +15,7 @@ export default function ListsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
 
-  const loadLists = useCallback(async () => {
+  async function loadLists() {
     try {
       const data = await fetchLists();
       setLists(data);
@@ -24,11 +24,12 @@ export default function ListsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }
 
   useEffect(() => {
     void loadLists();
-  }, [loadLists]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function handleCreated() {
     setShowCreate(false);

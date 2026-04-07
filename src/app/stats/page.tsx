@@ -1,66 +1,23 @@
-"use client";
-
-import { useState, useEffect } from "react";
-import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
+import { requireAuth } from "@/lib/auth/require-auth";
+import { getStats } from "@/lib/stats/get-stats";
 import { StatCard } from "@/features/stats/components/stat-card";
 import { MonthlyChart } from "@/features/stats/components/monthly-chart";
 import { GenreBars } from "@/features/stats/components/genre-bars";
 import { ReadingStreak } from "@/features/stats/components/reading-streak";
-import { Skeleton } from "@/features/shared/components/skeleton";
 
-interface StatsData {
-  booksByStatus: Record<string, number>;
-  totalBooks: number;
-  booksReadThisYear: number;
-  booksReadByMonth: { month: string; count: number }[];
-  averageRating: number | null;
-  totalPagesRead: number;
-  topGenres: { genre: string; count: number }[];
-  readingStreak: { current: number; unit: "days" | "weeks" };
-}
+export default async function StatsPage() {
+  const t = await getTranslations("stats");
 
-export default function StatsPage() {
-  const t = useTranslations("stats");
-  const [stats, setStats] = useState<StatsData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    void fetch("/api/stats")
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to load stats");
-        return res.json() as Promise<StatsData>;
-      })
-      .then(setStats)
-      .catch(() => setError("Failed to load stats"))
-      .finally(() => setIsLoading(false));
-  }, []);
-
-  if (isLoading) {
-    return (
-      <div className="pt-8 px-12 md:px-20 pb-24">
-        <Skeleton variant="text" className="h-10 w-64 mb-8" />
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} variant="card" className="h-32 rounded-2xl" />
-          ))}
-        </div>
-        <Skeleton variant="card" className="h-56 rounded-2xl mb-6" />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Skeleton variant="card" className="h-48 rounded-2xl" />
-          <Skeleton variant="card" className="h-48 rounded-2xl" />
-        </div>
-      </div>
-    );
-  }
-
-  if (error != null || stats == null) {
+  let stats;
+  try {
+    const { userId } = await requireAuth();
+    stats = await getStats(userId);
+  } catch {
     return (
       <div className="pt-8 px-12 md:px-20 pb-24">
         <div className="flex flex-col items-center gap-4 mt-16 text-center">
-          <span
-            className="material-symbols-outlined text-on-surface-variant/40 text-[64px]"
-          >
+          <span className="material-symbols-outlined text-on-surface-variant/40 text-[64px]">
             bar_chart
           </span>
           <p className="text-lg font-medium text-on-surface-variant">
@@ -72,8 +29,7 @@ export default function StatsPage() {
     );
   }
 
-  const { totalBooks, booksReadThisYear, averageRating, totalPagesRead } =
-    stats;
+  const { totalBooks, booksReadThisYear, averageRating, totalPagesRead } = stats;
 
   const formattedRating =
     averageRating != null ? averageRating.toFixed(1) : "--";
@@ -87,9 +43,7 @@ export default function StatsPage() {
     <div className="pt-8 px-12 md:px-20 pb-24">
       {/* Header */}
       <div className="flex items-center gap-3 mb-8">
-        <span
-          className="material-symbols-outlined text-primary text-[32px]"
-        >
+        <span className="material-symbols-outlined text-primary text-[32px]">
           bar_chart
         </span>
         <h1 className="text-3xl md:text-4xl font-bold text-on-surface tracking-tight font-headline">
@@ -99,9 +53,7 @@ export default function StatsPage() {
 
       {totalBooks === 0 ? (
         <div className="flex flex-col items-center gap-4 mt-16 text-center">
-          <span
-            className="material-symbols-outlined text-on-surface-variant/40 text-[64px]"
-          >
+          <span className="material-symbols-outlined text-on-surface-variant/40 text-[64px]">
             bar_chart
           </span>
           <p className="text-lg font-medium text-on-surface-variant">

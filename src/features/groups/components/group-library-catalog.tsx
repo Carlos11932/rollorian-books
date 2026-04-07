@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { BookRailSection } from "@/features/shared/ui/book-rail-section";
 import { EmptyState } from "@/features/shared/components/empty-state";
@@ -69,17 +69,15 @@ export function GroupLibraryCatalog({ books }: GroupLibraryCatalogProps) {
   const [readFilter, setReadFilter] = useState<ReadFilter>("all");
 
   // Apply read filter
-  const filteredBooks = useMemo(() => {
-    if (readFilter === "read") return books.filter((b) => b.isRead);
-    if (readFilter === "unread") return books.filter((b) => !b.isRead);
-    return books;
-  }, [books, readFilter]);
+  const filteredBooks =
+    readFilter === "read"
+      ? books.filter((b) => b.isRead)
+      : readFilter === "unread"
+        ? books.filter((b) => !b.isRead)
+        : books;
 
   // Group by normalized genre for the genre view
-  const genreSections = useMemo(
-    () => groupByNormalizedGenre(filteredBooks, t("noGenre")),
-    [filteredBooks, t],
-  );
+  const genreSections = groupByNormalizedGenre(filteredBooks, t("noGenre"));
 
   // Empty states
   if (books.length === 0) {

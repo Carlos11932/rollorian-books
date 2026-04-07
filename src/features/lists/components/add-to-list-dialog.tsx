@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/cn";
 import type { BookListSummary } from "@/lib/types/book";
@@ -30,7 +30,7 @@ export function AddToListDialog({ bookId, open, onClose }: AddToListDialogProps)
   const [isCreating, setIsCreating] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
 
-  const loadLists = useCallback(async () => {
+  async function loadLists() {
     setIsLoading(true);
     try {
       const data = await fetchLists(bookId);
@@ -47,13 +47,14 @@ export function AddToListDialog({ bookId, open, onClose }: AddToListDialogProps)
     } finally {
       setIsLoading(false);
     }
-  }, [bookId]);
+  }
 
   useEffect(() => {
     if (open) {
       void loadLists();
     }
-  }, [open, loadLists]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, bookId]);
 
   // Close on Escape
   useEffect(() => {
