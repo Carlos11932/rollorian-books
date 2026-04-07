@@ -21,10 +21,10 @@ export default defineConfig({
       // Start conservatively — many UI components are untested.
       // Raise incrementally as more tests are added (Phase 6+).
       thresholds: {
-        lines: 20,
-        functions: 18,
-        branches: 18,
-        statements: 20,
+        lines: 27,
+        functions: 23,
+        branches: 24,
+        statements: 27,
       },
     },
   },

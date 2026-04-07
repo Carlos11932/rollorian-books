@@ -1,102 +1,36 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useTranslations } from 'next-intl';
 import { cn } from "@/lib/cn";
 import { Button } from "@/features/shared/components/button";
 import type { LibraryEntryView } from "../types";
-import { type BookStatus, BOOK_STATUS_VALUES } from "@/lib/types/book";
-import { updateBook, deleteBook } from "@/lib/api/books";
+import { BOOK_STATUS_VALUES } from "@/lib/types/book";
+import { useBookDetail, SAVE_STATE, DELETE_STATE } from "../hooks/use-book-detail";
 
 interface BookDetailClientProps {
   book: LibraryEntryView;
 }
 
-const SAVE_STATE = {
-  idle: "idle",
-  saving: "saving",
-  saved: "saved",
-  error: "error",
-} as const;
-
-type SaveState = (typeof SAVE_STATE)[keyof typeof SAVE_STATE];
-
-const DELETE_STATE = {
-  idle: "idle",
-  confirming: "confirming",
-  deleting: "deleting",
-} as const;
-
-type DeleteState = (typeof DELETE_STATE)[keyof typeof DELETE_STATE];
-
 export function BookDetailClient({ book }: BookDetailClientProps) {
-  const router = useRouter();
   const t = useTranslations();
-  const saveStateResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const [status, setStatus] = useState<BookStatus>(book.status);
-  const [rating, setRating] = useState<number | null>(book.rating ?? null);
-  const [hoverRating, setHoverRating] = useState<number | null>(null);
-  const [notes, setNotes] = useState(book.notes ?? "");
-  const [saveState, setSaveState] = useState<SaveState>(SAVE_STATE.idle);
-  const [deleteState, setDeleteState] = useState<DeleteState>(DELETE_STATE.idle);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (saveStateResetRef.current !== null) {
-        clearTimeout(saveStateResetRef.current);
-      }
-    };
-  }, []);
-
-  async function handleSave() {
-    if (saveStateResetRef.current !== null) {
-      clearTimeout(saveStateResetRef.current);
-      saveStateResetRef.current = null;
-    }
-
-    setSaveState(SAVE_STATE.saving);
-    setErrorMessage(null);
-
-    try {
-      await updateBook(book.id, {
-        status,
-        rating: rating ?? null,
-        notes: notes.trim() || null,
-      });
-
-      setSaveState(SAVE_STATE.saved);
-      router.refresh();
-
-      // Reset to idle after short delay
-      saveStateResetRef.current = setTimeout(() => {
-        setSaveState(SAVE_STATE.idle);
-        saveStateResetRef.current = null;
-      }, 2000);
-    } catch (err) {
-      setSaveState(SAVE_STATE.error);
-      setErrorMessage(err instanceof Error ? err.message : "An unexpected error occurred");
-    }
-  }
-
-  async function handleDelete() {
-    setDeleteState(DELETE_STATE.deleting);
-
-    try {
-      await deleteBook(book.id);
-
-      router.push("/library");
-    } catch (err) {
-      setDeleteState(DELETE_STATE.idle);
-      setErrorMessage(err instanceof Error ? err.message : "Failed to delete book");
-    }
-  }
-
-  const displayRating = hoverRating ?? rating;
-  const isSaving = saveState === SAVE_STATE.saving;
-  const isDeleting = deleteState === DELETE_STATE.deleting;
+  const {
+    status,
+    rating,
+    notes,
+    saveState,
+    deleteState,
+    errorMessage,
+    displayRating,
+    isSaving,
+    isDeleting,
+    setStatus,
+    setRating,
+    setHoverRating,
+    setNotes,
+    setDeleteState,
+    handleSave,
+    handleDelete,
+  } = useBookDetail(book);
 
   return (
     <section
@@ -119,7 +53,7 @@ export function BookDetailClient({ book }: BookDetailClientProps) {
           <select
             value={status}
             disabled={isSaving || isDeleting}
-            onChange={(e) => setStatus(e.target.value as BookStatus)}
+            onChange={(e) => setStatus(e.target.value as Parameters<typeof setStatus>[0])}
             aria-label="Reading status"
             className={cn(
               "rounded-[var(--radius-sm)] border border-line bg-surface-soft text-text text-sm px-3 py-2.5",
