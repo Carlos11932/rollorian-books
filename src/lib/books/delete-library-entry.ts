@@ -14,6 +14,7 @@ import { LibraryEntryNotFoundError } from "./errors";
  * `.deleteMany()` only returns `{ count }` — no column reads, no drift.
  *
  * See `src/lib/books/user-book-select.ts` for the same pattern on queries.
+ * Related data cleanup is best-effort — tables may not exist (pending migrations).
  */
 export async function deleteLibraryEntry(
   userId: string,
