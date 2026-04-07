@@ -2,28 +2,37 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Prisma } from "@prisma/client";
 
 // ---------------------------------------------------------------------------
-// Mocks — interactive transaction pattern
+// Mocks — interactive transaction + best-effort donna cleanup
 // ---------------------------------------------------------------------------
 
-const mockDonnaDeleteMany = vi.fn().mockResolvedValue({ count: 0 });
-const mockBookListFindMany = vi.fn().mockResolvedValue([]);
-const mockBookListItemDeleteMany = vi.fn().mockResolvedValue({ count: 0 });
-const mockLoanUpdateMany = vi.fn().mockResolvedValue({ count: 0 });
-const mockUserBookDelete = vi.fn().mockResolvedValue({});
-
-const txClient = {
-  donnaBookState: { deleteMany: mockDonnaDeleteMany },
-  bookList: { findMany: mockBookListFindMany },
-  bookListItem: { deleteMany: mockBookListItemDeleteMany },
-  loan: { updateMany: mockLoanUpdateMany },
-  userBook: { delete: mockUserBookDelete },
-};
-
-vi.mock("@/lib/prisma", () => ({
-  prisma: {
-    $transaction: (fn: (tx: typeof txClient) => Promise<void>) => fn(txClient),
-  },
+const {
+  mockDonnaDeleteMany,
+  mockBookListFindMany,
+  mockBookListItemDeleteMany,
+  mockLoanUpdateMany,
+  mockUserBookDelete,
+} = vi.hoisted(() => ({
+  mockDonnaDeleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+  mockBookListFindMany: vi.fn().mockResolvedValue([]),
+  mockBookListItemDeleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+  mockLoanUpdateMany: vi.fn().mockResolvedValue({ count: 0 }),
+  mockUserBookDelete: vi.fn().mockResolvedValue({}),
 }));
+
+vi.mock("@/lib/prisma", () => {
+  const txClient = {
+    bookList: { findMany: mockBookListFindMany },
+    bookListItem: { deleteMany: mockBookListItemDeleteMany },
+    loan: { updateMany: mockLoanUpdateMany },
+    userBook: { delete: mockUserBookDelete },
+  };
+  return {
+    prisma: {
+      donnaBookState: { deleteMany: mockDonnaDeleteMany },
+      $transaction: (fn: (tx: typeof txClient) => Promise<void>) => fn(txClient),
+    },
+  };
+});
 
 vi.mock("@/lib/revalidation", () => ({
   revalidateBookCollectionPaths: vi.fn(),
@@ -53,12 +62,21 @@ describe("deleteLibraryEntry", () => {
     mockUserBookDelete.mockResolvedValue({});
   });
 
-  it("deletes DonnaBookState for the user+book", async () => {
+  it("attempts DonnaBookState cleanup before the transaction", async () => {
     await deleteLibraryEntry(userId, bookId);
 
     expect(mockDonnaDeleteMany).toHaveBeenCalledWith({
       where: { userId, bookId },
     });
+  });
+
+  it("continues if DonnaBookState table does not exist", async () => {
+    mockDonnaDeleteMany.mockRejectedValueOnce(new Error("Table not found"));
+
+    await deleteLibraryEntry(userId, bookId);
+
+    // Should still delete the UserBook
+    expect(mockUserBookDelete).toHaveBeenCalled();
   });
 
   it("queries user lists and deletes BookListItems with scalar filter", async () => {

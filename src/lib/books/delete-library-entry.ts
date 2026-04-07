@@ -9,25 +9,26 @@ import { LibraryEntryNotFoundError } from "./errors";
 /**
  * Removes a book from the user's library and cleans up all related data.
  *
- * Uses an interactive transaction (not batch) for PrismaPg adapter compatibility.
- * Cleanup order:
- * 1. DonnaBookState — removes AI reading state (prevents stale state on re-add)
- * 2. BookListItem — removes from user's lists (prevents ghost entries)
- * 3. Active loans — declines pending/active loans where user is lender
- * 4. UserBook — the library entry itself
+ * Uses an interactive transaction for PrismaPg adapter compatibility.
+ * DonnaBookState cleanup is best-effort outside the transaction because
+ * the Donna migration may not have been applied to the database yet.
  */
 export async function deleteLibraryEntry(
   userId: string,
   bookId: string,
 ): Promise<void> {
+  // Best-effort: clean up Donna AI reading state (table may not exist yet)
+  try {
+    await prisma.donnaBookState.deleteMany({
+      where: { userId, bookId },
+    });
+  } catch {
+    // Table may not exist if Donna migration hasn't been applied — safe to skip
+  }
+
   try {
     await prisma.$transaction(async (tx) => {
-      // 1. Clean up Donna AI reading state for this user+book
-      await tx.donnaBookState.deleteMany({
-        where: { userId, bookId },
-      });
-
-      // 2. Remove book from all of this user's lists (scalar filter only)
+      // 1. Remove book from all of this user's lists (scalar filter only)
       const userLists = await tx.bookList.findMany({
         where: { userId },
         select: { id: true },
@@ -42,7 +43,7 @@ export async function deleteLibraryEntry(
         });
       }
 
-      // 3. Decline any active loans where this user is the lender for this book
+      // 2. Decline any active loans where this user is the lender for this book
       await tx.loan.updateMany({
         where: {
           lenderId: userId,
@@ -52,7 +53,7 @@ export async function deleteLibraryEntry(
         data: { status: "DECLINED" },
       });
 
-      // 4. Delete the library entry itself
+      // 3. Delete the library entry itself
       await tx.userBook.delete({
         where: { userId_bookId: { userId, bookId } },
       });
