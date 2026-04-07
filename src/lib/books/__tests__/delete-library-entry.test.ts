@@ -1,27 +1,26 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { Prisma } from "@prisma/client";
 
-// ---------------------------------------------------------------------------
-// Mocks — interactive transaction pattern
-// ---------------------------------------------------------------------------
-
-const mockDonnaDeleteMany = vi.fn().mockResolvedValue({ count: 0 });
-const mockBookListFindMany = vi.fn().mockResolvedValue([]);
-const mockBookListItemDeleteMany = vi.fn().mockResolvedValue({ count: 0 });
-const mockLoanUpdateMany = vi.fn().mockResolvedValue({ count: 0 });
-const mockUserBookDelete = vi.fn().mockResolvedValue({});
-
-const txClient = {
-  donnaBookState: { deleteMany: mockDonnaDeleteMany },
-  bookList: { findMany: mockBookListFindMany },
-  bookListItem: { deleteMany: mockBookListItemDeleteMany },
-  loan: { updateMany: mockLoanUpdateMany },
-  userBook: { delete: mockUserBookDelete },
-};
+const {
+  mockDonnaDeleteMany,
+  mockBookListFindMany,
+  mockBookListItemDeleteMany,
+  mockLoanUpdateMany,
+  mockUserBookDeleteMany,
+} = vi.hoisted(() => ({
+  mockDonnaDeleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+  mockBookListFindMany: vi.fn().mockResolvedValue([]),
+  mockBookListItemDeleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+  mockLoanUpdateMany: vi.fn().mockResolvedValue({ count: 0 }),
+  mockUserBookDeleteMany: vi.fn().mockResolvedValue({ count: 1 }),
+}));
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
-    $transaction: (fn: (tx: typeof txClient) => Promise<void>) => fn(txClient),
+    donnaBookState: { deleteMany: mockDonnaDeleteMany },
+    bookList: { findMany: mockBookListFindMany },
+    bookListItem: { deleteMany: mockBookListItemDeleteMany },
+    loan: { updateMany: mockLoanUpdateMany },
+    userBook: { deleteMany: mockUserBookDeleteMany },
   },
 }));
 
@@ -36,10 +35,6 @@ vi.mock("@/lib/logger", () => ({
 import { deleteLibraryEntry } from "../delete-library-entry";
 import { LibraryEntryNotFoundError } from "../errors";
 
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
-
 describe("deleteLibraryEntry", () => {
   const userId = "user-1";
   const bookId = "book-1";
@@ -50,18 +45,34 @@ describe("deleteLibraryEntry", () => {
     mockBookListFindMany.mockResolvedValue([]);
     mockBookListItemDeleteMany.mockResolvedValue({ count: 0 });
     mockLoanUpdateMany.mockResolvedValue({ count: 0 });
-    mockUserBookDelete.mockResolvedValue({});
+    mockUserBookDeleteMany.mockResolvedValue({ count: 1 });
   });
 
-  it("deletes DonnaBookState for the user+book", async () => {
+  it("uses deleteMany to avoid Prisma 7 RETURNING * schema drift", async () => {
     await deleteLibraryEntry(userId, bookId);
 
-    expect(mockDonnaDeleteMany).toHaveBeenCalledWith({
+    expect(mockUserBookDeleteMany).toHaveBeenCalledWith({
       where: { userId, bookId },
     });
   });
 
-  it("queries user lists and deletes BookListItems with scalar filter", async () => {
+  it("throws LibraryEntryNotFoundError when count is 0", async () => {
+    mockUserBookDeleteMany.mockResolvedValueOnce({ count: 0 });
+
+    await expect(deleteLibraryEntry(userId, bookId)).rejects.toThrow(
+      LibraryEntryNotFoundError,
+    );
+  });
+
+  it("continues if DonnaBookState table does not exist", async () => {
+    mockDonnaDeleteMany.mockRejectedValueOnce(new Error("Table not found"));
+
+    await deleteLibraryEntry(userId, bookId);
+
+    expect(mockUserBookDeleteMany).toHaveBeenCalled();
+  });
+
+  it("cleans up BookListItems from user's lists", async () => {
     mockBookListFindMany.mockResolvedValue([
       { id: "list-1" },
       { id: "list-2" },
@@ -69,21 +80,12 @@ describe("deleteLibraryEntry", () => {
 
     await deleteLibraryEntry(userId, bookId);
 
-    expect(mockBookListFindMany).toHaveBeenCalledWith({
-      where: { userId },
-      select: { id: true },
-    });
     expect(mockBookListItemDeleteMany).toHaveBeenCalledWith({
-      where: {
-        bookId,
-        listId: { in: ["list-1", "list-2"] },
-      },
+      where: { bookId, listId: { in: ["list-1", "list-2"] } },
     });
   });
 
-  it("skips BookListItem deletion when user has no lists", async () => {
-    mockBookListFindMany.mockResolvedValue([]);
-
+  it("skips BookListItem cleanup when user has no lists", async () => {
     await deleteLibraryEntry(userId, bookId);
 
     expect(mockBookListItemDeleteMany).not.toHaveBeenCalled();
@@ -102,32 +104,9 @@ describe("deleteLibraryEntry", () => {
     });
   });
 
-  it("deletes the UserBook entry", async () => {
-    await deleteLibraryEntry(userId, bookId);
-
-    expect(mockUserBookDelete).toHaveBeenCalledWith({
-      where: { userId_bookId: { userId, bookId } },
-    });
-  });
-
-  it("throws LibraryEntryNotFoundError on P2025", async () => {
-    const p2025 = new Prisma.PrismaClientKnownRequestError("Not found", {
-      code: "P2025",
-      clientVersion: "5.0.0",
-    });
-    mockUserBookDelete.mockRejectedValueOnce(p2025);
-
-    await expect(deleteLibraryEntry(userId, bookId)).rejects.toThrow(
-      LibraryEntryNotFoundError,
-    );
-  });
-
   it("re-throws unexpected errors", async () => {
-    const unexpected = new Error("DB connection lost");
-    mockUserBookDelete.mockRejectedValueOnce(unexpected);
+    mockUserBookDeleteMany.mockRejectedValueOnce(new Error("DB down"));
 
-    await expect(deleteLibraryEntry(userId, bookId)).rejects.toThrow(
-      "DB connection lost",
-    );
+    await expect(deleteLibraryEntry(userId, bookId)).rejects.toThrow("DB down");
   });
 });

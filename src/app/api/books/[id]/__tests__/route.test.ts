@@ -6,7 +6,7 @@ const {
   revalidatePathMock,
   getLibraryEntryMock,
   updateLibraryEntryMock,
-  deleteLibraryEntryMock,
+  deleteUserBookManyMock,
   LibraryEntryNotFoundError,
 } = vi.hoisted(() => {
   class _LibraryEntryNotFoundError extends Error {
@@ -18,7 +18,7 @@ const {
     revalidatePathMock: vi.fn(),
     getLibraryEntryMock: vi.fn(),
     updateLibraryEntryMock: vi.fn(),
-    deleteLibraryEntryMock: vi.fn(),
+    deleteUserBookManyMock: vi.fn(),
     LibraryEntryNotFoundError: _LibraryEntryNotFoundError,
   };
 });
@@ -27,12 +27,15 @@ const {
 vi.mock("@/lib/books", () => ({
   getLibraryEntry: (...args: unknown[]) => getLibraryEntryMock(...args),
   updateLibraryEntry: (...args: unknown[]) => updateLibraryEntryMock(...args),
-  deleteLibraryEntry: (...args: unknown[]) => deleteLibraryEntryMock(...args),
   LibraryEntryNotFoundError,
 }));
 
 vi.mock("@/lib/prisma", () => ({
-  prisma: {},
+  prisma: {
+    userBook: {
+      deleteMany: (...args: unknown[]) => deleteUserBookManyMock(...args),
+    },
+  },
 }));
 
 vi.mock("next/cache", () => ({
@@ -331,7 +334,7 @@ describe("DELETE /api/books/[id]", () => {
   });
 
   it("returns 204 with no body when deletion succeeds", async () => {
-    deleteLibraryEntryMock.mockResolvedValueOnce(undefined);
+    deleteUserBookManyMock.mockResolvedValueOnce({ count: 1 });
 
     const request = makeDeleteRequest();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -339,11 +342,13 @@ describe("DELETE /api/books/[id]", () => {
 
     expect(response.status).toBe(204);
     expect(response.body).toBeNull();
-    expect(deleteLibraryEntryMock).toHaveBeenCalledWith("test-user-001", "book-123");
+    expect(deleteUserBookManyMock).toHaveBeenCalledWith({
+      where: { userId: "test-user-001", bookId: "book-123" },
+    });
   });
 
   it("returns 404 when the userBook does not exist", async () => {
-    deleteLibraryEntryMock.mockRejectedValueOnce(new LibraryEntryNotFoundError());
+    deleteUserBookManyMock.mockResolvedValueOnce({ count: 0 });
 
     const request = makeDeleteRequest();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -352,11 +357,11 @@ describe("DELETE /api/books/[id]", () => {
     expect(response.status).toBe(404);
     const json: unknown = await response.json();
     expect((json as { error: string }).error).toBe("Book not found");
-    expect(deleteLibraryEntryMock).toHaveBeenCalledOnce();
+    expect(deleteUserBookManyMock).toHaveBeenCalledOnce();
   });
 
   it("returns 500 when an unexpected error occurs during delete", async () => {
-    deleteLibraryEntryMock.mockRejectedValueOnce(new Error("Constraint violation"));
+    deleteUserBookManyMock.mockRejectedValueOnce(new Error("Constraint violation"));
 
     const request = makeDeleteRequest();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -364,17 +369,19 @@ describe("DELETE /api/books/[id]", () => {
 
     expect(response.status).toBe(500);
     const json: unknown = await response.json();
-    expect((json as { error: string }).error).toBe("Internal server error");
+    expect(json).toEqual({ error: "Internal server error", v: "inline-v3" });
   });
 
-  it("passes userId and bookId to deleteLibraryEntry", async () => {
-    deleteLibraryEntryMock.mockResolvedValueOnce(undefined);
+  it("passes userId and bookId to prisma.userBook.deleteMany", async () => {
+    deleteUserBookManyMock.mockResolvedValueOnce({ count: 1 });
 
     const request = makeDeleteRequest();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await DELETE(request as any, makeRouteContext());
 
-    expect(deleteLibraryEntryMock).toHaveBeenCalledWith("test-user-001", "book-123");
+    expect(deleteUserBookManyMock).toHaveBeenCalledWith({
+      where: { userId: "test-user-001", bookId: "book-123" },
+    });
   });
 
   it("returns 401 when requireAuth throws UnauthorizedError", async () => {
@@ -387,6 +394,6 @@ describe("DELETE /api/books/[id]", () => {
     expect(response.status).toBe(401);
     const json: unknown = await response.json();
     expect((json as { error: string }).error).toBe("Unauthorized");
-    expect(deleteLibraryEntryMock).not.toHaveBeenCalled();
+    expect(deleteUserBookManyMock).not.toHaveBeenCalled();
   });
 });
