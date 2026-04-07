@@ -17,7 +17,6 @@ interface BarcodeDetectorClass {
 }
 
 declare global {
-  // eslint-disable-next-line no-var
   var BarcodeDetector: BarcodeDetectorClass | undefined;
 }
 

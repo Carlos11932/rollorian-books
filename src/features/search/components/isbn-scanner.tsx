@@ -111,7 +111,6 @@ export function IsbnScanner({ onScan, onClose }: IsbnScannerProps) {
       clearTimeout(initializeUnsupportedState);
       stopCamera();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onScan, t]);
 
   // Close handler — stop camera then call parent

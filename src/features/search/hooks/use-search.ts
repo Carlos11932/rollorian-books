@@ -2,11 +2,14 @@
 
 import { useState, useEffect } from "react";
 import type { LibraryEntryView } from "@/features/books/types";
-import { saveBookToLibrary } from "../lib/search-mappers";
+import {
+  saveBookToLibrary,
+  type DiscoverGenre,
+  type Recommendation,
+} from "../lib/search-mappers";
 import { useSearchQuery } from "./use-search-query";
 import { useLibraryIndex } from "./use-library-index";
 import { useDiscover } from "./use-discover";
-import type { DiscoverGenre, Recommendation } from "../lib/search-mappers";
 import type { NormalizedBook } from "@/lib/google-books/types";
 import type { BookStatus } from "@/lib/types/book";
 
@@ -56,7 +59,13 @@ export function useSearch(): SearchState {
 
   // Feature-detect BarcodeDetector on mount
   useEffect(() => {
-    setHasBarcodeApi(typeof globalThis.BarcodeDetector !== "undefined");
+    const timeoutId = window.setTimeout(() => {
+      setHasBarcodeApi(typeof globalThis.BarcodeDetector !== "undefined");
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
   }, []);
 
   async function handleSave(displayBook: LibraryEntryView) {

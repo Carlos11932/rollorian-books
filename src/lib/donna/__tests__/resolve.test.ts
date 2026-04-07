@@ -24,7 +24,7 @@ vi.mock("@/lib/prisma", () => ({
 
 // Mock normalize so we can control getDonnaStateMap without hitting Prisma
 vi.mock("@/lib/donna/normalize", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/lib/donna/normalize")>();
+  const actual = await importOriginal<Record<string, unknown>>();
   return {
     ...actual,
     getDonnaStateMap: getDonnaStateMapMock,
@@ -176,7 +176,14 @@ describe("resolveUserBookByReference", () => {
   const userId = "user-001";
 
   // A minimal SelectedUserBook as returned by Prisma
-  function makeDbEntry(overrides: Partial<{ bookId: string; title: string; status: string }> = {}): SelectedUserBook {
+  function makeDbEntry(
+    overrides: Partial<{
+      bookId: string;
+      title: string;
+      status: string;
+      authors: string[];
+    }> = {},
+  ): SelectedUserBook {
     const bookId = overrides.bookId ?? "book-001";
     return {
       id: "ub-001",
@@ -191,7 +198,7 @@ describe("resolveUserBookByReference", () => {
         id: bookId,
         title: overrides.title ?? "Dune",
         subtitle: null,
-        authors: ["Frank Herbert"],
+        authors: overrides.authors ?? ["Frank Herbert"],
         description: null,
         coverUrl: null,
         publisher: null,
@@ -282,9 +289,7 @@ describe("resolveUserBookByReference", () => {
 
     it("returns exact when top candidate scores ≥ 70 (title + author match = 70)", async () => {
       // Exact title (50) + matching author (20) = 70 → should be "exact"
-      const entry = makeDbEntry({ title: "Dune" });
-      // Override book authors to match the ref
-      (entry as any).book.authors = ["Frank Herbert"];
+      const entry = makeDbEntry({ title: "Dune", authors: ["Frank Herbert"] });
       prismaMock.userBook.findMany.mockResolvedValueOnce([entry]);
 
       const result = await resolveUserBookByReference(userId, { title: "Dune", authors: ["Frank Herbert"] });

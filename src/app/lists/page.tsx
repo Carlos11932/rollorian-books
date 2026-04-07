@@ -28,7 +28,6 @@ export default function ListsPage() {
 
   useEffect(() => {
     void loadLists();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function handleCreated() {

@@ -49,12 +49,26 @@ function devLabel(level: LogLevel): string {
   return labels[level];
 }
 
+function serializeDevParts(message: string, context?: LogContext, error?: unknown): string {
+  const parts = [message];
+
+  if (error !== undefined) {
+    parts.push(error instanceof Error ? error.stack ?? error.message : String(error));
+  }
+
+  if (context && Object.keys(context).length > 0) {
+    parts.push(JSON.stringify(context));
+  }
+
+  return parts.join(" ");
+}
+
 export const logger = {
   info(message: string, context?: LogContext): void {
     if (IS_PRODUCTION) {
-      console.log(buildEntry("info", message, context));
+      process.stdout.write(`${buildEntry("info", message, context)}\n`);
     } else {
-      console.log(`${devLabel("info")} ${message}`, context ?? "");
+      process.stdout.write(`${devLabel("info")} ${serializeDevParts(message, context)}\n`);
     }
   },
 
@@ -70,7 +84,7 @@ export const logger = {
     if (IS_PRODUCTION) {
       console.error(buildEntry("error", message, context, error));
     } else {
-      console.error(`${devLabel("error")} ${message}`, error ?? "", context ?? "");
+      console.error(`${devLabel("error")} ${serializeDevParts(message, context, error)}`);
     }
   },
 };

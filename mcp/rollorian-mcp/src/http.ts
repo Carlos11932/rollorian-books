@@ -77,7 +77,7 @@ export async function startHttpServer(): Promise<void> {
         return;
       }
 
-      console.log(`Rollorian MCP listening on http://${host}:${port}/mcp`);
+      process.stdout.write(`Rollorian MCP listening on http://${host}:${port}/mcp\n`);
       resolve();
     });
 

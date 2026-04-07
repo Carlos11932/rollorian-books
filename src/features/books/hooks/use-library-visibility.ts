@@ -47,7 +47,14 @@ export function useLibraryVisibility(): LibraryVisibility {
   const [sectionVisibility, setSectionVisibility] = useState<VisibilityMap>({});
 
   useEffect(() => {
-    setSectionVisibility(loadVisibility());
+    const visibility = loadVisibility();
+    const timeoutId = window.setTimeout(() => {
+      setSectionVisibility(visibility);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
   }, []);
 
   function isSectionVisible(status: BookStatus): boolean {

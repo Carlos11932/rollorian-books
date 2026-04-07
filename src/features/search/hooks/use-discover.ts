@@ -37,7 +37,6 @@ export function useDiscover(): DiscoverState {
 
   // Load discover genres on mount
   useEffect(() => {
-    setIsDiscoverLoading(true);
     void fetch("/api/discover/genres")
       .then((res) => (res.ok ? (res.json() as Promise<DiscoverResponse>) : Promise.resolve({ genres: [] })))
       .then((data) => setDiscoverGenres(data.genres))
@@ -47,7 +46,6 @@ export function useDiscover(): DiscoverState {
 
   // Load recommendations on mount
   useEffect(() => {
-    setIsRecommendationsLoading(true);
     void fetch("/api/recommendations")
       .then((res) => (res.ok ? (res.json() as Promise<RecommendationsResponse>) : Promise.resolve({ recommendations: [] })))
       .then((data) => setRecommendations(data.recommendations))

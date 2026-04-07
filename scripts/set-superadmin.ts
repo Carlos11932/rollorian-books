@@ -15,14 +15,14 @@ const adapter = new PrismaPg({ connectionString });
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  console.log(`Setting SUPERADMIN role for: ${superadminEmail}`);
+  process.stdout.write(`Setting SUPERADMIN role for: ${superadminEmail}\n`);
 
   const user = await prisma.user.update({
     where: { email: superadminEmail },
     data: { role: "SUPERADMIN" },
   });
 
-  console.log(`Done. User "${user.name}" (${user.email}) is now SUPERADMIN.`);
+  process.stdout.write(`Done. User "${user.name}" (${user.email}) is now SUPERADMIN.\n`);
 }
 
 main()
