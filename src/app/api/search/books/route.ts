@@ -5,10 +5,21 @@ import { analyzeQuery, rankSearchResults } from "@/lib/google-books/strategy";
 import { progressiveSearch } from "@/lib/book-providers/progressive-search";
 import { searchQuerySchema } from "@/lib/schemas/book";
 import { requireAuth, UnauthorizedError } from "@/lib/auth/require-auth";
+import { createRateLimiter, rateLimitResponse } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
+
+const limiter = createRateLimiter({ windowMs: 60_000, maxRequests: 30 });
 
 export async function GET(request: NextRequest): Promise<Response> {
   try {
-    await requireAuth();
+    const { userId } = await requireAuth();
+
+    const key = userId ?? request.headers.get("x-forwarded-for") ?? "anonymous";
+    const rateLimitResult = limiter.check(`search:${key}`);
+    if (!rateLimitResult.allowed) {
+      logger.warn("Rate limit exceeded", { endpoint: "GET /api/search/books", userId: key });
+      return rateLimitResponse(rateLimitResult);
+    }
 
     const searchParams = request.nextUrl.searchParams;
     const rawQ = searchParams.get("q");
@@ -43,7 +54,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     if (error instanceof UnauthorizedError) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
-    console.error("[GET /api/search/books]", error);
+    logger.error("Request failed", error, { endpoint: "GET /api/search/books" });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

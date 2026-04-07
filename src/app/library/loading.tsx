@@ -18,7 +18,7 @@ export default function LibraryLoading() {
       {Array.from({ length: 2 }).map((_, sectionIndex) => (
         <section
           key={sectionIndex}
-          className="rounded-[var(--radius-xl)] border border-line bg-gradient-to-b from-[rgba(19,27,41,0.88)] to-[rgba(8,12,20,0.88)] p-6 grid gap-4"
+          className="card-glass p-6 grid gap-4"
         >
           {/* Section heading */}
           <div className="flex items-end justify-between gap-4">

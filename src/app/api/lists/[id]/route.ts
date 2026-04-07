@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { isMissingListsSchemaError } from "@/lib/prisma-schema-compat";
 import { updateListSchema } from "@/lib/schemas/list";
 import { requireAuth, UnauthorizedError } from "@/lib/auth/require-auth";
+import { logger } from "@/lib/logger";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -45,7 +46,7 @@ export async function GET(
     if (isMissingListsSchemaError(error)) {
       return Response.json({ error: "List not found" }, { status: 404 });
     }
-    console.error("[GET /api/lists/[id]]", error);
+    logger.error("Request failed", error, { endpoint: "GET /api/lists/[id]" });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
@@ -90,7 +91,7 @@ export async function PATCH(
     if (isMissingListsSchemaError(error)) {
       return Response.json({ error: "Lists feature unavailable until database schema is updated" }, { status: 503 });
     }
-    console.error("[PATCH /api/lists/[id]]", error);
+    logger.error("Request failed", error, { endpoint: "PATCH /api/lists/[id]" });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
@@ -121,7 +122,7 @@ export async function DELETE(
     if (isMissingListsSchemaError(error)) {
       return Response.json({ error: "Lists feature unavailable until database schema is updated" }, { status: 503 });
     }
-    console.error("[DELETE /api/lists/[id]]", error);
+    logger.error("Request failed", error, { endpoint: "DELETE /api/lists/[id]" });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

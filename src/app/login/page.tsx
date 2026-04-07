@@ -1,9 +1,10 @@
 import { redirect } from "next/navigation";
 import { auth, signIn } from "@/lib/auth";
 import { z } from "zod";
+import { env } from "@/lib/env";
 
 // VERCEL_ENV is set by Vercel infrastructure — do NOT add NODE_ENV guard (always "production" on Vercel)
-const isPreviewEnv = process.env.VERCEL_ENV === "preview";
+const isPreviewEnv = env.VERCEL_ENV === "preview";
 
 export default async function LoginPage() {
   const session = await auth();
@@ -88,7 +89,7 @@ export default async function LoginPage() {
               action={async (formData: FormData) => {
                 "use server";
                 const rawEmail = formData.get("email");
-                const parsed = z.string().email().max(255).safeParse(rawEmail);
+                const parsed = z.email().max(255).safeParse(rawEmail);
                 if (!parsed.success) return; // silently reject invalid input
                 await signIn("preview", { email: parsed.data, redirectTo: "/" });
               }}

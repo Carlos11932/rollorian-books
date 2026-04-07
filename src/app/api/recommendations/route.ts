@@ -6,6 +6,7 @@ import {
 } from "@/lib/prisma-schema-compat";
 import { requireAuth, UnauthorizedError } from "@/lib/auth/require-auth";
 import { getRecommendations } from "@/lib/recommendations/get-recommendations";
+import { logger } from "@/lib/logger";
 
 export async function GET(): Promise<Response> {
   try {
@@ -22,7 +23,7 @@ export async function GET(): Promise<Response> {
     if (isMissingSocialSchemaError(error)) {
       return Response.json({ recommendations: [] });
     }
-    console.error("[GET /api/recommendations]", error);
+    logger.error("Request failed", error, { endpoint: "GET /api/recommendations" });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

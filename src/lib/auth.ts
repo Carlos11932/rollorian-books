@@ -3,15 +3,17 @@ import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
+import { env } from "@/lib/env";
+import { logger } from "@/lib/logger";
 import {
   isMissingSocialSchemaError,
   isMissingUserRoleError,
 } from "@/lib/prisma-schema-compat";
 
-const isE2ETestMode = process.env.E2E_TEST_MODE === "true";
+const isE2ETestMode = env.E2E_TEST_MODE === "true";
 // VERCEL_ENV is set by Vercel infrastructure: "production" | "preview" | "development".
 // Do NOT add NODE_ENV guard — Vercel sets NODE_ENV=production on ALL deploys including preview.
-const isPreviewEnv = process.env.VERCEL_ENV === "preview";
+const isPreviewEnv = env.VERCEL_ENV === "preview";
 
 // CredentialsProvider is only added in E2E test mode.
 // It allows Playwright tests to authenticate without requiring Google OAuth.
@@ -52,7 +54,7 @@ const previewCredentialsProvider = Credentials({
     if (!email) return null;
 
     // Enforce allowlist if configured — reject unknown emails
-    const allowlist = process.env.PREVIEW_ALLOWED_EMAILS;
+    const allowlist = env.PREVIEW_ALLOWED_EMAILS;
     if (allowlist) {
       const allowed = allowlist.split(",").map((e) => e.trim().toLowerCase());
       if (!allowed.includes(email.toLowerCase())) return null;
@@ -127,7 +129,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (existing) return true;
 
       // Allow if email matches the designated superadmin.
-      const superadminEmail = process.env.SUPERADMIN_EMAIL;
+      const superadminEmail = env.SUPERADMIN_EMAIL;
       if (superadminEmail && email === superadminEmail) return true;
 
       // Allow if a valid PENDING non-expired invitation exists.
@@ -159,7 +161,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (!email) return;
 
       try {
-        const superadminEmail = process.env.SUPERADMIN_EMAIL;
+        const superadminEmail = env.SUPERADMIN_EMAIL;
 
         // If this is the designated superadmin, elevate their role.
         if (superadminEmail && email === superadminEmail) {
@@ -193,9 +195,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             data: { status: "ACCEPTED" },
           });
         }
-      } catch {
+      } catch (err) {
         // Errors must NOT break signup — log only.
-        console.error("[auth] createUser event failed for:", email);
+        logger.error("createUser event failed", err, { email });
       }
     },
   },

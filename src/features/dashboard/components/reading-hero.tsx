@@ -18,8 +18,7 @@ export async function ReadingHero({ books, hasToRead }: ReadingHeroProps) {
     return (
       <section className="rounded-[var(--radius-xl)] border border-outline-variant/15 bg-surface-container-low/40 p-8 text-center">
         <span
-          className="material-symbols-outlined text-tertiary mb-3 block"
-          style={{ fontSize: "48px" }}
+          className="material-symbols-outlined text-tertiary mb-3 block text-[48px]"
         >
           auto_stories
         </span>
@@ -71,8 +70,7 @@ export async function ReadingHero({ books, hasToRead }: ReadingHeroProps) {
             <Link
               key={book.id}
               href={`/books/${book.id}`}
-              className="group relative flex gap-4 rounded-[var(--radius-xl)] border border-outline-variant/15 overflow-hidden p-4 transition-all duration-200 hover:border-primary/30 hover:shadow-lg"
-              style={{ backdropFilter: "blur(8px)" }}
+              className="group relative flex gap-4 rounded-[var(--radius-xl)] border border-outline-variant/15 overflow-hidden p-4 transition-all duration-200 hover:border-primary/30 hover:shadow-lg backdrop-blur"
             >
               {/* Blurred cover backdrop */}
               {book.coverUrl && (
@@ -116,7 +114,6 @@ export async function ReadingHero({ books, hasToRead }: ReadingHeroProps) {
                 <Badge status={book.status} className="self-start text-[10px] px-2 py-0.5" />
                 <h3
                   className="text-sm font-bold text-on-surface leading-tight line-clamp-2 group-hover:text-primary transition-colors"
-                  style={{ fontFamily: "var(--font-headline)" }}
                 >
                   {book.title}
                 </h3>

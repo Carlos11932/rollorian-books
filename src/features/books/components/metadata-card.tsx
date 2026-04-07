@@ -18,13 +18,12 @@ export async function MetadataCard({ publisher, publishedDate, pageCount, isbn10
 
   return (
     <section
-      className="rounded-[var(--radius-xl)] border border-outline-variant/30 p-6"
-      style={{ backdropFilter: "blur(20px)", background: "rgba(255,255,255,0.04)" }}
+      className="rounded-[var(--radius-xl)] border border-outline-variant/30 p-6 backdrop-blur-[20px]"
+      style={{ background: "rgba(255,255,255,0.04)" }}
       aria-label="Book metadata"
     >
       <h2
         className="text-xs font-bold uppercase tracking-widest text-on-surface/40 mb-4"
-        style={{ fontFamily: "var(--font-headline)" }}
       >
         {t('details')}
       </h2>

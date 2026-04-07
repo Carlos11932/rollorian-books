@@ -4,6 +4,7 @@ import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { updateGroupSchema } from "@/lib/schemas/group";
 import { requireAuth, UnauthorizedError, ForbiddenError } from "@/lib/auth/require-auth";
+import { logger } from "@/lib/logger";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -59,7 +60,7 @@ export async function GET(
     if (error instanceof UnauthorizedError) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
-    console.error("[GET /api/groups/[id]]", error);
+    logger.error("Request failed", error, { endpoint: "GET /api/groups/[id]" });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
@@ -108,7 +109,7 @@ export async function PATCH(
     if (error instanceof ForbiddenError) {
       return Response.json({ error: "Forbidden" }, { status: 403 });
     }
-    console.error("[PATCH /api/groups/[id]]", error);
+    logger.error("Request failed", error, { endpoint: "PATCH /api/groups/[id]" });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
@@ -144,7 +145,7 @@ export async function DELETE(
     if (error instanceof ForbiddenError) {
       return Response.json({ error: "Forbidden" }, { status: 403 });
     }
-    console.error("[DELETE /api/groups/[id]]", error);
+    logger.error("Request failed", error, { endpoint: "DELETE /api/groups/[id]" });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

@@ -55,8 +55,7 @@ export default async function GroupMembersPage({ params }: MembersPageProps) {
     <div className="grid gap-6 px-12 md:px-20 pt-8 pb-24">
       {/* Page header */}
       <div
-        className="rounded-[var(--radius-xl)] border border-line bg-gradient-to-b from-[rgba(19,27,41,0.88)] to-[rgba(8,12,20,0.88)] p-6 grid gap-1"
-        style={{ backdropFilter: 'blur(16px)' }}
+        className="card-glass backdrop-blur-xl p-6 grid gap-1"
       >
         <p className="text-xs font-bold uppercase tracking-widest text-muted">
           <Link href="/groups" className="hover:text-primary transition-colors">
@@ -71,7 +70,6 @@ export default async function GroupMembersPage({ params }: MembersPageProps) {
         </p>
         <h1
           className="text-3xl font-bold text-text"
-          style={{ fontFamily: 'var(--font-headline)' }}
         >
           {t('members')}
         </h1>
@@ -81,8 +79,7 @@ export default async function GroupMembersPage({ params }: MembersPageProps) {
       {/* Invite form (admin only) */}
       {isAdmin && (
         <section
-          className="rounded-[var(--radius-xl)] border border-line bg-gradient-to-b from-[rgba(19,27,41,0.88)] to-[rgba(8,12,20,0.88)] p-6 grid gap-3"
-          style={{ backdropFilter: 'blur(16px)' }}
+          className="card-glass backdrop-blur-xl p-6 grid gap-3"
         >
           <h2 className="text-base font-semibold text-on-surface">{t('inviteMember')}</h2>
           <InviteMemberForm groupId={groupId} />
@@ -91,8 +88,7 @@ export default async function GroupMembersPage({ params }: MembersPageProps) {
 
       {/* Members list */}
       <section
-        className="rounded-[var(--radius-xl)] border border-line bg-gradient-to-b from-[rgba(19,27,41,0.88)] to-[rgba(8,12,20,0.88)] p-6 grid gap-4"
-        style={{ backdropFilter: 'blur(16px)' }}
+          className="card-glass backdrop-blur-xl p-6 grid gap-4"
       >
         <h2 className="text-base font-semibold text-on-surface">
           {t('members')} ({acceptedMembers.length})
@@ -124,12 +120,11 @@ export default async function GroupMembersPage({ params }: MembersPageProps) {
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <span
-                          className="material-symbols-outlined text-on-surface-variant/60"
-                          style={{ fontSize: '20px' }}
-                        >
-                          person
-                        </span>
+                         <span
+                           className="material-symbols-outlined text-on-surface-variant/60 text-[20px]"
+                         >
+                           person
+                         </span>
                       </div>
                     )}
                   </div>

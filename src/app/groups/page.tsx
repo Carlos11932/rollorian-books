@@ -35,15 +35,13 @@ export default async function GroupsPage() {
     <div className="grid gap-6 px-12 md:px-20 pt-8 pb-24">
       {/* Page header */}
       <div
-        className="rounded-[var(--radius-xl)] border border-line bg-gradient-to-b from-[rgba(19,27,41,0.88)] to-[rgba(8,12,20,0.88)] p-6 flex items-start justify-between gap-4"
-        style={{ backdropFilter: 'blur(16px)' }}
+        className="card-glass backdrop-blur-xl p-6 flex items-start justify-between gap-4"
       >
         <div className="grid gap-1">
           <p className="text-xs font-bold uppercase tracking-widest text-muted">{t('eyebrow')}</p>
           <h1
             className="text-3xl font-bold text-text"
-            style={{ fontFamily: 'var(--font-headline)' }}
-          >
+            >
             {t('heading')}
           </h1>
           <p className="text-sm text-muted leading-relaxed max-w-lg">{t('description')}</p>
@@ -65,8 +63,7 @@ export default async function GroupsPage() {
             {pendingGroups.map((m) => (
               <div
                 key={m.id}
-                className="rounded-[var(--radius-xl)] border border-line bg-gradient-to-b from-[rgba(19,27,41,0.88)] to-[rgba(8,12,20,0.88)] p-4 flex items-center justify-between gap-4"
-                style={{ backdropFilter: 'blur(16px)' }}
+                className="card-glass backdrop-blur-xl p-4 flex items-center justify-between gap-4"
               >
                 <div className="grid gap-0.5">
                   <p className="font-semibold text-on-surface">{m.group.name}</p>
@@ -89,7 +86,7 @@ export default async function GroupsPage() {
             title={t('noGroups')}
             description={t('noGroupsDescription')}
             icon={
-              <span className="material-symbols-outlined" style={{ fontSize: '48px' }}>
+              <span className="material-symbols-outlined text-[48px]">
                 group
               </span>
             }
@@ -107,8 +104,7 @@ export default async function GroupsPage() {
             {acceptedGroups.map((m) => (
               <div
                 key={m.id}
-                className="rounded-[var(--radius-xl)] border border-line bg-gradient-to-b from-[rgba(19,27,41,0.88)] to-[rgba(8,12,20,0.88)] p-4 flex items-center justify-between gap-4"
-                style={{ backdropFilter: 'blur(16px)' }}
+                className="card-glass backdrop-blur-xl p-4 flex items-center justify-between gap-4"
               >
                 <div className="grid gap-0.5">
                   <p className="font-semibold text-on-surface">{m.group.name}</p>

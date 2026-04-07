@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { env } from "@/lib/env";
 
 function isDirectPostgresUrl(value: string): boolean {
   return /^postgres(?:ql)?:\/\//i.test(value);
@@ -7,9 +8,9 @@ function isDirectPostgresUrl(value: string): boolean {
 
 function createPrismaClient() {
   const candidates = [
-    process.env["DATABASE_URL_UNPOOLED"],
-    process.env["DIRECT_URL"],
-    process.env["DATABASE_URL"],
+    env.DATABASE_URL_UNPOOLED,
+    env.DIRECT_URL,
+    env.DATABASE_URL,
   ].filter((value): value is string => value != null && value.length > 0);
 
   const connectionString = candidates.find(isDirectPostgresUrl);
@@ -30,6 +31,6 @@ const globalForPrisma = globalThis as unknown as {
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 
-if (process.env.NODE_ENV !== "production") {
+if (env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;
 }

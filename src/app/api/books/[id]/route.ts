@@ -3,6 +3,7 @@ import "server-only";
 import type { NextRequest } from "next/server";
 import { updateBookSchema } from "@/lib/schemas/book";
 import { requireAuth, UnauthorizedError } from "@/lib/auth/require-auth";
+import { logger } from "@/lib/logger";
 import {
   getLibraryEntry,
   updateLibraryEntry,
@@ -32,7 +33,7 @@ export async function GET(
     if (error instanceof LibraryEntryNotFoundError) {
       return Response.json({ error: "Book not found" }, { status: 404 });
     }
-    console.error("[GET /api/books/[id]]", error);
+    logger.error("Request failed", error, { endpoint: "GET /api/books/[id]" });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
@@ -65,7 +66,7 @@ export async function PATCH(
     if (error instanceof LibraryEntryNotFoundError) {
       return Response.json({ error: "Book not found" }, { status: 404 });
     }
-    console.error("[PATCH /api/books/[id]]", error);
+    logger.error("Request failed", error, { endpoint: "PATCH /api/books/[id]" });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
@@ -88,7 +89,7 @@ export async function DELETE(
     if (error instanceof LibraryEntryNotFoundError) {
       return Response.json({ error: "Book not found" }, { status: 404 });
     }
-    console.error("[DELETE /api/books/[id]]", error);
+    logger.error("Request failed", error, { endpoint: "DELETE /api/books/[id]" });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

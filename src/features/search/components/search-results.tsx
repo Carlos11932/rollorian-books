@@ -68,8 +68,7 @@ export function SearchResults({
     return (
       <div className="flex flex-col items-center gap-4 mt-16 text-center">
         <span
-          className="material-symbols-outlined text-on-surface-variant/40"
-          style={{ fontSize: "64px" }}
+          className="material-symbols-outlined text-on-surface-variant/40 text-[64px]"
         >
           menu_book
         </span>

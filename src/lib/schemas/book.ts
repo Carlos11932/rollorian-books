@@ -7,7 +7,7 @@ const bookFieldsSchema = z.object({
   subtitle: z.string().optional(),
   authors: z.array(z.string().min(1)).min(1, { error: "At least one author is required" }),
   description: z.string().optional(),
-  coverUrl: z.string().url("Cover URL must be a valid URL").optional().nullable(),
+  coverUrl: z.url({ error: "Cover URL must be a valid URL" }).optional().nullable(),
   publisher: z.string().optional(),
   publishedDate: z.string().optional(),
   pageCount: z.number().int().positive().optional(),

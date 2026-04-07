@@ -25,8 +25,8 @@ export function LoanBadge({ type, personName, personId }: LoanBadgeProps) {
       ].join(" ")}
     >
       <span
-        className="material-symbols-outlined"
-        style={{ fontSize: "12px", fontVariationSettings: "'FILL' 1" }}
+        className="material-symbols-outlined text-[12px]"
+        style={{ fontVariationSettings: "'FILL' 1" }}
       >
         {type === "lent" ? "call_made" : "call_received"}
       </span>

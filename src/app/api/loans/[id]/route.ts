@@ -2,6 +2,7 @@ import "server-only";
 
 import type { NextRequest } from "next/server";
 import { requireAuth, UnauthorizedError } from "@/lib/auth/require-auth";
+import { logger } from "@/lib/logger";
 import {
   acceptLoan,
   declineLoan,
@@ -54,7 +55,7 @@ export async function PATCH(
       return Response.json({ error: error.message }, { status: 400 });
     }
     const message = error instanceof Error ? error.message : "Internal server error";
-    console.error("[PATCH /api/loans/:id]", error);
+    logger.error("Request failed", error, { endpoint: "PATCH /api/loans/[id]" });
     return Response.json({ error: message }, { status: 500 });
   }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/cn";
 import type { BookListSummary } from "@/lib/types/book";
@@ -30,7 +30,7 @@ export function AddToListDialog({ bookId, open, onClose }: AddToListDialogProps)
   const [isCreating, setIsCreating] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
 
-  const loadLists = useCallback(async () => {
+  async function loadLists() {
     setIsLoading(true);
     try {
       const data = await fetchLists(bookId);
@@ -47,13 +47,14 @@ export function AddToListDialog({ bookId, open, onClose }: AddToListDialogProps)
     } finally {
       setIsLoading(false);
     }
-  }, [bookId]);
+  }
 
   useEffect(() => {
     if (open) {
       void loadLists();
     }
-  }, [open, loadLists]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, bookId]);
 
   // Close on Escape
   useEffect(() => {
@@ -134,7 +135,7 @@ export function AddToListDialog({ bookId, open, onClose }: AddToListDialogProps)
       >
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-text" style={{ fontFamily: "var(--font-headline)" }}>
+          <h2 className="text-lg font-bold text-text">
             {t("addToList")}
           </h2>
           <button
@@ -149,7 +150,7 @@ export function AddToListDialog({ bookId, open, onClose }: AddToListDialogProps)
         {/* Loading */}
         {isLoading && (
           <div className="flex items-center justify-center py-6">
-            <span className="material-symbols-outlined animate-spin text-muted" style={{ fontSize: "24px" }}>
+            <span className="material-symbols-outlined animate-spin text-muted text-[24px]">
               progress_activity
             </span>
           </div>

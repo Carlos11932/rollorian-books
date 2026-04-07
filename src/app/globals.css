@@ -95,12 +95,24 @@
   }
 }
 
+@layer components {
+  .card-glass {
+    @apply rounded-[var(--radius-xl)] border border-line
+           bg-gradient-to-b from-[rgba(19,27,41,0.88)] to-[rgba(8,12,20,0.88)];
+  }
+}
+
 @layer utilities {
   .hide-scrollbar::-webkit-scrollbar { display: none; }
   .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 }
 
 /* Animations */
+@keyframes scan-line {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(5.5rem); }
+}
+
 @keyframes fade-slide-up {
   from {
     opacity: 0;

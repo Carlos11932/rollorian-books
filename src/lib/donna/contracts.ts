@@ -37,7 +37,7 @@ export const readingEventPayloadSchema = z.object({
   subtitle: z.string().min(1).optional(),
   authors: z.array(z.string().min(1)).optional(),
   description: z.string().min(1).optional(),
-  coverUrl: z.string().url().optional(),
+  coverUrl: z.url().optional(),
   publisher: z.string().min(1).optional(),
   publishedDate: z.string().min(1).optional(),
   pageCount: z.number().int().positive().optional(),

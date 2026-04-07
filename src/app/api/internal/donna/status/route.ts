@@ -1,7 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { getDonnaStatus } from "@/lib/donna/books";
+import { getDonnaStatus } from "@/lib/donna";
 import { DonnaUserNotConfiguredError, DonnaUserNotFoundError } from "@/lib/donna/user";
 import { validateInternalApiKey } from "@/lib/internal-api";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   if (!validateInternalApiKey(request)) {
@@ -15,7 +16,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: error.message }, { status: 503 });
     }
 
-    console.error("[GET /api/internal/donna/status]", error);
+    logger.error("Request failed", error, { endpoint: "GET /api/internal/donna/status" });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

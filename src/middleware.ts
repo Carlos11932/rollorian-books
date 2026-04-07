@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { env } from "@/lib/env";
 
-const isE2ETestMode = process.env.E2E_TEST_MODE === "true";
+const isE2ETestMode = env.E2E_TEST_MODE === "true";
 
 /**
  * Middleware for redirect-based auth guard.

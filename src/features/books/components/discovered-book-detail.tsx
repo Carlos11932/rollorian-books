@@ -52,8 +52,8 @@ export async function DiscoveredBookDetail({ book, owners }: DiscoveredBookDetai
 
         {/* Book header */}
         <section
-          className="rounded-[var(--radius-xl)] border border-outline-variant/30 p-6 md:p-8"
-          style={{ backdropFilter: "blur(20px)", background: "rgba(0,23,17,0.6)" }}
+          className="rounded-[var(--radius-xl)] border border-outline-variant/30 p-6 md:p-8 backdrop-blur-[20px]"
+          style={{ background: "rgba(0,23,17,0.6)" }}
         >
           <div className="flex flex-col md:flex-row gap-8">
             <div className="shrink-0 flex justify-center md:justify-start">
@@ -71,12 +71,11 @@ export async function DiscoveredBookDetail({ book, owners }: DiscoveredBookDetai
               <div className="grid gap-2">
                 <h1
                   className="text-3xl md:text-4xl font-bold text-on-surface leading-tight"
-                  style={{ fontFamily: "var(--font-headline)" }}
                 >
                   {book.title}
                 </h1>
                 {book.subtitle && (
-                  <p className="text-lg text-on-surface/60 leading-snug" style={{ fontFamily: "var(--font-headline)" }}>
+                  <p className="text-lg text-on-surface/60 leading-snug">
                     {book.subtitle}
                   </p>
                 )}
@@ -98,8 +97,8 @@ export async function DiscoveredBookDetail({ book, owners }: DiscoveredBookDetai
         {/* Who has this book */}
         {owners.length > 0 && (
           <section
-            className="rounded-[var(--radius-xl)] border border-outline-variant/30 p-6"
-            style={{ backdropFilter: "blur(20px)", background: "rgba(0,23,17,0.6)" }}
+            className="rounded-[var(--radius-xl)] border border-outline-variant/30 p-6 backdrop-blur-[20px]"
+            style={{ background: "rgba(0,23,17,0.6)" }}
           >
             <div className="flex items-center gap-2 mb-4">
               <span className="material-symbols-outlined text-primary text-[20px]">group</span>

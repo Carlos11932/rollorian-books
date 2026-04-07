@@ -54,7 +54,7 @@ export function SearchHeader({
           aria-hidden="true"
           className="absolute inset-y-0 left-6 flex items-center pointer-events-none"
         >
-          <span className="material-symbols-outlined text-primary" style={{ fontSize: "22px" }}>
+          <span className="material-symbols-outlined text-primary text-[22px]">
             search
           </span>
         </span>
@@ -79,7 +79,7 @@ export function SearchHeader({
             className="absolute inset-y-0 right-4 flex items-center text-primary hover:text-primary/80 transition-colors cursor-pointer"
             aria-label={t("search.scanIsbn")}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: "22px" }}>
+            <span className="material-symbols-outlined text-[22px]">
               qr_code_scanner
             </span>
           </button>
@@ -88,7 +88,7 @@ export function SearchHeader({
             aria-hidden="true"
             className="absolute inset-y-0 right-4 flex items-center pointer-events-none"
           >
-            <span className="material-symbols-outlined text-outline" style={{ fontSize: "22px" }}>
+            <span className="material-symbols-outlined text-outline text-[22px]">
               mic
             </span>
           </span>

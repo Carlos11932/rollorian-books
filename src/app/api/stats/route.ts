@@ -2,6 +2,7 @@ import "server-only";
 
 import { requireAuth, UnauthorizedError } from "@/lib/auth/require-auth";
 import { getStats } from "@/lib/stats/get-stats";
+import { logger } from "@/lib/logger";
 
 export async function GET(): Promise<Response> {
   try {
@@ -12,7 +13,7 @@ export async function GET(): Promise<Response> {
     if (error instanceof UnauthorizedError) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
-    console.error("[GET /api/stats]", error);
+    logger.error("Request failed", error, { endpoint: "GET /api/stats" });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

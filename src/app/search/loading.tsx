@@ -5,8 +5,7 @@ export default function SearchLoading() {
     <div className="grid gap-6 px-12 md:px-20 pt-8 pb-24">
       {/* Header skeleton */}
       <div
-        className="rounded-[var(--radius-xl)] border border-line bg-gradient-to-b from-[rgba(19,27,41,0.88)] to-[rgba(8,12,20,0.88)] p-6 grid gap-6"
-        style={{ backdropFilter: "blur(16px)" }}
+        className="card-glass backdrop-blur-xl p-6 grid gap-6"
       >
         <div className="grid gap-3 text-center">
           <Skeleton variant="text" className="h-3 w-16 mx-auto" />
@@ -23,8 +22,7 @@ export default function SearchLoading() {
 
       {/* Results skeleton */}
       <div
-        className="rounded-[var(--radius-xl)] border border-line bg-gradient-to-b from-[rgba(19,27,41,0.88)] to-[rgba(8,12,20,0.88)] p-6 grid gap-4"
-        style={{ backdropFilter: "blur(16px)" }}
+        className="card-glass backdrop-blur-xl p-6 grid gap-4"
       >
         <div className="flex items-end justify-between gap-4">
           <div className="grid gap-1">

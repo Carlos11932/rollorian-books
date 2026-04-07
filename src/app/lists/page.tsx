@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import type { BookListSummary } from "@/lib/types/book";
@@ -15,7 +15,7 @@ export default function ListsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
 
-  const loadLists = useCallback(async () => {
+  async function loadLists() {
     try {
       const data = await fetchLists();
       setLists(data);
@@ -24,11 +24,12 @@ export default function ListsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }
 
   useEffect(() => {
     void loadLists();
-  }, [loadLists]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function handleCreated() {
     setShowCreate(false);
@@ -39,8 +40,7 @@ export default function ListsPage() {
     <div className="grid gap-6 px-12 md:px-20 pt-8 pb-24">
       {/* Page header */}
       <div
-        className="rounded-[var(--radius-xl)] border border-line bg-gradient-to-b from-[rgba(19,27,41,0.88)] to-[rgba(8,12,20,0.88)] p-6 flex items-start justify-between gap-4"
-        style={{ backdropFilter: "blur(16px)" }}
+        className="card-glass backdrop-blur-xl p-6 flex items-start justify-between gap-4"
       >
         <div className="grid gap-1">
           <p className="text-xs font-bold uppercase tracking-widest text-muted">
@@ -48,7 +48,6 @@ export default function ListsPage() {
           </p>
           <h1
             className="text-3xl font-bold text-text"
-            style={{ fontFamily: "var(--font-headline)" }}
           >
             {t("title")}
           </h1>
@@ -76,7 +75,7 @@ export default function ListsPage() {
       {/* Loading state */}
       {isLoading && (
         <div className="flex items-center justify-center py-12">
-          <span className="material-symbols-outlined animate-spin text-muted" style={{ fontSize: "32px" }}>
+          <span className="material-symbols-outlined animate-spin text-muted text-[32px]">
             progress_activity
           </span>
         </div>
@@ -88,7 +87,7 @@ export default function ListsPage() {
           title={t("empty")}
           description={t("createFirst")}
           icon={
-            <span className="material-symbols-outlined" style={{ fontSize: "48px" }}>
+            <span className="material-symbols-outlined text-[48px]">
               playlist_add
             </span>
           }
@@ -110,8 +109,7 @@ export default function ListsPage() {
           {lists.map((list) => (
             <div
               key={list.id}
-              className="rounded-[var(--radius-xl)] border border-line bg-gradient-to-b from-[rgba(19,27,41,0.88)] to-[rgba(8,12,20,0.88)] p-4 flex items-center justify-between gap-4"
-              style={{ backdropFilter: "blur(16px)" }}
+              className="card-glass backdrop-blur-xl p-4 flex items-center justify-between gap-4"
             >
               <div className="grid gap-0.5 min-w-0">
                 <p className="font-semibold text-on-surface truncate">{list.name}</p>

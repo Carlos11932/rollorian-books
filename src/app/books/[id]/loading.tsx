@@ -10,8 +10,7 @@ export default function BookDetailLoading() {
 
       {/* Hero section skeleton */}
       <div
-        className="rounded-[var(--radius-xl)] border border-line bg-gradient-to-b from-[rgba(19,27,41,0.88)] to-[rgba(8,12,20,0.88)] p-6 md:p-8"
-        style={{ backdropFilter: "blur(16px)" }}
+        className="card-glass backdrop-blur-xl p-6 md:p-8"
         aria-hidden="true"
       >
         <div className="flex flex-col md:flex-row gap-8">
@@ -48,8 +47,7 @@ export default function BookDetailLoading() {
 
       {/* Edit form skeleton */}
       <div
-        className="rounded-[var(--radius-xl)] border border-line bg-gradient-to-b from-[rgba(19,27,41,0.88)] to-[rgba(8,12,20,0.88)] p-6"
-        style={{ backdropFilter: "blur(16px)" }}
+        className="card-glass backdrop-blur-xl p-6"
         aria-hidden="true"
       >
         <div className="grid gap-4">

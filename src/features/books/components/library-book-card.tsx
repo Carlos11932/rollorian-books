@@ -75,7 +75,6 @@ export function LibraryBookCard({ book }: LibraryBookCardProps) {
         "hover:shadow-[0_8px_32px_rgba(0,0,0,0.4)]",
         (isDeleting) && "opacity-60 pointer-events-none",
       )}
-      style={{ backdropFilter: "blur(12px)" }}
     >
       {/* Cover — click navigates to detail */}
       <Link
@@ -100,7 +99,6 @@ export function LibraryBookCard({ book }: LibraryBookCardProps) {
           <Link
             href={`/books/${book.id}`}
             className="block truncate text-base font-bold text-text hover:text-accent-strong transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent rounded-sm"
-              style={{ fontFamily: "var(--font-headline)" }}
           >
             {book.title}
           </Link>

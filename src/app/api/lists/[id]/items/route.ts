@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { isMissingListsSchemaError } from "@/lib/prisma-schema-compat";
 import { addListItemSchema } from "@/lib/schemas/list";
 import { requireAuth, UnauthorizedError } from "@/lib/auth/require-auth";
+import { logger } from "@/lib/logger";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -66,7 +67,7 @@ export async function POST(
     if (isMissingListsSchemaError(error)) {
       return Response.json({ error: "Lists feature unavailable until database schema is updated" }, { status: 503 });
     }
-    console.error("[POST /api/lists/[id]/items]", error);
+    logger.error("Request failed", error, { endpoint: "POST /api/lists/[id]/items" });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
@@ -119,7 +120,7 @@ export async function DELETE(
     if (isMissingListsSchemaError(error)) {
       return Response.json({ error: "Lists feature unavailable until database schema is updated" }, { status: 503 });
     }
-    console.error("[DELETE /api/lists/[id]/items]", error);
+    logger.error("Request failed", error, { endpoint: "DELETE /api/lists/[id]/items" });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

@@ -24,7 +24,6 @@ export async function HeroBanner({ book }: HeroBannerProps) {
           </p>
           <h1
             className="text-4xl font-bold text-text"
-            style={{ fontFamily: "var(--font-headline)" }}
           >
             {t('home.heroTitle')}
           </h1>
@@ -90,7 +89,6 @@ export async function HeroBanner({ book }: HeroBannerProps) {
 
           <h1
             className="text-4xl md:text-5xl font-bold text-text leading-tight"
-            style={{ fontFamily: "var(--font-headline)" }}
           >
             {book.title}
           </h1>

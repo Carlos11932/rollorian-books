@@ -2,6 +2,7 @@ import "server-only";
 
 import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin, UnauthorizedError, ForbiddenError } from "@/lib/auth/require-auth";
+import { logger } from "@/lib/logger";
 
 export async function DELETE(
   _request: Request,
@@ -76,7 +77,7 @@ export async function DELETE(
     if (error instanceof ForbiddenError) {
       return Response.json({ error: "Forbidden" }, { status: 403 });
     }
-    console.error("[DELETE /api/admin/users/[id]]", error);
+    logger.error("Request failed", error, { endpoint: "DELETE /api/admin/users/[id]" });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

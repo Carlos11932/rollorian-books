@@ -2,6 +2,7 @@ import "server-only";
 
 import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin, UnauthorizedError, ForbiddenError } from "@/lib/auth/require-auth";
+import { logger } from "@/lib/logger";
 
 export async function GET(): Promise<Response> {
   try {
@@ -38,7 +39,7 @@ export async function GET(): Promise<Response> {
     if (error instanceof ForbiddenError) {
       return Response.json({ error: "Forbidden" }, { status: 403 });
     }
-    console.error("[GET /api/admin/users]", error);
+    logger.error("Request failed", error, { endpoint: "GET /api/admin/users" });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

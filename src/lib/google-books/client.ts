@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { GoogleBooksVolume } from "./types";
+import { env } from "@/lib/env";
 
 const GOOGLE_BOOKS_URL = "https://www.googleapis.com/books/v1/volumes";
 const DEFAULT_SEARCH_LIMIT = 40;
@@ -22,7 +23,7 @@ export async function fetchBooks(
   url.searchParams.set("printType", "books");
   url.searchParams.set("orderBy", "relevance");
 
-  const apiKey = process.env["GOOGLE_BOOKS_API_KEY"];
+  const apiKey = env.GOOGLE_BOOKS_API_KEY;
   if (apiKey) {
     url.searchParams.set("key", apiKey);
   }
@@ -67,7 +68,7 @@ export async function fetchBookById(
 ): Promise<GoogleBooksVolume | null> {
   const url = new URL(`${GOOGLE_BOOKS_URL}/${encodeURIComponent(volumeId)}`);
 
-  const apiKey = process.env["GOOGLE_BOOKS_API_KEY"];
+  const apiKey = env.GOOGLE_BOOKS_API_KEY;
   if (apiKey) {
     url.searchParams.set("key", apiKey);
   }

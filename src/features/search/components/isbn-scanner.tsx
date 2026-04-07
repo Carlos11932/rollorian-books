@@ -1,30 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/cn";
-
-// ── BarcodeDetector type declarations (not in standard lib yet) ──────────────
-
-interface BarcodeDetectorOptions {
-  formats: string[];
-}
-
-interface DetectedBarcode {
-  rawValue: string;
-  format: string;
-}
-
-interface BarcodeDetectorClass {
-  new (options?: BarcodeDetectorOptions): {
-    detect(image: ImageBitmapSource): Promise<DetectedBarcode[]>;
-  };
-  getSupportedFormats(): Promise<string[]>;
-}
-
-declare global {
-  var BarcodeDetector: BarcodeDetectorClass | undefined;
-}
 
 // ── Component ────────────────────────────────────────────────────────────────
 
@@ -43,7 +21,7 @@ export function IsbnScanner({ onScan, onClose }: IsbnScannerProps) {
   const [state, setState] = useState<ScannerState>("initializing");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const stopCamera = useCallback(() => {
+  function stopCamera() {
     if (rafRef.current) {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = 0;
@@ -54,7 +32,7 @@ export function IsbnScanner({ onScan, onClose }: IsbnScannerProps) {
       }
       streamRef.current = null;
     }
-  }, []);
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -133,7 +111,8 @@ export function IsbnScanner({ onScan, onClose }: IsbnScannerProps) {
       clearTimeout(initializeUnsupportedState);
       stopCamera();
     };
-  }, [onScan, stopCamera, t]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onScan, t]);
 
   // Close handler — stop camera then call parent
   function handleClose() {
@@ -150,7 +129,7 @@ export function IsbnScanner({ onScan, onClose }: IsbnScannerProps) {
         className="absolute top-4 right-4 z-10 rounded-full bg-surface-container-highest/80 p-3 text-on-surface transition-colors hover:bg-surface-container-highest"
         aria-label={t("closeScan")}
       >
-        <span className="material-symbols-outlined" style={{ fontSize: "24px" }}>
+        <span className="material-symbols-outlined text-[24px]">
           close
         </span>
       </button>
@@ -159,8 +138,7 @@ export function IsbnScanner({ onScan, onClose }: IsbnScannerProps) {
       {state === "error" && (
         <div className="px-8 text-center">
           <span
-            className="material-symbols-outlined text-error mb-4 block"
-            style={{ fontSize: "48px" }}
+            className="material-symbols-outlined text-error mb-4 block text-[48px]"
           >
             videocam_off
           </span>
@@ -213,13 +191,6 @@ export function IsbnScanner({ onScan, onClose }: IsbnScannerProps) {
         </div>
       )}
 
-      {/* Scan line keyframes — injected as a style tag */}
-      <style>{`
-        @keyframes scan-line {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(5.5rem); }
-        }
-      `}</style>
     </div>
   );
 }

@@ -83,8 +83,7 @@ export function DashboardLoansClient({ initialLoans }: DashboardLoansClientProps
         {loans.map((loan) => (
           <div
             key={loan.id}
-            className="flex items-center gap-4 rounded-[var(--radius-xl)] border border-outline-variant/15 bg-surface-container-low/40 p-4"
-            style={{ backdropFilter: "blur(8px)" }}
+            className="flex items-center gap-4 rounded-[var(--radius-xl)] border border-outline-variant/15 bg-surface-container-low/40 p-4 backdrop-blur"
           >
             <Link href={`/books/${loan.bookId}`} className="shrink-0">
               {loan.bookCoverUrl ? (

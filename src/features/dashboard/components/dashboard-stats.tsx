@@ -37,8 +37,7 @@ export async function DashboardStats({ stats }: DashboardStatsProps) {
         {cards.map((card) => (
           <div
             key={card.label}
-            className="rounded-2xl border border-outline-variant/15 bg-surface-container-low/60 p-4 flex flex-col gap-1.5"
-            style={{ backdropFilter: "blur(8px)" }}
+            className="rounded-2xl border border-outline-variant/15 bg-surface-container-low/60 p-4 flex flex-col gap-1.5 backdrop-blur"
           >
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-primary text-[20px]">{card.icon}</span>

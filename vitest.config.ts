@@ -13,5 +13,19 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "json-summary", "html"],
+      include: ["src/**/*.ts", "src/**/*.tsx"],
+      exclude: ["src/**/*.test.*", "src/test/**", "src/**/*.d.ts"],
+      // Start conservatively — many UI components are untested.
+      // Raise incrementally as more tests are added (Phase 6+).
+      thresholds: {
+        lines: 27,
+        functions: 23,
+        branches: 24,
+        statements: 27,
+      },
+    },
   },
 });
