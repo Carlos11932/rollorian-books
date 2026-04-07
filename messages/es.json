@@ -30,8 +30,98 @@
     "people": "Personas"
   },
   "settingsPage": {
-    "title": "Los ajustes están en camino",
-    "description": "Esta sección aún no está implementada, pero la ruta ya resuelve correctamente para que la shell de la app no se rompa en las previews."
+    "title": "Conecta tus propios agentes",
+    "description": "Rollorian sigue siendo la fuente de verdad de tus datos de lectura. Desde aquí puedes emitir credenciales con scopes para que tu asistente, tus scripts o tus clientes MCP lean contexto y apliquen eventos de forma segura.",
+    "errors": {
+      "generic": "No se pudo completar la petición. Inténtalo de nuevo."
+    },
+    "agents": {
+      "eyebrow": "Plataforma de agentes",
+      "title": "Conexiones, scopes y credenciales",
+      "description": "Crea conexiones dedicadas por usuario, limita lo que pueden hacer, rota tokens y revisa la actividad antes de exponer un MCP público.",
+      "cards": {
+        "apiTitle": "Agent API",
+        "apiBody": "La superficie canónica. Todos los companions y adaptadores MCP deben pasar por /api/agent/v1.",
+        "privateMcpTitle": "MCP privado",
+        "privateMcpBody": "Ejecuta tu MCP privado en la Pi 5 y apúntalo a un token de Agent API con scopes de usuario.",
+        "publicMcpTitle": "MCP público",
+        "publicMcpBody": "El MCP público alojado en Vercel puede salir después, sobre los mismos scopes, auditoría y contratos."
+      },
+      "create": {
+        "title": "Crear una nueva conexión",
+        "description": "Cada conexión debería representar un agente o un punto de entrada de automatización.",
+        "nameLabel": "Nombre de la conexión",
+        "namePlaceholder": "Donna en la Pi 5",
+        "kindLabel": "Tipo de conexión",
+        "scopesLabel": "Scopes permitidos",
+        "submit": "Crear conexión"
+      },
+      "token": {
+        "eyebrow": "Token de un solo uso",
+        "title": "Copia la credencial ahora",
+        "description": "El token en claro sólo se muestra una vez. Después sólo conservas el prefijo y los controles de rotación.",
+        "warning": "Guarda este token en el entorno de tu agente o en tu gestor de secretos ahora mismo.",
+        "empty": "Crea una conexión o genera un token nuevo para revelar una credencial."
+      },
+      "instructions": {
+        "title": "Arranque rápido",
+        "api": "Usa la Agent API directamente para scripts, automatizaciones o asistentes que no hablen MCP.",
+        "mcp": "Usa el mismo token en tu paquete MCP privado para que los agentes de escritorio puedan invocar herramientas de Rollorian."
+      },
+      "connections": {
+        "title": "Conexiones existentes",
+        "description": "Cada conexión corresponde a un cliente de agente del usuario y puede tener varias credenciales revocables.",
+        "count": "{count, plural, =0 {Sin conexiones} one {# conexión} other {# conexiones}}",
+        "empty": "Todavía no existe ninguna conexión de agente para esta cuenta.",
+        "never": "Nunca",
+        "lastUsed": "Último uso: {date}",
+        "newToken": "Nuevo token",
+        "revokeConnection": "Revocar conexión",
+        "credentials": "Credenciales",
+        "credentialMeta": "Creado {createdAt} · Último uso {lastUsedAt}",
+        "revokeToken": "Revocar token",
+        "revoked": "Revocado",
+        "revokedAt": "Revocado el {date}"
+      },
+      "activity": {
+        "title": "Actividad reciente",
+        "description": "Aquí aparecen los eventos de auditoría escritos por la Agent API, incluidas llamadas rechazadas o fallidas.",
+        "empty": "Todavía no se ha registrado actividad de agentes.",
+        "genericResource": "Evento general"
+      },
+      "kind": {
+        "PRIVATE_COMPANION": "Companion privado",
+        "MCP_CLIENT": "Cliente MCP",
+        "CUSTOM": "Integración personalizada"
+      },
+      "status": {
+        "ACTIVE": "Activa",
+        "REVOKED": "Revocada"
+      },
+      "outcome": {
+        "SUCCESS": "Éxito",
+        "FAILURE": "Fallo",
+        "REJECTED": "Rechazada"
+      },
+      "scopeTitle": {
+        "profile:read": "Perfil",
+        "summary:read": "Resumen",
+        "library:read": "Biblioteca",
+        "lists:read": "Listas",
+        "recommendations:read": "Recomendaciones",
+        "books:resolve": "Resolver libros",
+        "reading-events:write": "Escribir eventos de lectura"
+      },
+      "scopeDescription": {
+        "profile:read": "Lee el perfil del propietario y los metadatos de la conexión.",
+        "summary:read": "Lee el resumen compacto de lectura que usan los asistentes.",
+        "library:read": "Lee la fotografía completa de la biblioteca con estados semánticos.",
+        "lists:read": "Lee las listas personalizadas y su número de libros.",
+        "recommendations:read": "Lee recomendaciones personalizadas basadas en tu grafo social.",
+        "books:resolve": "Resuelve referencias contra la biblioteca del usuario sin mutar datos.",
+        "reading-events:write": "Aplica eventos started, finished, rated, noted, paused o abandoned."
+      }
+    }
   },
   "admin": {
     "heading": "Panel de administración",

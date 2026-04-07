@@ -1,0 +1,19 @@
+[Unit]
+Description=Rollorian private MCP server
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/rollorian-books/mcp/rollorian-mcp
+Environment=ROLLORIAN_BASE_URL=https://your-rollorian.vercel.app
+Environment=ROLLORIAN_AGENT_TOKEN=replace-me
+Environment=ROLLORIAN_MCP_MODE=http
+Environment=ROLLORIAN_MCP_HTTP_HOST=127.0.0.1
+Environment=ROLLORIAN_MCP_HTTP_PORT=8787
+ExecStart=/usr/bin/node /opt/rollorian-books/mcp/rollorian-mcp/dist/index.js http
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+

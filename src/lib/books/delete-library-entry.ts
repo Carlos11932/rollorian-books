@@ -2,7 +2,6 @@ import "server-only";
 
 import { prisma } from "@/lib/prisma";
 import { revalidateBookCollectionPaths } from "@/lib/revalidation";
-import { logger } from "@/lib/logger";
 import { LibraryEntryNotFoundError } from "./errors";
 
 /**
@@ -20,18 +19,13 @@ export async function deleteLibraryEntry(
   userId: string,
   bookId: string,
 ): Promise<void> {
-  // ── Best-effort cleanup ──────────────────────────────────────────────
-  // Multiple tables may not exist in production (pending migrations).
-  // Each cleanup is wrapped individually so failures don't block the delete.
-
+  // Multiple tables may not exist in production yet. Each cleanup is best-effort
+  // so a missing table does not block the library entry delete itself.
   await cleanupRelatedData(userId, bookId);
 
-  // ── Essential: delete the library entry ──────────────────────────────
-  // Uses deleteMany to avoid Prisma 7 RETURNING * schema drift (P2022).
   const result = await prisma.userBook.deleteMany({
     where: { userId, bookId },
   });
-
   if (result.count === 0) {
     throw new LibraryEntryNotFoundError();
   }
@@ -39,33 +33,22 @@ export async function deleteLibraryEntry(
   revalidateBookCollectionPaths(bookId);
 }
 
-/**
- * Best-effort cleanup of related data. Each operation catches its own errors
- * because the underlying tables may not exist yet (pending migrations for
- * DonnaBookState, Loan, BookList, etc.).
- */
-async function cleanupRelatedData(
-  userId: string,
-  bookId: string,
-): Promise<void> {
-  // Donna AI reading state
+async function cleanupRelatedData(userId: string, bookId: string): Promise<void> {
   await prisma.donnaBookState
     .deleteMany({ where: { userId, bookId } })
-    .catch(() => { /* table may not exist */ });
+    .catch(() => {});
 
-  // Book list items
   await prisma.bookList
     .findMany({ where: { userId }, select: { id: true } })
     .then(async (lists) => {
       if (lists.length > 0) {
         await prisma.bookListItem.deleteMany({
-          where: { bookId, listId: { in: lists.map((l) => l.id) } },
+          where: { bookId, listId: { in: lists.map((list) => list.id) } },
         });
       }
     })
-    .catch(() => { /* table may not exist */ });
+    .catch(() => {});
 
-  // Active loans
   await prisma.loan
     .updateMany({
       where: {
@@ -75,5 +58,5 @@ async function cleanupRelatedData(
       },
       data: { status: "DECLINED" },
     })
-    .catch(() => { /* table may not exist */ });
+    .catch(() => {});
 }

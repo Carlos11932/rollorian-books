@@ -2,8 +2,7 @@ import "server-only";
 
 import { prisma } from "@/lib/prisma";
 import { revalidateBookCollectionPaths } from "@/lib/revalidation";
-import { LOAN_SELECT, toLoanView } from "./types";
-import type { LoanView } from "./types";
+import { LOAN_SELECT, toLoanView, type LoanView } from "./types";
 import {
   LoanNotFoundError,
   LoanForbiddenError,

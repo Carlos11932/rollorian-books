@@ -86,8 +86,9 @@ export async function upsertDonnaState(
   }
 }
 
-export async function applyDonnaReadingEvent(input: ReadingEventRequest) {
-  const user = await getDonnaUserContext();
+type LibraryOwner = Awaited<ReturnType<typeof getDonnaUserContext>>;
+
+export async function applyReadingEventForUser(user: LibraryOwner, input: ReadingEventRequest) {
   const warnings: string[] = [];
   const resolution = await resolveOrCreateBook(user.userId, input.bookRef, input.payload);
 
@@ -156,4 +157,8 @@ export async function applyDonnaReadingEvent(input: ReadingEventRequest) {
     matchStatus: resolution.resolve.matchStatus,
     suggestions: [],
   };
+}
+
+export async function applyDonnaReadingEvent(input: ReadingEventRequest) {
+  return applyReadingEventForUser(await getDonnaUserContext(), input);
 }

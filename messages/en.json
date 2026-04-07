@@ -30,8 +30,98 @@
     "people": "People"
   },
   "settingsPage": {
-    "title": "Settings are on the way",
-    "description": "This section is not implemented yet, but the route now resolves correctly so the app shell stays stable in preview deployments."
+    "title": "Connect your own agents",
+    "description": "Rollorian remains the source of truth for your reading data. From here you can issue scoped credentials so your own assistant, scripts, or MCP clients can read context and apply reading events safely.",
+    "errors": {
+      "generic": "The request could not be completed. Please try again."
+    },
+    "agents": {
+      "eyebrow": "Agent Platform",
+      "title": "Connections, scopes, and credentials",
+      "description": "Create dedicated agent connections per user, limit what they can do, rotate tokens, and review recent usage before exposing MCP publicly.",
+      "cards": {
+        "apiTitle": "Agent API",
+        "apiBody": "The canonical surface. All companions and MCP adapters should go through /api/agent/v1.",
+        "privateMcpTitle": "Private MCP",
+        "privateMcpBody": "Run your private MCP on the Pi 5 and point it at a user-scoped Agent API token.",
+        "publicMcpTitle": "Public MCP",
+        "publicMcpBody": "The public Vercel-hosted MCP can ship later on top of the same scopes, audit trail, and contracts."
+      },
+      "create": {
+        "title": "Create a new connection",
+        "description": "Each connection should represent one agent or one automation entry point.",
+        "nameLabel": "Connection name",
+        "namePlaceholder": "Donna on Pi 5",
+        "kindLabel": "Connection type",
+        "scopesLabel": "Allowed scopes",
+        "submit": "Create connection"
+      },
+      "token": {
+        "eyebrow": "One-time token",
+        "title": "Copy the credential now",
+        "description": "The raw token is only shown once. After that you keep only the prefix and rotation controls.",
+        "warning": "Store this token in your agent environment or secret manager right away.",
+        "empty": "Create a connection or issue a fresh token to reveal a new credential."
+      },
+      "instructions": {
+        "title": "Quick start",
+        "api": "Use the Agent API directly for scripts, automations, or assistants that do not speak MCP.",
+        "mcp": "Use the same token in your private MCP package so desktop agents can call Rollorian tools."
+      },
+      "connections": {
+        "title": "Existing connections",
+        "description": "Every connection maps to one user-owned agent client and can carry multiple revocable credentials.",
+        "count": "{count, plural, =0 {No connections} one {# connection} other {# connections}}",
+        "empty": "No agent connections exist yet for this account.",
+        "never": "Never",
+        "lastUsed": "Last used: {date}",
+        "newToken": "New token",
+        "revokeConnection": "Revoke connection",
+        "credentials": "Credentials",
+        "credentialMeta": "Created {createdAt} · Last used {lastUsedAt}",
+        "revokeToken": "Revoke token",
+        "revoked": "Revoked",
+        "revokedAt": "Revoked at {date}"
+      },
+      "activity": {
+        "title": "Recent activity",
+        "description": "Audit events written by the Agent API appear here, including rejected and failed calls.",
+        "empty": "No agent activity has been recorded yet.",
+        "genericResource": "General event"
+      },
+      "kind": {
+        "PRIVATE_COMPANION": "Private companion",
+        "MCP_CLIENT": "MCP client",
+        "CUSTOM": "Custom integration"
+      },
+      "status": {
+        "ACTIVE": "Active",
+        "REVOKED": "Revoked"
+      },
+      "outcome": {
+        "SUCCESS": "Success",
+        "FAILURE": "Failure",
+        "REJECTED": "Rejected"
+      },
+      "scopeTitle": {
+        "profile:read": "Profile",
+        "summary:read": "Summary",
+        "library:read": "Library",
+        "lists:read": "Lists",
+        "recommendations:read": "Recommendations",
+        "books:resolve": "Resolve books",
+        "reading-events:write": "Write reading events"
+      },
+      "scopeDescription": {
+        "profile:read": "Read the owner profile and connection metadata.",
+        "summary:read": "Read the compact reading summary used by assistants.",
+        "library:read": "Read the complete library snapshot with semantic states.",
+        "lists:read": "Read custom lists and their item counts.",
+        "recommendations:read": "Read personalized recommendations based on your graph.",
+        "books:resolve": "Resolve references against the user library without mutating data.",
+        "reading-events:write": "Apply started, finished, rated, noted, paused, or abandoned events."
+      }
+    }
   },
   "admin": {
     "heading": "Admin Panel",

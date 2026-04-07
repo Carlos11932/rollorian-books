@@ -6,8 +6,7 @@ import { isMissingSocialSchemaError } from "@/lib/prisma-schema-compat";
 import { normalizeBook, type NormalizedBook, type BookInput } from "./normalize";
 import { getDonnaUserContext } from "./user";
 
-export async function getDonnaRecommendations() {
-  const { userId } = await getDonnaUserContext();
+export async function getRecommendationsForUser(userId: string) {
   const userBookIds = await prisma.userBook.findMany({
     where: { userId },
     select: { bookId: true },
@@ -113,4 +112,9 @@ export async function getDonnaRecommendations() {
   return {
     recommendations: [...counts.values()].sort((left, right) => right.readerCount - left.readerCount).slice(0, 20),
   };
+}
+
+export async function getDonnaRecommendations() {
+  const { userId } = await getDonnaUserContext();
+  return getRecommendationsForUser(userId);
 }
