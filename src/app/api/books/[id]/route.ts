@@ -90,17 +90,6 @@ export async function DELETE(
       return Response.json({ error: "Book not found" }, { status: 404 });
     }
     logger.error("Request failed", error, { endpoint: "DELETE /api/books/[id]" });
-    // TEMPORARY: expose full error for diagnosis — remove after fixing
-    const diagError = error instanceof Error ? error : new Error(String(error));
-    return Response.json({
-      error: "Internal server error",
-      _debug: {
-        name: diagError.name,
-        message: diagError.message,
-        code: "code" in diagError ? (diagError as Record<string, unknown>).code : undefined,
-        meta: "meta" in diagError ? (diagError as Record<string, unknown>).meta : undefined,
-        stack: diagError.stack?.split("\n").slice(0, 5),
-      },
-    }, { status: 500 });
+    return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

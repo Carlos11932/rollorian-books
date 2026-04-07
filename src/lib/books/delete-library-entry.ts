@@ -19,57 +19,60 @@ export async function deleteLibraryEntry(
   userId: string,
   bookId: string,
 ): Promise<void> {
-  try {
-    // Best-effort: clean up Donna AI reading state (table may not exist)
-    await prisma.donnaBookState.deleteMany({
-      where: { userId, bookId },
-    }).catch(() => {
-      // DonnaBookState migration may not be applied yet — safe to skip
-    });
+  // ── Best-effort cleanup ──────────────────────────────────────────────
+  // Multiple tables may not exist in production (pending migrations).
+  // Each cleanup is wrapped individually so failures don't block the delete.
 
-    // Remove book from user's lists (prevents ghost entries)
-    const userLists = await prisma.bookList.findMany({
-      where: { userId },
-      select: { id: true },
-    });
+  await cleanupRelatedData(userId, bookId);
 
-    if (userLists.length > 0) {
-      await prisma.bookListItem.deleteMany({
-        where: {
-          bookId,
-          listId: { in: userLists.map((l) => l.id) },
-        },
-      });
-    }
+  // ── Essential: delete the library entry ──────────────────────────────
+  // Uses deleteMany to avoid Prisma 7 RETURNING * schema drift (P2022).
+  const result = await prisma.userBook.deleteMany({
+    where: { userId, bookId },
+  });
 
-    // Decline active loans where user is lender
-    await prisma.loan.updateMany({
+  if (result.count === 0) {
+    throw new LibraryEntryNotFoundError();
+  }
+
+  revalidateBookCollectionPaths(bookId);
+}
+
+/**
+ * Best-effort cleanup of related data. Each operation catches its own errors
+ * because the underlying tables may not exist yet (pending migrations for
+ * DonnaBookState, Loan, BookList, etc.).
+ */
+async function cleanupRelatedData(
+  userId: string,
+  bookId: string,
+): Promise<void> {
+  // Donna AI reading state
+  await prisma.donnaBookState
+    .deleteMany({ where: { userId, bookId } })
+    .catch(() => { /* table may not exist */ });
+
+  // Book list items
+  await prisma.bookList
+    .findMany({ where: { userId }, select: { id: true } })
+    .then(async (lists) => {
+      if (lists.length > 0) {
+        await prisma.bookListItem.deleteMany({
+          where: { bookId, listId: { in: lists.map((l) => l.id) } },
+        });
+      }
+    })
+    .catch(() => { /* table may not exist */ });
+
+  // Active loans
+  await prisma.loan
+    .updateMany({
       where: {
         lenderId: userId,
         bookId,
         status: { in: ["REQUESTED", "OFFERED", "ACTIVE"] },
       },
       data: { status: "DECLINED" },
-    });
-
-    // Delete the library entry — deleteMany avoids RETURNING * schema drift
-    const result = await prisma.userBook.deleteMany({
-      where: { userId, bookId },
-    });
-
-    if (result.count === 0) {
-      throw new LibraryEntryNotFoundError();
-    }
-
-    revalidateBookCollectionPaths(bookId);
-  } catch (error) {
-    if (error instanceof LibraryEntryNotFoundError) {
-      throw error;
-    }
-    logger.error("Failed to delete library entry", error, {
-      userId,
-      bookId,
-    });
-    throw error;
-  }
+    })
+    .catch(() => { /* table may not exist */ });
 }
