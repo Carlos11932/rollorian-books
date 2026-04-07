@@ -33,5 +33,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", "prisma", "e2e", "playwright.config.ts"]
+  "exclude": ["node_modules", "prisma", "e2e", "playwright.config.ts", "mcp"]
 }

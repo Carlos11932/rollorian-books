@@ -8,6 +8,8 @@ import {
 import { getLibraryEntriesForUser } from "./normalize";
 import { getDonnaUserContext } from "./user";
 
+type LibraryOwner = Awaited<ReturnType<typeof getDonnaUserContext>>;
+
 export function computeWeeklyStreak(dates: Date[]): { current: number; unit: "weeks" } {
   if (dates.length === 0) {
     return { current: 0, unit: "weeks" };
@@ -42,22 +44,24 @@ export function computeWeeklyStreak(dates: Date[]): { current: number; unit: "we
   return { current, unit: "weeks" };
 }
 
-export async function getDonnaStatus() {
-  const user = await getDonnaUserContext();
-  const libraryCount = await prisma.userBook.count({ where: { userId: user.userId } }).catch(() => 0);
+export async function getStatusForOwner(owner: LibraryOwner) {
+  const libraryCount = await prisma.userBook.count({ where: { userId: owner.userId } }).catch(() => 0);
 
   return {
     ok: true,
-    owner: user,
+    owner,
     contractVersion: "v1",
     libraryCount,
     generatedAt: new Date().toISOString(),
   };
 }
 
-export async function getDonnaSummary() {
-  const user = await getDonnaUserContext();
-  const entries = await getLibraryEntriesForUser(user.userId).catch((error) => {
+export async function getDonnaStatus() {
+  return getStatusForOwner(await getDonnaUserContext());
+}
+
+export async function getSummaryForOwner(owner: LibraryOwner) {
+  const entries = await getLibraryEntriesForUser(owner.userId).catch((error) => {
     if (isMissingUserBookSchemaError(error)) {
       return [];
     }
@@ -67,7 +71,7 @@ export async function getDonnaSummary() {
   let activeLists: Array<{ id: string; name: string; description: string | null; itemCount: number }> = [];
   try {
     activeLists = (await prisma.bookList.findMany({
-      where: { userId: user.userId },
+      where: { userId: owner.userId },
       include: { _count: { select: { items: true } } },
       orderBy: { updatedAt: "desc" },
       take: 5,
@@ -105,7 +109,7 @@ export async function getDonnaSummary() {
 
   const byUpdatedAt = [...entries].sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
   return {
-    owner: user,
+    owner,
     currentlyReading: byUpdatedAt.filter((entry) => entry.semanticState === "reading" || entry.semanticState === "rereading").slice(0, 5),
     recentlyFinished: byUpdatedAt.filter((entry) => entry.semanticState === "read").slice(0, 5),
     wishlistHighlights: byUpdatedAt.filter((entry) => entry.semanticState === "wishlist" || entry.semanticState === "to_read").slice(0, 5),
@@ -119,19 +123,26 @@ export async function getDonnaSummary() {
   };
 }
 
-export async function getDonnaLibrarySnapshot() {
-  const user = await getDonnaUserContext();
-  const items = await getLibraryEntriesForUser(user.userId);
+export async function getDonnaSummary() {
+  return getSummaryForOwner(await getDonnaUserContext());
+}
+
+export async function getLibrarySnapshotForOwner(owner: LibraryOwner) {
+  const items = await getLibraryEntriesForUser(owner.userId);
   return {
-    owner: user,
+    owner,
     total: items.length,
     items,
     generatedAt: new Date().toISOString(),
   };
 }
 
-export async function getDonnaLists() {
-  const { userId } = await getDonnaUserContext();
+export async function getDonnaLibrarySnapshot() {
+  return getLibrarySnapshotForOwner(await getDonnaUserContext());
+}
+
+export async function getListsForOwner(owner: LibraryOwner) {
+  const { userId } = owner;
 
   try {
     const lists = await prisma.bookList.findMany({
@@ -157,4 +168,8 @@ export async function getDonnaLists() {
     }
     throw error;
   }
+}
+
+export async function getDonnaLists() {
+  return getListsForOwner(await getDonnaUserContext());
 }
