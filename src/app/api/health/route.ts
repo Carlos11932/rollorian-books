@@ -7,7 +7,7 @@ export async function GET(): Promise<Response> {
   try {
     await prisma.$queryRaw`SELECT 1`;
 
-    return Response.json({ status: "ok", version: "v2-catchfix" });
+    return Response.json({ status: "ok" });
   } catch (error) {
     logger.error("Request failed", error, { endpoint: "GET /api/health" });
     return Response.json(
