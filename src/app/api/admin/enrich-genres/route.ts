@@ -7,7 +7,10 @@ import {
   ForbiddenError,
 } from "@/lib/auth/require-auth";
 import { fetchByIsbn } from "@/lib/book-providers/search-orchestrator";
+import { createRateLimiter, rateLimitResponse } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
+
+const limiter = createRateLimiter({ windowMs: 60_000, maxRequests: 5 });
 
 /**
  * POST /api/admin/enrich-genres
@@ -18,7 +21,13 @@ import { logger } from "@/lib/logger";
  */
 export async function POST(): Promise<Response> {
   try {
-    await requireSuperAdmin();
+    const { userId } = await requireSuperAdmin();
+
+    const rateLimitResult = limiter.check(userId);
+    if (!rateLimitResult.allowed) {
+      logger.warn("Rate limit exceeded", { endpoint: "POST /api/admin/enrich-genres", userId });
+      return rateLimitResponse(rateLimitResult);
+    }
 
     // Find all books with ISBN but no genres
     const books = await prisma.book.findMany({

@@ -13,7 +13,10 @@ import {
 } from "@/lib/books";
 import { fetchByIsbn } from "@/lib/book-providers/search-orchestrator";
 import { prisma } from "@/lib/prisma";
+import { createRateLimiter, rateLimitResponse } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
+
+const postLimiter = createRateLimiter({ windowMs: 60_000, maxRequests: 20 });
 
 export async function GET(request: NextRequest): Promise<Response> {
   try {
@@ -49,6 +52,12 @@ export async function GET(request: NextRequest): Promise<Response> {
 export async function POST(request: NextRequest): Promise<Response> {
   try {
     const { userId } = await requireAuth();
+
+    const rateLimitResult = postLimiter.check(userId);
+    if (!rateLimitResult.allowed) {
+      logger.warn("Rate limit exceeded", { endpoint: "POST /api/books", userId });
+      return rateLimitResponse(rateLimitResult);
+    }
 
     const body: unknown = await request.json();
     const result = createBookSchema.safeParse(body);
