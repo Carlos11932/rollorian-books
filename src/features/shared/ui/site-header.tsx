@@ -33,7 +33,7 @@ export function SiteHeader({ user, signOutAction, role }: SiteHeaderProps) {
   ];
 
   return (
-    <nav className="fixed top-0 w-full z-50 bg-[#001711]/80 backdrop-blur-xl bg-gradient-to-b from-[#001711] to-transparent">
+    <nav className="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-xl bg-gradient-to-b from-surface to-transparent">
       <div className="flex justify-between items-center w-full px-8 md:px-16 py-4">
         {/* Left: Logo + desktop nav */}
         <div className="flex items-center gap-12">
@@ -69,7 +69,7 @@ export function SiteHeader({ user, signOutAction, role }: SiteHeaderProps) {
             type="button"
             className="hover:bg-surface-variant/50 p-2 rounded-full transition-colors"
           >
-            <span className="material-symbols-outlined text-primary" style={{ fontSize: "22px" }}>
+            <span className="material-symbols-outlined text-primary">
               search
             </span>
           </button>

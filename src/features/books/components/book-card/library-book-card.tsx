@@ -64,7 +64,6 @@ export function LibraryVariantCard({
           <Badge status={book.status} />
           <h3
             className="text-base font-bold text-text leading-tight line-clamp-2"
-            style={{ fontFamily: "var(--font-headline)" }}
           >
             {book.title}
           </h3>

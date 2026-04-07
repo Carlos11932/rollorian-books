@@ -19,8 +19,7 @@ export async function DashboardRecommendations({ recommendations }: DashboardRec
       {recommendations.length === 0 ? (
         <div className="rounded-xl border border-outline-variant/15 bg-surface-container-low/40 p-6 text-center">
           <span
-            className="material-symbols-outlined text-tertiary mb-2 block"
-            style={{ fontSize: "36px" }}
+            className="material-symbols-outlined text-tertiary mb-2 block text-[36px]"
           >
             explore
           </span>

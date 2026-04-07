@@ -39,8 +39,8 @@ export async function LocalBookDetail({ userBook }: LocalBookDetailProps) {
         </div>
 
         <section
-          className="rounded-[var(--radius-xl)] border border-outline-variant/30 p-6 md:p-8"
-          style={{ backdropFilter: "blur(20px)", background: "rgba(0,23,17,0.6)" }}
+          className="rounded-[var(--radius-xl)] border border-outline-variant/30 p-6 md:p-8 backdrop-blur-[20px]"
+          style={{ background: "rgba(0,23,17,0.6)" }}
           aria-label="Book detail"
         >
           <div className="flex flex-col md:flex-row gap-8">
@@ -59,12 +59,11 @@ export async function LocalBookDetail({ userBook }: LocalBookDetailProps) {
               <div className="grid gap-2">
                 <h1
                   className="text-3xl md:text-4xl font-bold text-on-surface leading-tight"
-                  style={{ fontFamily: "var(--font-headline)" }}
                 >
                   {book.title}
                 </h1>
                 {book.subtitle && (
-                  <p className="text-lg text-on-surface/60 leading-snug" style={{ fontFamily: "var(--font-headline)" }}>
+                  <p className="text-lg text-on-surface/60 leading-snug">
                     {book.subtitle}
                   </p>
                 )}

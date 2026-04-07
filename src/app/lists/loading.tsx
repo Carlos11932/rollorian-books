@@ -4,7 +4,7 @@ export default function ListsLoading() {
   return (
     <div className="grid gap-6 px-12 md:px-20 pt-8 pb-24">
       {/* Page header skeleton */}
-      <div className="rounded-[var(--radius-xl)] border border-line bg-gradient-to-b from-[rgba(19,27,41,0.88)] to-[rgba(8,12,20,0.88)] p-6 flex items-start justify-between gap-4">
+      <div className="card-glass p-6 flex items-start justify-between gap-4">
         <div className="grid gap-2">
           <Skeleton variant="text" className="h-3 w-16" />
           <Skeleton variant="text" className="h-8 w-32" />
@@ -17,7 +17,7 @@ export default function ListsLoading() {
         {Array.from({ length: 4 }).map((_, i) => (
           <div
             key={i}
-            className="rounded-[var(--radius-xl)] border border-line bg-gradient-to-b from-[rgba(19,27,41,0.88)] to-[rgba(8,12,20,0.88)] p-4 flex items-center justify-between gap-4"
+            className="card-glass p-4 flex items-center justify-between gap-4"
           >
             <div className="grid gap-1.5 flex-1 min-w-0">
               <Skeleton variant="text" className="h-5 w-40" />

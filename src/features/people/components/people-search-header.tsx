@@ -14,7 +14,6 @@ export function PeopleSearchHeader({ query, onQueryChange }: PeopleSearchHeaderP
     <div>
       <h1
         className="text-3xl font-bold text-on-surface mb-2"
-        style={{ fontFamily: "var(--font-headline)" }}
       >
         {t("heading")}
       </h1>
@@ -29,8 +28,7 @@ export function PeopleSearchHeader({ query, onQueryChange }: PeopleSearchHeaderP
           value={query}
           onChange={(e) => onQueryChange(e.target.value)}
           placeholder={t("searchPlaceholder")}
-          className="w-full pl-12 pr-4 py-3 rounded-xl border border-outline-variant/20 bg-surface-container-low/60 text-on-surface text-sm placeholder:text-tertiary focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/30 transition-colors"
-          style={{ backdropFilter: "blur(8px)" }}
+          className="w-full pl-12 pr-4 py-3 rounded-xl border border-outline-variant/20 bg-surface-container-low/60 text-on-surface text-sm placeholder:text-tertiary focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/30 transition-colors backdrop-blur"
         />
       </div>
     </div>

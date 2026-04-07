@@ -57,8 +57,7 @@ export function GoogleBookSaveClient({ payload }: GoogleBookSaveClientProps) {
 
   return (
     <section
-      className="rounded-[var(--radius-xl)] border border-accent/30 bg-gradient-to-b from-[rgba(19,27,41,0.88)] to-[rgba(8,12,20,0.88)] p-6"
-      style={{ backdropFilter: "blur(16px)" }}
+      className="card-glass backdrop-blur-xl border-accent/30 p-6"
       aria-label="Save to library"
     >
       <div className="grid gap-1 mb-4">
@@ -67,7 +66,6 @@ export function GoogleBookSaveClient({ payload }: GoogleBookSaveClientProps) {
         </p>
         <h2
           className="text-2xl font-bold text-text"
-          style={{ fontFamily: "var(--font-headline)" }}
         >
           {t('trackQuestion')}
         </h2>

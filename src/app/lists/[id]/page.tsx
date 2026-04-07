@@ -16,7 +16,7 @@ export default function ListDetailPage() {
   if (detail.isLoading) {
     return (
       <div className="flex items-center justify-center py-24">
-        <span className="material-symbols-outlined animate-spin text-muted" style={{ fontSize: "32px" }}>
+        <span className="material-symbols-outlined animate-spin text-muted text-[32px]">
           progress_activity
         </span>
       </div>

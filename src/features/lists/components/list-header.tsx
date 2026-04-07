@@ -51,8 +51,7 @@ export function ListHeader({
 
   return (
     <div
-      className="rounded-[var(--radius-xl)] border border-line bg-gradient-to-b from-[rgba(19,27,41,0.88)] to-[rgba(8,12,20,0.88)] p-6"
-      style={{ backdropFilter: "blur(16px)" }}
+      className="card-glass backdrop-blur-xl p-6"
     >
       <div className="grid gap-3">
         {/* Name */}
@@ -69,7 +68,6 @@ export function ListHeader({
               autoFocus
               maxLength={100}
               className="flex-1 rounded-[var(--radius-sm)] border border-line bg-surface-soft text-text text-lg font-bold px-3 py-1 focus:outline-none focus:border-accent/50"
-              style={{ fontFamily: "var(--font-headline)" }}
             />
             <Button size="sm" onClick={onSaveName}>
               {tCommon("save")}
@@ -82,7 +80,6 @@ export function ListHeader({
           <div className="flex items-center gap-2">
             <h1
               className="text-3xl font-bold text-text"
-              style={{ fontFamily: "var(--font-headline)" }}
             >
               {list.name}
             </h1>

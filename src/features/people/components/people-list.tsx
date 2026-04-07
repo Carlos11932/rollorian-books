@@ -42,7 +42,7 @@ export function PeopleList({
   if (users.length === 0 && query.trim().length > 0) {
     return (
       <div className="flex flex-col items-center gap-3 py-16 text-center">
-        <span className="material-symbols-outlined text-tertiary" style={{ fontSize: "48px" }}>
+        <span className="material-symbols-outlined text-tertiary text-[48px]">
           person_search
         </span>
         <p className="text-on-surface-variant font-medium">
@@ -55,7 +55,7 @@ export function PeopleList({
   if (users.length === 0) {
     return (
       <div className="flex flex-col items-center gap-3 py-16 text-center">
-        <span className="material-symbols-outlined text-tertiary" style={{ fontSize: "48px" }}>
+        <span className="material-symbols-outlined text-tertiary text-[48px]">
           group_add
         </span>
         <p className="text-on-surface-variant font-medium">{t("emptyState")}</p>

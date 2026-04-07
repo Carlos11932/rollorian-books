@@ -59,8 +59,7 @@ export default function StatsPage() {
       <div className="pt-8 px-12 md:px-20 pb-24">
         <div className="flex flex-col items-center gap-4 mt-16 text-center">
           <span
-            className="material-symbols-outlined text-on-surface-variant/40"
-            style={{ fontSize: "64px" }}
+            className="material-symbols-outlined text-on-surface-variant/40 text-[64px]"
           >
             bar_chart
           </span>
@@ -89,8 +88,7 @@ export default function StatsPage() {
       {/* Header */}
       <div className="flex items-center gap-3 mb-8">
         <span
-          className="material-symbols-outlined text-primary"
-          style={{ fontSize: "32px" }}
+          className="material-symbols-outlined text-primary text-[32px]"
         >
           bar_chart
         </span>
@@ -102,8 +100,7 @@ export default function StatsPage() {
       {totalBooks === 0 ? (
         <div className="flex flex-col items-center gap-4 mt-16 text-center">
           <span
-            className="material-symbols-outlined text-on-surface-variant/40"
-            style={{ fontSize: "64px" }}
+            className="material-symbols-outlined text-on-surface-variant/40 text-[64px]"
           >
             bar_chart
           </span>

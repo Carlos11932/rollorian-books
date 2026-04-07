@@ -15,13 +15,11 @@ export default async function NewGroupPage() {
     <div className="grid gap-6 px-12 md:px-20 pt-8 pb-24 max-w-xl">
       {/* Page header */}
       <div
-        className="rounded-[var(--radius-xl)] border border-line bg-gradient-to-b from-[rgba(19,27,41,0.88)] to-[rgba(8,12,20,0.88)] p-6 grid gap-1"
-        style={{ backdropFilter: 'blur(16px)' }}
+        className="card-glass backdrop-blur-xl p-6 grid gap-1"
       >
         <p className="text-xs font-bold uppercase tracking-widest text-muted">{t('heading')}</p>
         <h1
           className="text-3xl font-bold text-text"
-          style={{ fontFamily: 'var(--font-headline)' }}
         >
           {t('newGroup')}
         </h1>
@@ -29,8 +27,7 @@ export default async function NewGroupPage() {
 
       {/* Form */}
       <section
-        className="rounded-[var(--radius-xl)] border border-line bg-gradient-to-b from-[rgba(19,27,41,0.88)] to-[rgba(8,12,20,0.88)] p-6"
-        style={{ backdropFilter: 'blur(16px)' }}
+        className="card-glass backdrop-blur-xl p-6"
       >
         <CreateGroupForm />
       </section>

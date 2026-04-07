@@ -46,7 +46,7 @@ export function BookCover({
       ) : (
         <div
           className="absolute inset-0 grid place-items-center p-3 text-center text-text/60 text-xs leading-snug"
-          style={{ fontFamily: "var(--font-headline)" }}
+          
           aria-label={`No cover image for ${title}`}
         >
           {title}

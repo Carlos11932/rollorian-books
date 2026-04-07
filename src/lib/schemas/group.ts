@@ -9,7 +9,7 @@ export const updateGroupSchema = z.object({
 });
 
 export const inviteMemberSchema = z.object({
-  email: z.string().email({ error: "A valid email is required" }),
+  email: z.email({ error: "A valid email is required" }),
 });
 
 export const updateMemberStatusSchema = z.object({

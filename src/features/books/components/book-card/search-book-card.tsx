@@ -78,7 +78,6 @@ export function SearchBookCard({
           <div className="grid gap-0.5">
             <h3
               className="text-sm font-bold text-text leading-tight line-clamp-2"
-              style={{ fontFamily: "var(--font-headline)" }}
             >
               {book.title}
             </h3>
@@ -122,7 +121,7 @@ export function SearchBookCard({
                 saveState === "saving" && "opacity-60 cursor-not-allowed",
               )}
             >
-              <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>
+              <span className="material-symbols-outlined text-[14px]">
                 {saveState === "saved" ? "bookmark" : saveState === "error" ? "error" : "bookmark_add"}
               </span>
               {saveState === "saving"

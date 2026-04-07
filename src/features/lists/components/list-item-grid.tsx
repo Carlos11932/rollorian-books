@@ -20,7 +20,7 @@ export function ListItemGrid({ items, onRemoveBook }: ListItemGridProps) {
         title={t("emptyList")}
         description={t("emptyListDescription")}
         icon={
-          <span className="material-symbols-outlined" style={{ fontSize: "48px" }}>
+            <span className="material-symbols-outlined text-[48px]">
             menu_book
           </span>
         }
@@ -33,8 +33,7 @@ export function ListItemGrid({ items, onRemoveBook }: ListItemGridProps) {
       {items.map((item) => (
         <div
           key={item.id}
-          className="rounded-[var(--radius-xl)] border border-line bg-gradient-to-b from-[rgba(19,27,41,0.88)] to-[rgba(8,12,20,0.88)] p-4 flex items-center gap-4"
-          style={{ backdropFilter: "blur(16px)" }}
+          className="card-glass backdrop-blur-xl p-4 flex items-center gap-4"
         >
           {/* Book cover thumbnail */}
           <Link href={`/books/${item.book.id}`} className="shrink-0">
@@ -49,7 +48,7 @@ export function ListItemGrid({ items, onRemoveBook }: ListItemGridProps) {
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
-                  <span className="material-symbols-outlined text-muted" style={{ fontSize: "20px" }}>
+                  <span className="material-symbols-outlined text-muted text-[20px]">
                     menu_book
                   </span>
                 </div>

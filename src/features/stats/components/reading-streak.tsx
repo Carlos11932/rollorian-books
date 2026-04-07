@@ -23,8 +23,7 @@ export function ReadingStreak({ current, unit }: ReadingStreakProps) {
       <div className="flex items-center gap-4">
         <div className="flex items-center justify-center w-14 h-14 rounded-full bg-primary/10">
           <span
-            className="material-symbols-outlined text-primary"
-            style={{ fontSize: "32px" }}
+            className="material-symbols-outlined text-primary text-[32px]"
           >
             local_fire_department
           </span>

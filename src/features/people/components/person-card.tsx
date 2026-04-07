@@ -17,8 +17,7 @@ export function PersonCard({ user, isFollowing, onFollow }: PersonCardProps) {
 
   return (
     <div
-      className="flex items-center gap-4 rounded-[var(--radius-xl)] border border-outline-variant/15 bg-surface-container-low/40 p-4 transition-colors hover:border-outline-variant/30"
-      style={{ backdropFilter: "blur(8px)" }}
+      className="flex items-center gap-4 rounded-[var(--radius-xl)] border border-outline-variant/15 bg-surface-container-low/40 p-4 transition-colors hover:border-outline-variant/30 backdrop-blur"
     >
       <Link href={`/users/${user.id}`} className="shrink-0">
         {user.image ? (

@@ -8,7 +8,7 @@ import { sendInvitationEmail } from "@/lib/email/send-invitation";
 import { logger } from "@/lib/logger";
 
 const createInvitationSchema = z.object({
-  email: z.string().email("Invalid email address"),
+  email: z.email({ error: "Invalid email address" }),
 });
 
 export async function GET(): Promise<Response> {

@@ -60,8 +60,7 @@ export function GroupBookCard({ book, index = 0 }: GroupBookCardProps) {
           aria-label={t("groups.readCheck")}
         >
           <span
-            className="material-symbols-outlined"
-            style={{ fontSize: "14px" }}
+            className="material-symbols-outlined text-[14px]"
           >
             check
           </span>
@@ -72,8 +71,7 @@ export function GroupBookCard({ book, index = 0 }: GroupBookCardProps) {
       <div className="p-2 grid gap-1">
         <h3
           className="text-[0.78rem] font-bold text-text leading-tight line-clamp-2"
-          style={{ fontFamily: "var(--font-headline)" }}
-        >
+          >
           {book.title}
         </h3>
         <p className="text-[0.7rem] text-muted truncate">{authorLine}</p>

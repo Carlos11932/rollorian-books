@@ -100,15 +100,13 @@ export function BookDetailClient({ book }: BookDetailClientProps) {
 
   return (
     <section
-      className="rounded-[var(--radius-xl)] border border-line bg-gradient-to-b from-[rgba(19,27,41,0.88)] to-[rgba(8,12,20,0.88)] p-6"
-      style={{ backdropFilter: "blur(16px)" }}
+      className="card-glass backdrop-blur-xl p-6"
       aria-label="Manage book"
     >
       <div className="grid gap-1 mb-6">
         <p className="text-xs font-bold uppercase tracking-widest text-muted">{t('book.manage')}</p>
         <h2
           className="text-2xl font-bold text-text"
-          style={{ fontFamily: "var(--font-headline)" }}
         >
           {t('book.updateState')}
         </h2>

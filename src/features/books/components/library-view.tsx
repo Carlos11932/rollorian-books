@@ -148,15 +148,13 @@ export function LibraryView({
     <div className="grid gap-6">
       {/* Header card */}
       <div
-        className="rounded-[var(--radius-xl)] border border-line bg-gradient-to-b from-[rgba(19,27,41,0.88)] to-[rgba(8,12,20,0.88)] p-6 grid gap-4"
-        style={{ backdropFilter: "blur(16px)" }}
+        className="card-glass backdrop-blur-xl p-6 grid gap-4"
       >
         <div className="flex items-start justify-between gap-4">
           <div className="grid gap-1">
             <p className="text-xs font-bold uppercase tracking-widest text-muted">Library</p>
             <h1
               className="text-3xl font-bold text-text"
-              style={{ fontFamily: "var(--font-headline)" }}
             >
               {t("library.heading")}
             </h1>

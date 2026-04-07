@@ -39,7 +39,6 @@ export function BrowseBookCard({ book, index = 0 }: BaseBookCardProps) {
         <Badge status={book.status} className="text-[10px] px-2 py-0.5" />
         <h3
           className="text-[0.78rem] font-bold text-text leading-tight line-clamp-2"
-          style={{ fontFamily: "var(--font-headline)" }}
         >
           {book.title}
         </h3>

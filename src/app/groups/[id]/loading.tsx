@@ -4,7 +4,7 @@ export default function GroupDetailLoading() {
   return (
     <div className="grid gap-6 px-12 md:px-20 pt-8 pb-24">
       {/* Page header skeleton */}
-      <div className="rounded-[var(--radius-xl)] border border-line bg-gradient-to-b from-[rgba(19,27,41,0.88)] to-[rgba(8,12,20,0.88)] p-6 flex items-start justify-between gap-4">
+      <div className="card-glass p-6 flex items-start justify-between gap-4">
         <div className="grid gap-2 flex-1">
           <Skeleton variant="text" className="h-3 w-32" />
           <Skeleton variant="text" className="h-8 w-48" />
@@ -28,7 +28,7 @@ export default function GroupDetailLoading() {
       {Array.from({ length: 2 }).map((_, sectionIndex) => (
         <section
           key={sectionIndex}
-          className="rounded-[var(--radius-xl)] border border-line bg-gradient-to-b from-[rgba(19,27,41,0.88)] to-[rgba(8,12,20,0.88)] p-6 grid gap-4"
+          className="card-glass p-6 grid gap-4"
         >
           <div className="flex items-end justify-between gap-4">
             <Skeleton variant="text" className="h-6 w-36" />

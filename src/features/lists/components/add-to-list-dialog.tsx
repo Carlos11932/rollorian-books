@@ -134,7 +134,7 @@ export function AddToListDialog({ bookId, open, onClose }: AddToListDialogProps)
       >
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-text" style={{ fontFamily: "var(--font-headline)" }}>
+          <h2 className="text-lg font-bold text-text">
             {t("addToList")}
           </h2>
           <button
@@ -149,7 +149,7 @@ export function AddToListDialog({ bookId, open, onClose }: AddToListDialogProps)
         {/* Loading */}
         {isLoading && (
           <div className="flex items-center justify-center py-6">
-            <span className="material-symbols-outlined animate-spin text-muted" style={{ fontSize: "24px" }}>
+            <span className="material-symbols-outlined animate-spin text-muted text-[24px]">
               progress_activity
             </span>
           </div>

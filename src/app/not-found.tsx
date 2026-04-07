@@ -10,7 +10,7 @@ export default async function NotFound() {
         <p className="text-xs font-bold uppercase tracking-widest text-accent">
           404
         </p>
-        <h1 className="text-5xl font-bold text-text" style={{ fontFamily: "var(--font-headline)" }}>
+        <h1 className="text-5xl font-bold text-text">
           {t('notFoundTitle')}
         </h1>
         <p className="text-muted text-base max-w-sm">
