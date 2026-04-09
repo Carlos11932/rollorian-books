@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import {
   isMissingFinishedAtError,
   isMissingUserBookSchemaError,
+  isPrismaSchemaMismatchError,
 } from "@/lib/prisma-schema-compat";
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -152,53 +153,57 @@ async function getStatsUsingFinishedAt(userId: string): Promise<StatsSnapshot> {
 
   // ── Collection stats ──────────────────────────────────────────────────────
 
-  const booksOwned = await prisma.userBook.count({
-    where: { userId, ownershipStatus: "OWNED" },
-  });
-
-  const booksNotSpecified = await prisma.userBook.count({
-    where: { userId, ownershipStatus: "UNKNOWN" },
-  });
-
-  // Books the user owns that have NO active loan where they are the lender
-  // (ACTIVE, REQUESTED, or OFFERED counts as "not available")
-  const ownedUserBooks = await prisma.userBook.findMany({
-    where: { userId, ownershipStatus: "OWNED" },
-    select: { bookId: true },
-  });
-  const ownedBookIds = ownedUserBooks.map((ub) => ub.bookId);
-
+  let booksOwned = 0;
+  let booksNotSpecified = 0;
   let booksAvailableToLend = 0;
   let booksCurrentlyLent = 0;
 
-  if (ownedBookIds.length > 0) {
-    // Books with any active/pending loan (user is lender)
-    const activeLoanBookIds = await prisma.loan.findMany({
-      where: {
-        lenderId: userId,
-        bookId: { in: ownedBookIds },
-        status: { in: ["ACTIVE", "REQUESTED", "OFFERED"] },
-      },
+  try {
+    booksOwned = await prisma.userBook.count({
+      where: { userId, ownershipStatus: "OWNED" },
+    });
+
+    booksNotSpecified = await prisma.userBook.count({
+      where: { userId, ownershipStatus: "UNKNOWN" },
+    });
+
+    // Books the user owns that have NO active loan where they are the lender
+    // (ACTIVE, REQUESTED, or OFFERED counts as "not available")
+    const ownedUserBooks = await prisma.userBook.findMany({
+      where: { userId, ownershipStatus: "OWNED" },
       select: { bookId: true },
     });
-    const activeLoanSet = new Set(activeLoanBookIds.map((l) => l.bookId));
+    const ownedBookIds = ownedUserBooks.map((ub) => ub.bookId);
 
-    // Books with a strictly ACTIVE loan (currently lent out)
-    const currentlyLentBookIds = await prisma.loan.findMany({
-      where: {
-        lenderId: userId,
-        bookId: { in: ownedBookIds },
-        status: "ACTIVE",
-      },
-      select: { bookId: true },
-    });
-    const currentlyLentSet = new Set(currentlyLentBookIds.map((l) => l.bookId));
+    if (ownedBookIds.length > 0) {
+      // Books with any active/pending loan (user is lender)
+      const activeLoanBookIds = await prisma.loan.findMany({
+        where: {
+          lenderId: userId,
+          bookId: { in: ownedBookIds },
+          status: { in: ["ACTIVE", "REQUESTED", "OFFERED"] },
+        },
+        select: { bookId: true },
+      });
+      const activeLoanSet = new Set(activeLoanBookIds.map((l) => l.bookId));
 
-    booksAvailableToLend = ownedBookIds.filter((id) => !activeLoanSet.has(id)).length;
-    booksCurrentlyLent = currentlyLentSet.size;
-  } else {
-    booksAvailableToLend = 0;
-    booksCurrentlyLent = 0;
+      // Books with a strictly ACTIVE loan (currently lent out)
+      const currentlyLentBookIds = await prisma.loan.findMany({
+        where: {
+          lenderId: userId,
+          bookId: { in: ownedBookIds },
+          status: "ACTIVE",
+        },
+        select: { bookId: true },
+      });
+      const currentlyLentSet = new Set(currentlyLentBookIds.map((l) => l.bookId));
+
+      booksAvailableToLend = ownedBookIds.filter((id) => !activeLoanSet.has(id)).length;
+      booksCurrentlyLent = currentlyLentSet.size;
+    }
+  } catch (error) {
+    if (!isPrismaSchemaMismatchError(error)) throw error;
+    // Column doesn't exist yet — return zeroed collection stats
   }
 
   return {
@@ -292,46 +297,53 @@ async function getLegacyStatsUsingUpdatedAt(userId: string): Promise<StatsSnapsh
 
   // ── Collection stats ──────────────────────────────────────────────────────
 
-  const booksOwned = await prisma.userBook.count({
-    where: { userId, ownershipStatus: "OWNED" },
-  });
-
-  const booksNotSpecified = await prisma.userBook.count({
-    where: { userId, ownershipStatus: "UNKNOWN" },
-  });
-
-  const ownedUserBooks = await prisma.userBook.findMany({
-    where: { userId, ownershipStatus: "OWNED" },
-    select: { bookId: true },
-  });
-  const ownedBookIds = ownedUserBooks.map((ub) => ub.bookId);
-
+  let booksOwned = 0;
+  let booksNotSpecified = 0;
   let booksAvailableToLend = 0;
   let booksCurrentlyLent = 0;
 
-  if (ownedBookIds.length > 0) {
-    const activeLoanBookIds = await prisma.loan.findMany({
-      where: {
-        lenderId: userId,
-        bookId: { in: ownedBookIds },
-        status: { in: ["ACTIVE", "REQUESTED", "OFFERED"] },
-      },
+  try {
+    booksOwned = await prisma.userBook.count({
+      where: { userId, ownershipStatus: "OWNED" },
+    });
+
+    booksNotSpecified = await prisma.userBook.count({
+      where: { userId, ownershipStatus: "UNKNOWN" },
+    });
+
+    const ownedUserBooks = await prisma.userBook.findMany({
+      where: { userId, ownershipStatus: "OWNED" },
       select: { bookId: true },
     });
-    const activeLoanSet = new Set(activeLoanBookIds.map((l) => l.bookId));
+    const ownedBookIds = ownedUserBooks.map((ub) => ub.bookId);
 
-    const currentlyLentBookIds = await prisma.loan.findMany({
-      where: {
-        lenderId: userId,
-        bookId: { in: ownedBookIds },
-        status: "ACTIVE",
-      },
-      select: { bookId: true },
-    });
-    const currentlyLentSet = new Set(currentlyLentBookIds.map((l) => l.bookId));
+    if (ownedBookIds.length > 0) {
+      const activeLoanBookIds = await prisma.loan.findMany({
+        where: {
+          lenderId: userId,
+          bookId: { in: ownedBookIds },
+          status: { in: ["ACTIVE", "REQUESTED", "OFFERED"] },
+        },
+        select: { bookId: true },
+      });
+      const activeLoanSet = new Set(activeLoanBookIds.map((l) => l.bookId));
 
-    booksAvailableToLend = ownedBookIds.filter((id) => !activeLoanSet.has(id)).length;
-    booksCurrentlyLent = currentlyLentSet.size;
+      const currentlyLentBookIds = await prisma.loan.findMany({
+        where: {
+          lenderId: userId,
+          bookId: { in: ownedBookIds },
+          status: "ACTIVE",
+        },
+        select: { bookId: true },
+      });
+      const currentlyLentSet = new Set(currentlyLentBookIds.map((l) => l.bookId));
+
+      booksAvailableToLend = ownedBookIds.filter((id) => !activeLoanSet.has(id)).length;
+      booksCurrentlyLent = currentlyLentSet.size;
+    }
+  } catch (error) {
+    if (!isPrismaSchemaMismatchError(error)) throw error;
+    // Column doesn't exist yet — return zeroed collection stats
   }
 
   return {

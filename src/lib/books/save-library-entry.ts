@@ -1,7 +1,7 @@
 import "server-only";
 
 import { prisma } from "@/lib/prisma";
-import { isMissingFinishedAtError } from "@/lib/prisma-schema-compat";
+import { isMissingFinishedAtError, isPrismaSchemaMismatchError } from "@/lib/prisma-schema-compat";
 import type { UserBookWithBook } from "@/lib/types/book";
 import type { CreateBookInput } from "@/lib/schemas/book";
 import { revalidateBookCollectionPaths } from "@/lib/revalidation";
@@ -55,21 +55,56 @@ export async function saveLibraryEntry(
       select: USER_BOOK_SELECT,
     });
   } catch (error) {
-    if (!isMissingFinishedAtError(error)) {
+    if (isMissingFinishedAtError(error)) {
+      // DB lacks finishedAt — retry without it but keep ownershipStatus
+      created = await prisma.userBook.create({
+        data: {
+          userId,
+          bookId: book.id,
+          status,
+          ownershipStatus,
+          ...(rating !== undefined ? { rating } : {}),
+          ...(notes !== undefined ? { notes } : {}),
+        },
+        select: USER_BOOK_SELECT,
+      });
+    } else if (isPrismaSchemaMismatchError(error)) {
+      // DB lacks ownershipStatus column — retry without it and without it in select
+      const fallbackSelect = {
+        id: true,
+        userId: true,
+        bookId: true,
+        status: true,
+        rating: true,
+        notes: true,
+        createdAt: true,
+        updatedAt: true,
+        book: true,
+      } as const;
+
+      const fallbackCreated = await prisma.userBook.create({
+        data: {
+          userId,
+          bookId: book.id,
+          status,
+          ...(status === "READ" ? { finishedAt: new Date() } : {}),
+          ...(rating !== undefined ? { rating } : {}),
+          ...(notes !== undefined ? { notes } : {}),
+        },
+        select: fallbackSelect,
+      });
+
+      const userBook: UserBookWithBook = {
+        ...fallbackCreated,
+        ownershipStatus: "UNKNOWN" as const,
+        finishedAt: null,
+      };
+
+      revalidateBookCollectionPaths(book.id);
+      return userBook;
+    } else {
       throw error;
     }
-
-    created = await prisma.userBook.create({
-      data: {
-        userId,
-        bookId: book.id,
-        status,
-        ownershipStatus,
-        ...(rating !== undefined ? { rating } : {}),
-        ...(notes !== undefined ? { notes } : {}),
-      },
-      select: USER_BOOK_SELECT,
-    });
   }
 
   const userBook: UserBookWithBook = { ...created, finishedAt: null };

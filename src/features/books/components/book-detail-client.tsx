@@ -37,7 +37,7 @@ export function BookDetailClient({ book }: BookDetailClientProps) {
   return (
     <section
       className="card-glass backdrop-blur-xl p-6"
-      aria-label="Manage book"
+      aria-label={t('book.manageBook')}
     >
       <div className="grid gap-1 mb-6">
         <p className="text-xs font-bold uppercase tracking-widest text-muted">{t('book.manage')}</p>
@@ -56,7 +56,7 @@ export function BookDetailClient({ book }: BookDetailClientProps) {
             value={status}
             disabled={isSaving || isDeleting}
             onChange={(e) => setStatus(e.target.value as Parameters<typeof setStatus>[0])}
-            aria-label="Reading status"
+            aria-label={t('book.readingStatus')}
             className={cn(
               "rounded-[var(--radius-sm)] border border-line bg-surface-soft text-text text-sm px-3 py-2.5",
               "focus:outline-none focus:border-accent/50",
@@ -75,7 +75,7 @@ export function BookDetailClient({ book }: BookDetailClientProps) {
         {/* Ownership */}
         <div className="grid gap-1.5">
           <span className="text-xs font-bold uppercase tracking-wide text-muted">{t('book.ownershipLabel')}</span>
-          <div className="flex flex-wrap gap-2" role="group" aria-label="Ownership status">
+          <div className="flex flex-wrap gap-2" role="group" aria-label={t('book.ownershipStatus')}>
             {OWNERSHIP_STATUS_VALUES.map((o) => (
               <button
                 key={o}
@@ -113,7 +113,7 @@ export function BookDetailClient({ book }: BookDetailClientProps) {
           <div
             className="flex gap-1"
             role="group"
-            aria-label="Book rating"
+            aria-label={t('book.bookRating')}
           >
             {[1, 2, 3, 4, 5].map((star) => (
               <button
@@ -123,7 +123,7 @@ export function BookDetailClient({ book }: BookDetailClientProps) {
                 onClick={() => setRating(rating === star ? null : star)}
                 onMouseEnter={() => setHoverRating(star)}
                 onMouseLeave={() => setHoverRating(null)}
-                aria-label={`Rate ${star} out of 5 — ${t(`book.rating.${star}`)}`}
+                aria-label={`${t('book.rateStar', { star })} — ${t(`book.rating.${star}`)}`}
                 aria-pressed={rating === star}
                 className={cn(
                   "text-2xl transition-all duration-100 cursor-pointer",
@@ -143,7 +143,7 @@ export function BookDetailClient({ book }: BookDetailClientProps) {
                 type="button"
                 disabled={isSaving || isDeleting}
                 onClick={() => setRating(null)}
-                aria-label="Clear rating"
+                aria-label={t('book.clearRating')}
                 className="ml-2 text-xs text-muted hover:text-text transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent rounded-sm disabled:opacity-60 self-center"
               >
                 {t('common.clear')}
@@ -161,7 +161,7 @@ export function BookDetailClient({ book }: BookDetailClientProps) {
             onChange={(e) => setNotes(e.target.value)}
             placeholder={t('book.notesPlaceholder')}
             rows={4}
-            aria-label="Book notes"
+            aria-label={t('book.bookNotes')}
             className={cn(
               "rounded-[var(--radius-sm)] border border-line bg-surface-soft text-text text-sm px-3 py-2.5",
               "placeholder:text-muted resize-y leading-relaxed",

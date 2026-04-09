@@ -13,6 +13,7 @@ import { DiscoveredBookDetail } from "@/features/books/components/discovered-boo
 import { fetchWorkById } from "@/lib/book-providers/open-library/client";
 import { USER_BOOK_SELECT } from "@/lib/books/user-book-select";
 import { getViewableUserIds } from "@/lib/privacy/can-view-user-books";
+import { isPrismaSchemaMismatchError } from "@/lib/prisma-schema-compat";
 
 interface BookDetailPageProps {
   params: Promise<{ id: string }>;
@@ -43,8 +44,36 @@ const resolveBook = cache(async function resolveBook(id: string, userId: string)
     if (result) {
       return { source: "local", userBook: { ...result, finishedAt: null } };
     }
-  } catch {
-    // Invalid ID format for Prisma — fall through
+  } catch (err) {
+    if (isPrismaSchemaMismatchError(err)) {
+      // ownershipStatus column missing — retry without it
+      const fallbackSelect = {
+        id: true,
+        userId: true,
+        bookId: true,
+        status: true,
+        rating: true,
+        notes: true,
+        createdAt: true,
+        updatedAt: true,
+        book: true,
+      } as const;
+      try {
+        const result = await prisma.userBook.findUnique({
+          where: { userId_bookId: { userId, bookId: id } },
+          select: fallbackSelect,
+        });
+        if (result) {
+          return {
+            source: "local",
+            userBook: { ...result, ownershipStatus: "UNKNOWN" as const, finishedAt: null },
+          };
+        }
+      } catch {
+        // Fall through
+      }
+    }
+    // Invalid ID format for Prisma or other error — fall through
   }
 
   // 2. Check if the book exists in the DB (e.g. from a recommendation)
@@ -52,15 +81,33 @@ const resolveBook = cache(async function resolveBook(id: string, userId: string)
     const book = await prisma.book.findUnique({ where: { id } });
     if (book) {
       // Find who among the user's connections actually owns this book
-      const allOwners = await prisma.userBook.findMany({
-        where: { bookId: id, userId: { not: userId }, ownershipStatus: "OWNED" },
-        select: {
-          userId: true,
-          status: true,
-          rating: true,
-          user: { select: { id: true, name: true, image: true } },
-        },
-      });
+      let allOwners: { userId: string; status: string; rating: number | null; user: { id: string; name: string | null; image: string | null } }[];
+      try {
+        allOwners = await prisma.userBook.findMany({
+          where: { bookId: id, userId: { not: userId }, ownershipStatus: "OWNED" },
+          select: {
+            userId: true,
+            status: true,
+            rating: true,
+            user: { select: { id: true, name: true, image: true } },
+          },
+        });
+      } catch (ownershipErr) {
+        if (isPrismaSchemaMismatchError(ownershipErr)) {
+          // ownershipStatus column missing — fall back to all UserBook holders
+          allOwners = await prisma.userBook.findMany({
+            where: { bookId: id, userId: { not: userId } },
+            select: {
+              userId: true,
+              status: true,
+              rating: true,
+              user: { select: { id: true, name: true, image: true } },
+            },
+          });
+        } else {
+          throw ownershipErr;
+        }
+      }
 
       // Bulk visibility check — 2 queries instead of N per owner
       const ownerIds = allOwners.map((o) => o.userId);
@@ -121,7 +168,7 @@ const resolveBook = cache(async function resolveBook(id: string, userId: string)
           externalId: id,
           title: olDoc.title,
           subtitle: olDoc.subtitle ?? null,
-          authors: olDoc.author_name ?? ["Unknown"],
+          authors: olDoc.author_name ?? [],
           description: null,
           coverUrl,
           publisher: null,

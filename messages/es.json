@@ -322,7 +322,14 @@
       "wantToRead": "Quiero leerlo",
       "haveIt": "Lo tengo",
       "alreadyRead": "Ya lo leí"
-    }
+    },
+    "manageBook": "Gestionar libro",
+    "readingStatus": "Estado de lectura",
+    "ownershipStatus": "Estado de posesión",
+    "bookRating": "Valoración del libro",
+    "clearRating": "Quitar valoración",
+    "bookNotes": "Notas del libro",
+    "rateStar": "Valorar con {star} de 5"
   },
   "profile": {
     "books": "Libros",
@@ -335,7 +342,8 @@
     "follow": "Seguir",
     "unfollow": "Dejar de seguir",
     "following_action": "Siguiendo",
-    "editProfile": "Editar perfil"
+    "editProfile": "Editar perfil",
+    "thisUser": "este usuario"
   },
   "groups": {
     "nav": "Grupos",

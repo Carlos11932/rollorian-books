@@ -128,7 +128,7 @@ export async function DiscoveredBookDetail({ book, owners }: DiscoveredBookDetai
                     )}
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-on-surface truncate">
-                        {owner.userName ?? "Anonymous"}
+                        {owner.userName ?? t("common.anonymous")}
                       </p>
                       <p className="text-[10px] text-tertiary">
                         {t(`book.status.${owner.status}`)}

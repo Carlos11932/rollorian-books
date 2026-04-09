@@ -206,13 +206,13 @@ export async function returnLoan(
       select: LOAN_SELECT,
     });
 
-    // If borrower didn't finish (status != READ), remove their UserBook
+    // Only remove transient entries created by the loan flow (NOT_OWNED + not finished)
     const borrowerBook = await tx.userBook.findUnique({
       where: { userId_bookId: { userId: loan.borrowerId, bookId: loan.bookId } },
-      select: { id: true, status: true },
+      select: { id: true, status: true, ownershipStatus: true },
     });
 
-    if (borrowerBook && borrowerBook.status !== "READ") {
+    if (borrowerBook && borrowerBook.ownershipStatus === "NOT_OWNED" && borrowerBook.status !== "READ") {
       await tx.userBook.delete({
         where: { id: borrowerBook.id },
       });

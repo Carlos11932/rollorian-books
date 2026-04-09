@@ -322,7 +322,14 @@
       "wantToRead": "Want to read",
       "haveIt": "I have it",
       "alreadyRead": "Already read"
-    }
+    },
+    "manageBook": "Manage book",
+    "readingStatus": "Reading status",
+    "ownershipStatus": "Ownership status",
+    "bookRating": "Book rating",
+    "clearRating": "Clear rating",
+    "bookNotes": "Book notes",
+    "rateStar": "Rate {star} out of 5"
   },
   "profile": {
     "books": "Books",
@@ -335,7 +342,8 @@
     "follow": "Follow",
     "unfollow": "Unfollow",
     "following_action": "Following",
-    "editProfile": "Edit profile"
+    "editProfile": "Edit profile",
+    "thisUser": "this user"
   },
   "groups": {
     "nav": "Groups",

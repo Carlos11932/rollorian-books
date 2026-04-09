@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -38,6 +38,8 @@ export function LibraryBookRow({
 
   const [status, setStatus] = useState<BookStatus>(book.status);
   const [isStatusLoading, setIsStatusLoading] = useState(false);
+
+  useEffect(() => { setStatus(book.status); }, [book.status]);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);

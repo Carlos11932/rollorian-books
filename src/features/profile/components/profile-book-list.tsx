@@ -24,7 +24,8 @@ export async function ProfileBookList({
   showOwnership = true,
 }: ProfileBookListProps) {
   const t = await getTranslations("profile");
-  const name = targetUserName ?? "this user";
+  const tBook = await getTranslations("book");
+  const name = targetUserName ?? t("thisUser");
 
   if (!canView) {
     return (
@@ -64,7 +65,7 @@ export async function ProfileBookList({
           <Link
             href={`/books/${book.id}`}
             className="shrink-0"
-            aria-label={`View ${book.title}`}
+            aria-label={`${tBook("openDetail")} ${book.title}`}
           >
             <BookCover
               coverUrl={book.coverUrl}
@@ -95,7 +96,7 @@ export async function ProfileBookList({
               {rating !== null && (
                 <span
                   className="text-xs text-amber-400 tabular-nums"
-                  aria-label={`Rating: ${rating} out of 5`}
+                  aria-label={tBook("ratingAriaLabel", { rating })}
                 >
                   {"★".repeat(rating)}{"☆".repeat(5 - rating)}
                 </span>

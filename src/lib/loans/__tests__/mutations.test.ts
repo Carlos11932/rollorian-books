@@ -554,7 +554,7 @@ describe("returnLoan", () => {
     expect(result.status).toBe("RETURNED");
   });
 
-  it("deletes borrower UserBook when status is not READ", async () => {
+  it("deletes borrower UserBook when ownershipStatus is NOT_OWNED and status is not READ", async () => {
     const loan = makePrismaLoan({ status: "ACTIVE", borrowerId: "user-borrower", bookId: "book-001" });
     loanFindUniqueMock.mockResolvedValueOnce(loan);
 
@@ -563,7 +563,7 @@ describe("returnLoan", () => {
       const tx = {
         loan: { update: vi.fn().mockResolvedValue(returnedLoan) },
         userBook: {
-          findUnique: vi.fn().mockResolvedValue({ id: "ub-borrower", status: "READING" }),
+          findUnique: vi.fn().mockResolvedValue({ id: "ub-borrower", status: "READING", ownershipStatus: "NOT_OWNED" }),
           delete: userBookDeleteMock,
         },
       };
@@ -573,6 +573,27 @@ describe("returnLoan", () => {
     await returnLoan("loan-001", "user-lender");
 
     expect(userBookDeleteMock).toHaveBeenCalledWith({ where: { id: "ub-borrower" } });
+  });
+
+  it("does NOT delete borrower UserBook when ownershipStatus is OWNED (pre-existing entry)", async () => {
+    const loan = makePrismaLoan({ status: "ACTIVE", borrowerId: "user-borrower", bookId: "book-001" });
+    loanFindUniqueMock.mockResolvedValueOnce(loan);
+
+    const returnedLoan = makePrismaLoan({ status: "RETURNED" });
+    transactionMock.mockImplementationOnce(async (fn: (tx: unknown) => Promise<unknown>) => {
+      const tx = {
+        loan: { update: vi.fn().mockResolvedValue(returnedLoan) },
+        userBook: {
+          findUnique: vi.fn().mockResolvedValue({ id: "ub-borrower", status: "READING", ownershipStatus: "OWNED" }),
+          delete: userBookDeleteMock,
+        },
+      };
+      return fn(tx);
+    });
+
+    await returnLoan("loan-001", "user-lender");
+
+    expect(userBookDeleteMock).not.toHaveBeenCalled();
   });
 
   it("does NOT delete borrower UserBook when status is READ", async () => {
