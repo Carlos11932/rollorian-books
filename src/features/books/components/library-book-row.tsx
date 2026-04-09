@@ -94,7 +94,7 @@ export function LibraryBookRow({
       onClick={selectionMode ? handleRowClick : undefined}
       role={selectionMode ? "checkbox" : undefined}
       aria-checked={selectionMode ? selected : undefined}
-      aria-label={selectionMode ? `${selected ? "Deselect" : "Select"} ${book.title}` : undefined}
+      aria-label={selectionMode ? t(selected ? "library.deselectBook" : "library.selectBook", { title: book.title }) : undefined}
       tabIndex={selectionMode ? 0 : undefined}
       onKeyDown={
         selectionMode
@@ -134,7 +134,7 @@ export function LibraryBookRow({
             selectionMode && "pointer-events-none",
           )}
           tabIndex={selectionMode ? -1 : 0}
-          aria-label={`View details for ${book.title}`}
+          aria-label={t("book.openDetail") + ": " + book.title}
         >
           <BookCover
             coverUrl={book.coverUrl}
@@ -179,7 +179,7 @@ export function LibraryBookRow({
           {book.rating !== null && (
             <span
               className="text-xs text-gold tabular-nums"
-              aria-label={`Rating: ${book.rating} out of 5`}
+              aria-label={t("book.ratingAriaLabel", { rating: book.rating })}
             >
               {"★".repeat(book.rating)}{"☆".repeat(5 - book.rating)}
             </span>
@@ -278,7 +278,7 @@ export function LibraryBookRow({
           <button
             type="button"
             onClick={() => setShowMoreMenu(true)}
-            aria-label="More options"
+            aria-label={t("common.moreOptions")}
             className={cn(
               "w-7 h-7 flex items-center justify-center rounded-full",
               "border border-transparent bg-transparent text-muted/50",

@@ -100,7 +100,7 @@ export function LibraryView({
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => selectAll(books)}
+              onClick={() => selectAll(filteredBooks)}
               className="text-xs text-accent font-bold hover:underline"
             >
               {t("library.selectAll")}

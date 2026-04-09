@@ -12,7 +12,8 @@
     "viewAll": "Ver todo",
     "notRated": "Sin valorar",
     "anonymous": "Anónimo",
-    "loading": "Cargando..."
+    "loading": "Cargando...",
+    "moreOptions": "Más opciones"
   },
   "nav": {
     "home": "Inicio",
@@ -219,7 +220,9 @@
       "OWNED": "Lo tengo",
       "NOT_OWNED": "No lo tengo",
       "UNKNOWN": "Sin indicar"
-    }
+    },
+    "selectBook": "Seleccionar {title}",
+    "deselectBook": "Deseleccionar {title}"
   },
   "search": {
     "heading": "Explorar libros",
@@ -300,6 +303,7 @@
     "saveToLibrary": "Guardar en biblioteca",
     "savedRedirecting": "Guardado — redirigiendo...",
     "openDetail": "Abrir detalle",
+    "ratingAriaLabel": "Valoración: {rating} de 5",
     "details": "Detalles",
     "publisher": "Editorial",
     "published": "Publicación",

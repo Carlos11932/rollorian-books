@@ -56,11 +56,11 @@ export function GoogleBookSaveClient({ payload }: GoogleBookSaveClientProps) {
         throw new Error((data as { error?: string }).error ?? "Failed to save book");
       }
 
-      const created = (await res.json()) as { id: string };
+      const created = (await res.json()) as { id: string; book: { id: string } };
       setState("saved");
 
-      // Redirect to the real library detail page
-      router.push(`/books/${created.id}`);
+      // Redirect to the real library detail page — use Book.id, not UserBook.id
+      router.push(`/books/${created.book?.id ?? created.id}`);
     } catch (err) {
       setState("error");
       setErrorMessage(err instanceof Error ? err.message : "An unexpected error occurred");

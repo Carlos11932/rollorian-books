@@ -47,3 +47,9 @@ export function isMissingDonnaStateSchemaError(error: unknown): boolean {
     && /(DonnaBookState|donnaBookState|DonnaSemanticState|donnaSemanticState)/i.test(getErrorMessage(error))
   );
 }
+
+export function isMissingOwnershipStatusError(error: unknown): boolean {
+  if (!isPrismaSchemaMismatchError(error)) return false;
+  const msg = getErrorMessage(error);
+  return /ownershipStatus|OwnershipStatus/i.test(msg) || /\(not available\)/i.test(msg);
+}

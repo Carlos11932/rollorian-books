@@ -5,6 +5,10 @@ import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUserIdOrNull } from "@/lib/auth/require-auth";
 import type { StatusCounts, StatusTabValue } from "@/features/books/components/status-tabs";
 import { LibraryView } from "@/features/books/components/library-view";
+import {
+  isMissingOwnershipStatusError,
+  isPrismaSchemaMismatchError,
+} from "@/lib/prisma-schema-compat";
 
 interface LibraryBookRow {
   id: string;
@@ -72,38 +76,85 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
   const activeStatus = resolveActiveStatus(statusParam);
   const tabSearchParams = toStringRecord(params);
 
-  const [userBooks, groupedCounts]: [LibraryBookRow[], StatusCountRow[]] = await Promise.all([
-    prisma.userBook.findMany({
-      where: activeStatus !== "all" ? { userId, status: activeStatus } : { userId },
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        status: true,
-        ownershipStatus: true,
-        rating: true,
-        notes: true,
-        createdAt: true,
-        updatedAt: true,
-        book: {
-          select: {
-            id: true,
-            title: true,
-            subtitle: true,
-            authors: true,
-            description: true,
-            coverUrl: true,
-            publisher: true,
-            publishedDate: true,
-            pageCount: true,
-            isbn10: true,
-            isbn13: true,
-            genres: true,
+  let userBooks: LibraryBookRow[];
+  let groupedCounts: StatusCountRow[];
+
+  try {
+    [userBooks, groupedCounts] = await Promise.all([
+      prisma.userBook.findMany({
+        where: activeStatus !== "all" ? { userId, status: activeStatus } : { userId },
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          status: true,
+          ownershipStatus: true,
+          rating: true,
+          notes: true,
+          createdAt: true,
+          updatedAt: true,
+          book: {
+            select: {
+              id: true,
+              title: true,
+              subtitle: true,
+              authors: true,
+              description: true,
+              coverUrl: true,
+              publisher: true,
+              publishedDate: true,
+              pageCount: true,
+              isbn10: true,
+              isbn13: true,
+              genres: true,
+            },
           },
         },
-      },
-    }),
-    prisma.userBook.groupBy({ by: ["status"], where: { userId }, _count: { id: true } }),
-  ]);
+      }),
+      prisma.userBook.groupBy({ by: ["status"], where: { userId }, _count: { id: true } }),
+    ]);
+  } catch (error) {
+    if (isMissingOwnershipStatusError(error) || isPrismaSchemaMismatchError(error)) {
+      // Migration not yet applied — fall back to querying without ownershipStatus
+      const [userBooksCompat, groupedCountsCompat] = await Promise.all([
+        prisma.userBook.findMany({
+          where: activeStatus !== "all" ? { userId, status: activeStatus } : { userId },
+          orderBy: { createdAt: "desc" },
+          select: {
+            id: true,
+            status: true,
+            rating: true,
+            notes: true,
+            createdAt: true,
+            updatedAt: true,
+            book: {
+              select: {
+                id: true,
+                title: true,
+                subtitle: true,
+                authors: true,
+                description: true,
+                coverUrl: true,
+                publisher: true,
+                publishedDate: true,
+                pageCount: true,
+                isbn10: true,
+                isbn13: true,
+                genres: true,
+              },
+            },
+          },
+        }) as unknown as Omit<LibraryBookRow, "ownershipStatus">[],
+        prisma.userBook.groupBy({ by: ["status"], where: { userId }, _count: { id: true } }),
+      ]);
+      userBooks = userBooksCompat.map((ub) => ({
+        ...ub,
+        ownershipStatus: "UNKNOWN" as OwnershipStatus,
+      }));
+      groupedCounts = groupedCountsCompat;
+    } else {
+      throw error;
+    }
+  }
 
   const counts = groupedCounts.reduce<StatusCounts>(
     (acc, row) => {

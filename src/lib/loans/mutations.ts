@@ -27,19 +27,18 @@ export async function requestLoan(
   if (!lenderBook) throw new LoanBookNotInLibraryError();
   if (lenderBook.ownershipStatus !== "OWNED") throw new LoanBookNotOwnedError();
 
-  // Prevent duplicate active/pending loans for the same book between same users
-  const existingActive = await prisma.loan.findFirst({
+  // Prevent lending the same physical book to multiple borrowers simultaneously
+  const existingLenderLoan = await prisma.loan.findFirst({
     where: {
       lenderId,
-      borrowerId,
       bookId,
       status: { in: ["REQUESTED", "OFFERED", "ACTIVE"] },
     },
     select: { id: true },
   });
 
-  if (existingActive) {
-    throw new LoanInvalidTransitionError("An active loan already exists for this book between these users");
+  if (existingLenderLoan) {
+    throw new LoanInvalidTransitionError("This book is already involved in an active loan");
   }
 
   const loan = await prisma.loan.create({
@@ -71,19 +70,18 @@ export async function offerLoan(
   if (!lenderBook) throw new LoanBookNotInLibraryError();
   if (lenderBook.ownershipStatus !== "OWNED") throw new LoanBookNotOwnedError();
 
-  // Prevent duplicate active/pending loans for the same book between same users
-  const existingActive = await prisma.loan.findFirst({
+  // Prevent lending the same physical book to multiple borrowers simultaneously
+  const existingLenderLoan = await prisma.loan.findFirst({
     where: {
       lenderId,
-      borrowerId,
       bookId,
       status: { in: ["REQUESTED", "OFFERED", "ACTIVE"] },
     },
     select: { id: true },
   });
 
-  if (existingActive) {
-    throw new LoanInvalidTransitionError("An active loan already exists for this book between these users");
+  if (existingLenderLoan) {
+    throw new LoanInvalidTransitionError("This book is already involved in an active loan");
   }
 
   const loan = await prisma.loan.create({
@@ -139,7 +137,7 @@ export async function acceptLoan(
         status: "READING",
         ownershipStatus: "NOT_OWNED",
       },
-      update: { ownershipStatus: "NOT_OWNED" },
+      update: { status: "READING" },
     });
 
     return activatedLoan;

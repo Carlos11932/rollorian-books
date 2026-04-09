@@ -159,7 +159,7 @@ describe("requestLoan", () => {
     );
   });
 
-  it("checks for existing active loans between same users and same book", async () => {
+  it("checks for existing active loans per lender+book (exclusive across all borrowers)", async () => {
     userBookFindUniqueMock.mockResolvedValueOnce({ id: "ub-001", ownershipStatus: "OWNED" });
     loanFindFirstMock.mockResolvedValueOnce(null);
     loanCreateMock.mockResolvedValueOnce(makePrismaLoan());
@@ -170,7 +170,6 @@ describe("requestLoan", () => {
       expect.objectContaining({
         where: expect.objectContaining({
           lenderId: "user-lender",
-          borrowerId: "user-borrower",
           bookId: "book-001",
           status: { in: ["REQUESTED", "OFFERED", "ACTIVE"] },
         }),
@@ -359,7 +358,7 @@ describe("acceptLoan", () => {
     expect(revalidateBookCollectionPathsMock).toHaveBeenCalledWith("book-xyz");
   });
 
-  it("sets ownershipStatus NOT_OWNED on borrower's UserBook when accepting a loan", async () => {
+  it("sets ownershipStatus NOT_OWNED on create but preserves existing ownershipStatus on update", async () => {
     const loan = makePrismaLoan({ status: "REQUESTED", lenderId: "user-lender", borrowerId: "user-borrower" });
     loanFindUniqueMock.mockResolvedValueOnce(loan);
 
@@ -377,7 +376,13 @@ describe("acceptLoan", () => {
     expect(userBookUpsertMock).toHaveBeenCalledWith(
       expect.objectContaining({
         create: expect.objectContaining({ ownershipStatus: "NOT_OWNED" }),
-        update: expect.objectContaining({ ownershipStatus: "NOT_OWNED" }),
+        update: expect.objectContaining({ status: "READING" }),
+      }),
+    );
+    // Ensure ownershipStatus is NOT clobbered on update
+    expect(userBookUpsertMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        update: expect.not.objectContaining({ ownershipStatus: expect.anything() }),
       }),
     );
   });

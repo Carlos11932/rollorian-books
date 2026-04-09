@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import type { NormalizedBook } from "@/lib/google-books/types";
 import { BookCard } from "@/features/books/components/book-card";
 import { Skeleton } from "@/features/shared/components/skeleton";
@@ -73,6 +74,8 @@ export function SearchResultsGrid({
   isLoading = false,
   hasSearched = false,
 }: SearchResultsGridProps) {
+  const t = useTranslations();
+
   async function handleSave(displayBook: LibraryEntryView): Promise<void> {
     // Find the original NormalizedBook to save correctly
     const original = results.find((r) => r.externalId === displayBook.id);
@@ -86,7 +89,7 @@ export function SearchResultsGrid({
         className="grid gap-4"
         style={{ gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))" }}
         aria-busy="true"
-        aria-label="Loading search results"
+        aria-label={t("search.loading")}
       >
         {SKELETON_WIDTHS.map((_, i) => (
           <div key={i} className="grid gap-2">
@@ -108,8 +111,8 @@ export function SearchResultsGrid({
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
         }
-        title="Start with a real query"
-        description="Search by title, author, or ISBN to load this rail with candidate books."
+        title={t("search.inputLabel")}
+        description={t("search.tryAnother")}
       />
     );
   }
@@ -118,8 +121,8 @@ export function SearchResultsGrid({
     return (
       <EmptyState
         icon="📚"
-        title="No matches found"
-        description="Try a different title, author, or ISBN query."
+        title={t("search.noResults", { query: "" })}
+        description={t("search.tryAnother")}
       />
     );
   }
@@ -128,7 +131,7 @@ export function SearchResultsGrid({
     <div
       className="grid gap-4"
       style={{ gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))" }}
-      aria-label={`${results.length} search results`}
+      aria-label={t("search.resultsLabel")}
     >
       {results.map((book, index) => (
         <BookCard
