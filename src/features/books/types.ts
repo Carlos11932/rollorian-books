@@ -1,4 +1,4 @@
-import type { Book, BookStatus, UserBookWithBook } from "@/lib/types/book";
+import type { Book, BookStatus, OwnershipStatus, UserBookWithBook } from "@/lib/types/book";
 import type { GoogleBooksVolume } from "@/lib/google-books/types";
 
 /**
@@ -49,6 +49,7 @@ export interface ExternalBookView {
  */
 export type LibraryEntryView = Omit<Book, "createdAt" | "updatedAt"> & {
   status: BookStatus;
+  ownershipStatus: OwnershipStatus;
   rating: number | null;
   notes: string | null;
   createdAt: string;
@@ -67,6 +68,7 @@ export function toLibraryEntryView(userBook: UserBookWithBook): LibraryEntryView
   return {
     ...book,
     status: userBook.status,
+    ownershipStatus: userBook.ownershipStatus,
     rating: userBook.rating,
     notes: userBook.notes,
     createdAt: userBook.createdAt.toISOString(),

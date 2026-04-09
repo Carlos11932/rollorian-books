@@ -8,6 +8,7 @@ import {
   LoanForbiddenError,
   LoanInvalidTransitionError,
   LoanBookNotInLibraryError,
+  LoanBookNotOwnedError,
 } from "./errors";
 
 // ── Request to borrow ───────────────────────────────────────────────────────
@@ -17,13 +18,14 @@ export async function requestLoan(
   lenderId: string,
   bookId: string,
 ): Promise<LoanView> {
-  // Verify the lender actually has this book
+  // Verify the lender actually has this book and owns it
   const lenderBook = await prisma.userBook.findUnique({
     where: { userId_bookId: { userId: lenderId, bookId } },
-    select: { id: true },
+    select: { id: true, ownershipStatus: true },
   });
 
   if (!lenderBook) throw new LoanBookNotInLibraryError();
+  if (lenderBook.ownershipStatus !== "OWNED") throw new LoanBookNotOwnedError();
 
   // Prevent duplicate active/pending loans for the same book between same users
   const existingActive = await prisma.loan.findFirst({
@@ -60,13 +62,14 @@ export async function offerLoan(
   borrowerId: string,
   bookId: string,
 ): Promise<LoanView> {
-  // Verify the lender actually has this book
+  // Verify the lender actually has this book and owns it
   const lenderBook = await prisma.userBook.findUnique({
     where: { userId_bookId: { userId: lenderId, bookId } },
-    select: { id: true },
+    select: { id: true, ownershipStatus: true },
   });
 
   if (!lenderBook) throw new LoanBookNotInLibraryError();
+  if (lenderBook.ownershipStatus !== "OWNED") throw new LoanBookNotOwnedError();
 
   // Prevent duplicate active/pending loans for the same book between same users
   const existingActive = await prisma.loan.findFirst({
@@ -134,8 +137,9 @@ export async function acceptLoan(
         userId: loan.borrowerId,
         bookId: loan.bookId,
         status: "READING",
+        ownershipStatus: "NOT_OWNED",
       },
-      update: {},
+      update: { ownershipStatus: "NOT_OWNED" },
     });
 
     return activatedLoan;

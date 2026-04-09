@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { BookCover } from "@/features/books/components/book-cover";
 import { cn } from "@/lib/cn";
+import type { CatalogBookOwner } from "./group-library-catalog";
 
 interface GroupBookCardProps {
   book: {
@@ -12,6 +13,7 @@ interface GroupBookCardProps {
     authors: string[];
     coverUrl: string | null;
     isRead: boolean;
+    owners?: CatalogBookOwner[];
   };
   index?: number;
 }
@@ -75,6 +77,30 @@ export function GroupBookCard({ book, index = 0 }: GroupBookCardProps) {
           {book.title}
         </h3>
         <p className="text-[0.7rem] text-muted truncate">{authorLine}</p>
+        {book.owners && book.owners.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-0.5">
+            {book.owners.slice(0, 2).map((owner) => (
+              <span
+                key={owner.userId}
+                title={t("groups.ownedBy", { name: owner.userName ?? t("common.anonymous") })}
+                className={cn(
+                  "inline-flex items-center gap-0.5 text-[0.6rem] font-bold rounded-full px-1.5 py-0.5 border",
+                  owner.hasActiveLoan
+                    ? "bg-amber-500/10 text-amber-400 border-amber-500/15"
+                    : "bg-emerald-500/10 text-emerald-400 border-emerald-500/15",
+                )}
+              >
+                <span className="material-symbols-outlined text-[9px]">
+                  {owner.hasActiveLoan ? "schedule" : "person"}
+                </span>
+                <span className="truncate max-w-[40px]">{owner.userName ?? "?"}</span>
+              </span>
+            ))}
+            {book.owners.length > 2 && (
+              <span className="text-[0.6rem] text-muted">+{book.owners.length - 2}</span>
+            )}
+          </div>
+        )}
       </div>
     </Link>
   );

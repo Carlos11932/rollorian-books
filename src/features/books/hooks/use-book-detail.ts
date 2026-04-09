@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { LibraryEntryView } from "../types";
-import type { BookStatus } from "@/lib/types/book";
+import type { BookStatus, OwnershipStatus } from "@/lib/types/book";
 import { updateBook, deleteBook } from "@/lib/api/books";
 
 const SAVE_STATE = {
@@ -26,6 +26,7 @@ type DeleteState = (typeof DELETE_STATE)[keyof typeof DELETE_STATE];
 export interface UseBookDetailReturn {
   // State
   status: BookStatus;
+  ownershipStatus: OwnershipStatus;
   rating: number | null;
   hoverRating: number | null;
   notes: string;
@@ -38,6 +39,7 @@ export interface UseBookDetailReturn {
   isDeleting: boolean;
   // Handlers
   setStatus: (status: BookStatus) => void;
+  setOwnershipStatus: (ownership: OwnershipStatus) => void;
   setRating: (rating: number | null) => void;
   setHoverRating: (rating: number | null) => void;
   setNotes: (notes: string) => void;
@@ -51,6 +53,7 @@ export function useBookDetail(book: LibraryEntryView): UseBookDetailReturn {
   const saveStateResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [status, setStatus] = useState<BookStatus>(book.status);
+  const [ownershipStatus, setOwnershipStatus] = useState<OwnershipStatus>(book.ownershipStatus);
   const [rating, setRating] = useState<number | null>(book.rating ?? null);
   const [hoverRating, setHoverRating] = useState<number | null>(null);
   const [notes, setNotes] = useState(book.notes ?? "");
@@ -78,6 +81,7 @@ export function useBookDetail(book: LibraryEntryView): UseBookDetailReturn {
     try {
       await updateBook(book.id, {
         status,
+        ownershipStatus,
         rating: rating ?? null,
         notes: notes.trim() || null,
       });
@@ -115,6 +119,7 @@ export function useBookDetail(book: LibraryEntryView): UseBookDetailReturn {
 
   return {
     status,
+    ownershipStatus,
     rating,
     hoverRating,
     notes,
@@ -125,6 +130,7 @@ export function useBookDetail(book: LibraryEntryView): UseBookDetailReturn {
     isSaving,
     isDeleting,
     setStatus,
+    setOwnershipStatus,
     setRating,
     setHoverRating,
     setNotes,

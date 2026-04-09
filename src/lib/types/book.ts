@@ -30,6 +30,22 @@ export const BOOK_STATUS_VALUES: BookStatus[] = [
 ] as const;
 
 
+export const OwnershipStatus = {
+  OWNED: "OWNED",
+  NOT_OWNED: "NOT_OWNED",
+  UNKNOWN: "UNKNOWN",
+} as const;
+
+export type OwnershipStatus = (typeof OwnershipStatus)[keyof typeof OwnershipStatus];
+
+/** Ordered array of all OwnershipStatus values for iteration */
+export const OWNERSHIP_STATUS_VALUES: OwnershipStatus[] = [
+  OwnershipStatus.OWNED,
+  OwnershipStatus.NOT_OWNED,
+  OwnershipStatus.UNKNOWN,
+] as const;
+
+
 export interface Book {
   id: string;
   title: string;
@@ -52,6 +68,7 @@ export interface UserBook {
   userId: string;
   bookId: string;
   status: BookStatus;
+  ownershipStatus: OwnershipStatus;
   finishedAt: Date | null;
   rating: number | null;
   notes: string | null;

@@ -4,6 +4,7 @@ import {
   LoanForbiddenError,
   LoanInvalidTransitionError,
   LoanBookNotInLibraryError,
+  LoanBookNotOwnedError,
 } from "../errors";
 
 // ─── Mock prisma and revalidation BEFORE importing mutations ─────────────────
@@ -90,7 +91,7 @@ describe("requestLoan", () => {
   });
 
   it("creates a loan with REQUESTED status on success", async () => {
-    userBookFindUniqueMock.mockResolvedValueOnce({ id: "ub-001" });
+    userBookFindUniqueMock.mockResolvedValueOnce({ id: "ub-001", ownershipStatus: "OWNED" });
     loanFindFirstMock.mockResolvedValueOnce(null);
     const createdLoan = makePrismaLoan({ status: "REQUESTED" });
     loanCreateMock.mockResolvedValueOnce(createdLoan);
@@ -116,8 +117,26 @@ describe("requestLoan", () => {
     expect(loanCreateMock).not.toHaveBeenCalled();
   });
 
+  it("throws LoanBookNotOwnedError when lender's ownershipStatus is NOT_OWNED", async () => {
+    userBookFindUniqueMock.mockResolvedValueOnce({ id: "ub-001", ownershipStatus: "NOT_OWNED" });
+
+    await expect(requestLoan("user-borrower", "user-lender", "book-001")).rejects.toThrow(
+      LoanBookNotOwnedError,
+    );
+    expect(loanCreateMock).not.toHaveBeenCalled();
+  });
+
+  it("throws LoanBookNotOwnedError when lender's ownershipStatus is UNKNOWN", async () => {
+    userBookFindUniqueMock.mockResolvedValueOnce({ id: "ub-001", ownershipStatus: "UNKNOWN" });
+
+    await expect(requestLoan("user-borrower", "user-lender", "book-001")).rejects.toThrow(
+      LoanBookNotOwnedError,
+    );
+    expect(loanCreateMock).not.toHaveBeenCalled();
+  });
+
   it("throws LoanInvalidTransitionError when an active loan already exists", async () => {
-    userBookFindUniqueMock.mockResolvedValueOnce({ id: "ub-001" });
+    userBookFindUniqueMock.mockResolvedValueOnce({ id: "ub-001", ownershipStatus: "OWNED" });
     loanFindFirstMock.mockResolvedValueOnce({ id: "loan-existing" });
 
     await expect(requestLoan("user-borrower", "user-lender", "book-001")).rejects.toThrow(
@@ -127,7 +146,7 @@ describe("requestLoan", () => {
   });
 
   it("verifies lender ownership using lenderId and bookId", async () => {
-    userBookFindUniqueMock.mockResolvedValueOnce({ id: "ub-001" });
+    userBookFindUniqueMock.mockResolvedValueOnce({ id: "ub-001", ownershipStatus: "OWNED" });
     loanFindFirstMock.mockResolvedValueOnce(null);
     loanCreateMock.mockResolvedValueOnce(makePrismaLoan());
 
@@ -141,7 +160,7 @@ describe("requestLoan", () => {
   });
 
   it("checks for existing active loans between same users and same book", async () => {
-    userBookFindUniqueMock.mockResolvedValueOnce({ id: "ub-001" });
+    userBookFindUniqueMock.mockResolvedValueOnce({ id: "ub-001", ownershipStatus: "OWNED" });
     loanFindFirstMock.mockResolvedValueOnce(null);
     loanCreateMock.mockResolvedValueOnce(makePrismaLoan());
 
@@ -160,7 +179,7 @@ describe("requestLoan", () => {
   });
 
   it("returns a mapped LoanView", async () => {
-    userBookFindUniqueMock.mockResolvedValueOnce({ id: "ub-001" });
+    userBookFindUniqueMock.mockResolvedValueOnce({ id: "ub-001", ownershipStatus: "OWNED" });
     loanFindFirstMock.mockResolvedValueOnce(null);
     loanCreateMock.mockResolvedValueOnce(makePrismaLoan());
 
@@ -183,7 +202,7 @@ describe("offerLoan", () => {
   });
 
   it("creates a loan with OFFERED status on success", async () => {
-    userBookFindUniqueMock.mockResolvedValueOnce({ id: "ub-001" });
+    userBookFindUniqueMock.mockResolvedValueOnce({ id: "ub-001", ownershipStatus: "OWNED" });
     loanFindFirstMock.mockResolvedValueOnce(null);
     const createdLoan = makePrismaLoan({ status: "OFFERED" });
     loanCreateMock.mockResolvedValueOnce(createdLoan);
@@ -207,8 +226,26 @@ describe("offerLoan", () => {
     expect(loanCreateMock).not.toHaveBeenCalled();
   });
 
+  it("throws LoanBookNotOwnedError when lender's ownershipStatus is NOT_OWNED", async () => {
+    userBookFindUniqueMock.mockResolvedValueOnce({ id: "ub-001", ownershipStatus: "NOT_OWNED" });
+
+    await expect(offerLoan("user-lender", "user-borrower", "book-001")).rejects.toThrow(
+      LoanBookNotOwnedError,
+    );
+    expect(loanCreateMock).not.toHaveBeenCalled();
+  });
+
+  it("throws LoanBookNotOwnedError when lender's ownershipStatus is UNKNOWN", async () => {
+    userBookFindUniqueMock.mockResolvedValueOnce({ id: "ub-001", ownershipStatus: "UNKNOWN" });
+
+    await expect(offerLoan("user-lender", "user-borrower", "book-001")).rejects.toThrow(
+      LoanBookNotOwnedError,
+    );
+    expect(loanCreateMock).not.toHaveBeenCalled();
+  });
+
   it("throws LoanInvalidTransitionError when an active loan already exists", async () => {
-    userBookFindUniqueMock.mockResolvedValueOnce({ id: "ub-001" });
+    userBookFindUniqueMock.mockResolvedValueOnce({ id: "ub-001", ownershipStatus: "OWNED" });
     loanFindFirstMock.mockResolvedValueOnce({ id: "loan-existing" });
 
     await expect(offerLoan("user-lender", "user-borrower", "book-001")).rejects.toThrow(
@@ -218,7 +255,7 @@ describe("offerLoan", () => {
   });
 
   it("returns a mapped LoanView with OFFERED status", async () => {
-    userBookFindUniqueMock.mockResolvedValueOnce({ id: "ub-001" });
+    userBookFindUniqueMock.mockResolvedValueOnce({ id: "ub-001", ownershipStatus: "OWNED" });
     loanFindFirstMock.mockResolvedValueOnce(null);
     loanCreateMock.mockResolvedValueOnce(makePrismaLoan({ status: "OFFERED" }));
 
@@ -320,6 +357,29 @@ describe("acceptLoan", () => {
     await acceptLoan("loan-001", "user-lender");
 
     expect(revalidateBookCollectionPathsMock).toHaveBeenCalledWith("book-xyz");
+  });
+
+  it("sets ownershipStatus NOT_OWNED on borrower's UserBook when accepting a loan", async () => {
+    const loan = makePrismaLoan({ status: "REQUESTED", lenderId: "user-lender", borrowerId: "user-borrower" });
+    loanFindUniqueMock.mockResolvedValueOnce(loan);
+
+    const activatedLoan = makePrismaLoan({ status: "ACTIVE" });
+    transactionMock.mockImplementationOnce(async (fn: (tx: unknown) => Promise<unknown>) => {
+      const tx = {
+        loan: { update: vi.fn().mockResolvedValue(activatedLoan) },
+        userBook: { upsert: userBookUpsertMock },
+      };
+      return fn(tx);
+    });
+
+    await acceptLoan("loan-001", "user-lender");
+
+    expect(userBookUpsertMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ ownershipStatus: "NOT_OWNED" }),
+        update: expect.objectContaining({ ownershipStatus: "NOT_OWNED" }),
+      }),
+    );
   });
 });
 

@@ -16,7 +16,7 @@ export async function saveLibraryEntry(
   userId: string,
   input: CreateBookInput,
 ): Promise<UserBookWithBook> {
-  const { status, rating, notes, ...bookFields } = input;
+  const { status, ownershipStatus, rating, notes, ...bookFields } = input;
 
   // Find existing book by ISBN or create a new one
   let book = bookFields.isbn13
@@ -47,6 +47,7 @@ export async function saveLibraryEntry(
         userId,
         bookId: book.id,
         status,
+        ownershipStatus,
         ...(status === "READ" ? { finishedAt: new Date() } : {}),
         ...(rating !== undefined ? { rating } : {}),
         ...(notes !== undefined ? { notes } : {}),
@@ -63,6 +64,7 @@ export async function saveLibraryEntry(
         userId,
         bookId: book.id,
         status,
+        ownershipStatus,
         ...(rating !== undefined ? { rating } : {}),
         ...(notes !== undefined ? { notes } : {}),
       },

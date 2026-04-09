@@ -25,6 +25,7 @@ function makeBook(
     pageCount: null,
     isbn10: null,
     isbn13: null,
+    ownershipStatus: "UNKNOWN",
     rating: null,
     notes: null,
     genres: [],

@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { GroupLibraryCatalog } from "@/features/groups/components/group-library-catalog";
+import type { CatalogBookOwner } from "@/features/groups/components/group-library-catalog";
 
 interface GroupFeedPageProps {
   params: Promise<{ id: string }>;
@@ -64,17 +65,44 @@ export default async function GroupFeedPage({ params }: GroupFeedPageProps) {
             coverUrl: true,
             genres: true,
             userBooks: {
-              where: { userId },
-              select: { status: true },
-              take: 1,
+              where: { userId: { in: [userId, ...memberUserIds] } },
+              select: {
+                userId: true,
+                status: true,
+                ownershipStatus: true,
+                user: { select: { name: true } },
+              },
             },
           },
           orderBy: { title: "asc" },
         })
       : [];
 
+  // Batch-fetch active loans for this group's books by member lenders
+  const allBookIds = books.map((b) => b.id);
+  const activeLoans = allBookIds.length > 0 && memberUserIds.length > 0
+    ? await prisma.loan.findMany({
+        where: {
+          bookId: { in: allBookIds },
+          lenderId: { in: memberUserIds },
+          status: "ACTIVE",
+        },
+        select: { bookId: true, lenderId: true },
+      })
+    : [];
+
+  // Build a Set keyed by "bookId:lenderId" for O(1) lookup
+  const activeLoanKey = new Set(activeLoans.map((l) => `${l.bookId}:${l.lenderId}`));
+
   const catalogBooks = books.map((b) => {
-    const myEntry = b.userBooks[0] ?? null;
+    const myEntry = b.userBooks.find((ub) => ub.userId === userId) ?? null;
+    const owners: CatalogBookOwner[] = b.userBooks
+      .filter((ub) => memberUserIds.includes(ub.userId) && ub.ownershipStatus === "OWNED")
+      .map((ub) => ({
+        userId: ub.userId,
+        userName: ub.user.name,
+        hasActiveLoan: activeLoanKey.has(`${b.id}:${ub.userId}`),
+      }));
     return {
       id: b.id,
       title: b.title,
@@ -83,6 +111,7 @@ export default async function GroupFeedPage({ params }: GroupFeedPageProps) {
       genres: b.genres,
       currentUserStatus: myEntry?.status ?? null,
       isRead: myEntry?.status === "READ",
+      owners,
     };
   });
 

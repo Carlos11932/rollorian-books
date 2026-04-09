@@ -136,9 +136,16 @@ export async function DiscoveredBookDetail({ book, owners }: DiscoveredBookDetai
                           <span className="ml-1">· ⭐ {owner.rating}</span>
                         )}
                       </p>
+                      <p className={`text-[10px] font-semibold mt-0.5 ${owner.hasActiveLoan ? "text-amber-400" : "text-emerald-400"}`}>
+                        {owner.hasActiveLoan
+                          ? t("book.ownershipSocialLent")
+                          : t("book.ownershipSocialAvailable")}
+                      </p>
                     </div>
                   </Link>
-                  <RequestLoanButton lenderId={owner.userId} bookId={book.id} />
+                  {!owner.hasActiveLoan && (
+                    <RequestLoanButton lenderId={owner.userId} bookId={book.id} />
+                  )}
                 </div>
               ))}
             </div>

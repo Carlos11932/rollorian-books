@@ -177,7 +177,8 @@
     "wishlist": "Lista de deseos",
     "wishlistEmpty": "Tu lista de deseos está vacía.",
     "viewAll": "Ver todo",
-    "seeMore": "Ver más"
+    "seeMore": "Ver más",
+    "booksOwned": "Libros que tienes"
   },
   "library": {
     "heading": "Tu Biblioteca",
@@ -212,7 +213,13 @@
     "selectAll": "Todos",
     "deselectAll": "Ninguno",
     "hideSection": "Ocultar sección",
-    "showSection": "Mostrar sección"
+    "showSection": "Mostrar sección",
+    "ownershipFilter": {
+      "ALL": "Todos",
+      "OWNED": "Lo tengo",
+      "NOT_OWNED": "No lo tengo",
+      "UNKNOWN": "Sin indicar"
+    }
   },
   "search": {
     "heading": "Explorar libros",
@@ -261,6 +268,15 @@
       "READ": "Leído",
       "ON_HOLD": "En pausa"
     },
+    "ownership": {
+      "OWNED": "Lo tienes",
+      "NOT_OWNED": "No lo tienes",
+      "UNKNOWN": "Sin indicar"
+    },
+    "ownershipLabel": "Posesión",
+    "ownershipSocialAvailable": "Disponible",
+    "ownershipSocialLent": "Prestado",
+    "ownershipSocialUnknown": "Sin indicar",
     "statusLabel": "Estado",
     "ratingLabel": "Valoración",
     "notesLabel": "Notas",
@@ -297,6 +313,11 @@
       "3": "Bueno",
       "4": "Muy bueno",
       "5": "Excelente"
+    },
+    "saveQuickOptions": {
+      "wantToRead": "Quiero leerlo",
+      "haveIt": "Lo tengo",
+      "alreadyRead": "Ya lo leí"
     }
   },
   "profile": {
@@ -372,6 +393,8 @@
     "filterAll": "Todos",
     "filterRead": "Leídos",
     "filterUnread": "No leídos",
+    "filterAvailable": "Disponibles",
+    "ownedBy": "Lo tiene {name}",
     "noGenre": "Sin género",
     "readCheck": "Leído por ti",
     "emptyGenre": "No hay libros en esta categoría.",
@@ -424,7 +447,12 @@
     "streakDays": "Racha de {count} días",
     "noStreak": "¡Empieza a leer para construir tu racha!",
     "noData": "Aún no hay datos de lectura",
-    "startReading": "Añade libros para ver tus estadísticas"
+    "startReading": "Añade libros para ver tus estadísticas",
+    "collection": "Colección",
+    "booksOwned": "Libros que tienes",
+    "booksNotSpecified": "Sin indicar",
+    "booksAvailable": "Prestables",
+    "booksLent": "Prestados ahora"
   },
   "loans": {
     "lentTo": "Prestado a {name}",

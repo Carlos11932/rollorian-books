@@ -3,14 +3,18 @@ import "server-only";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, UnauthorizedError } from "@/lib/auth/require-auth";
-import { BOOK_STATUS_VALUES, type BookStatus } from "@/lib/types/book";
+import { BOOK_STATUS_VALUES, type BookStatus, OWNERSHIP_STATUS_VALUES, type OwnershipStatus } from "@/lib/types/book";
 import { revalidateBookCollectionPaths } from "@/lib/revalidation";
 import { logger } from "@/lib/logger";
 
 const batchUpdateSchema = z.object({
   bookIds: z.array(z.string().min(1)).min(1).max(100),
-  status: z.enum(BOOK_STATUS_VALUES as [BookStatus, ...BookStatus[]]),
-});
+  status: z.enum(BOOK_STATUS_VALUES as [BookStatus, ...BookStatus[]]).optional(),
+  ownershipStatus: z.enum(OWNERSHIP_STATUS_VALUES as [OwnershipStatus, ...OwnershipStatus[]]).optional(),
+}).refine(
+  (data) => data.status !== undefined || data.ownershipStatus !== undefined,
+  { error: "At least one of 'status' or 'ownershipStatus' must be provided" },
+);
 
 /**
  * PATCH /api/books/batch
@@ -31,7 +35,7 @@ export async function PATCH(request: Request): Promise<Response> {
       );
     }
 
-    const { bookIds, status } = result.data;
+    const { bookIds, status, ownershipStatus } = result.data;
 
     const updated = await prisma.userBook.updateMany({
       where: {
@@ -39,8 +43,9 @@ export async function PATCH(request: Request): Promise<Response> {
         bookId: { in: bookIds },
       },
       data: {
-        status,
+        ...(status !== undefined ? { status } : {}),
         ...(status === "READ" ? { finishedAt: new Date() } : {}),
+        ...(ownershipStatus !== undefined ? { ownershipStatus } : {}),
       },
     });
 
@@ -51,7 +56,8 @@ export async function PATCH(request: Request): Promise<Response> {
 
     return Response.json({
       updated: updated.count,
-      status,
+      ...(status !== undefined ? { status } : {}),
+      ...(ownershipStatus !== undefined ? { ownershipStatus } : {}),
     });
   } catch (error) {
     if (error instanceof UnauthorizedError) {

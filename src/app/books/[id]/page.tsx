@@ -24,6 +24,7 @@ export interface BookOwner {
   userImage: string | null;
   status: string;
   rating: number | null;
+  hasActiveLoan: boolean;
 }
 
 type ResolvedBook =
@@ -50,9 +51,9 @@ const resolveBook = cache(async function resolveBook(id: string, userId: string)
   try {
     const book = await prisma.book.findUnique({ where: { id } });
     if (book) {
-      // Find who among the user's connections has this book
+      // Find who among the user's connections actually owns this book
       const allOwners = await prisma.userBook.findMany({
-        where: { bookId: id, userId: { not: userId } },
+        where: { bookId: id, userId: { not: userId }, ownershipStatus: "OWNED" },
         select: {
           userId: true,
           status: true,
@@ -65,6 +66,20 @@ const resolveBook = cache(async function resolveBook(id: string, userId: string)
       const ownerIds = allOwners.map((o) => o.userId);
       const viewableIds = await getViewableUserIds(userId, ownerIds);
 
+      // Fetch active loans for this book from the visible owners
+      const visibleOwnerIds = ownerIds.filter((oid) => viewableIds.has(oid));
+      const activeLoans = visibleOwnerIds.length > 0
+        ? await prisma.loan.findMany({
+            where: {
+              bookId: id,
+              lenderId: { in: visibleOwnerIds },
+              status: "ACTIVE",
+            },
+            select: { lenderId: true },
+          })
+        : [];
+      const activeLenderIds = new Set(activeLoans.map((l) => l.lenderId));
+
       const visibleOwners: BookOwner[] = allOwners
         .filter((o) => viewableIds.has(o.userId))
         .map((owner) => ({
@@ -73,6 +88,7 @@ const resolveBook = cache(async function resolveBook(id: string, userId: string)
           userImage: owner.user.image,
           status: owner.status,
           rating: owner.rating,
+          hasActiveLoan: activeLenderIds.has(owner.userId),
         }));
 
       return { source: "discovered", book, owners: visibleOwners };

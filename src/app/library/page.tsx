@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { type BookStatus, BOOK_STATUS_VALUES } from "@/lib/types/book";
+import type { OwnershipStatus } from "@/lib/types/book";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUserIdOrNull } from "@/lib/auth/require-auth";
 import type { StatusCounts, StatusTabValue } from "@/features/books/components/status-tabs";
@@ -8,15 +9,24 @@ import { LibraryView } from "@/features/books/components/library-view";
 interface LibraryBookRow {
   id: string;
   status: BookStatus;
+  ownershipStatus: OwnershipStatus;
   rating: number | null;
   notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
   book: {
     id: string;
     title: string;
+    subtitle: string | null;
     authors: string[];
+    description: string | null;
     coverUrl: string | null;
     publisher: string | null;
     publishedDate: string | null;
+    pageCount: number | null;
+    isbn10: string | null;
+    isbn13: string | null;
+    genres: string[];
   };
 }
 
@@ -69,16 +79,25 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
       select: {
         id: true,
         status: true,
+        ownershipStatus: true,
         rating: true,
         notes: true,
+        createdAt: true,
+        updatedAt: true,
         book: {
           select: {
             id: true,
             title: true,
+            subtitle: true,
             authors: true,
+            description: true,
             coverUrl: true,
             publisher: true,
             publishedDate: true,
+            pageCount: true,
+            isbn10: true,
+            isbn13: true,
+            genres: true,
           },
         },
       },
@@ -97,13 +116,22 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
   const books = userBooks.map((ub) => ({
     id: ub.book.id,
     title: ub.book.title,
+    subtitle: ub.book.subtitle,
     authors: ub.book.authors,
+    description: ub.book.description,
     coverUrl: ub.book.coverUrl,
-    status: ub.status,
-    rating: ub.rating,
-    notes: ub.notes,
     publisher: ub.book.publisher,
     publishedDate: ub.book.publishedDate,
+    pageCount: ub.book.pageCount,
+    isbn10: ub.book.isbn10,
+    isbn13: ub.book.isbn13,
+    genres: ub.book.genres,
+    status: ub.status,
+    ownershipStatus: ub.ownershipStatus,
+    rating: ub.rating,
+    notes: ub.notes,
+    createdAt: ub.createdAt.toISOString(),
+    updatedAt: ub.updatedAt.toISOString(),
   }));
 
   return (

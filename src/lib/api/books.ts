@@ -6,20 +6,23 @@
  */
 
 import type { UserBookWithBook } from "@/lib/types/book";
-import type { CreateBookInput, UpdateBookInput } from "@/lib/schemas/book";
+import type { CreateBookInput, CreateBookPayload, UpdateBookInput } from "@/lib/schemas/book";
 import { apiFetch } from "./client";
 
 // Re-export shared error + input types for consumers
 export { ApiError } from "./client";
-export type { CreateBookInput, UpdateBookInput };
+export type { CreateBookInput, CreateBookPayload, UpdateBookInput };
 
 // ── Public API ───────────────────────────────────────────────────────────────
 
 /**
  * Save a Google Books entry to the user's library.
  * Maps to POST /api/books.
+ *
+ * Accepts `CreateBookPayload` (input type) so callers can omit fields that
+ * have schema defaults (e.g. `ownershipStatus`, `status`, `genres`).
  */
-export async function saveBook(data: CreateBookInput): Promise<UserBookWithBook> {
+export async function saveBook(data: CreateBookPayload): Promise<UserBookWithBook> {
   return apiFetch<UserBookWithBook>("/api/books", {
     method: "POST",
     headers: { "Content-Type": "application/json" },

@@ -30,6 +30,7 @@ function toDisplayBook(book: NormalizedBook): LibraryEntryView {
     isbn10: null,
     isbn13: book.isbn ?? null,
     status: "WISHLIST",
+    ownershipStatus: "UNKNOWN",
     rating: null,
     notes: null,
     genres: [],

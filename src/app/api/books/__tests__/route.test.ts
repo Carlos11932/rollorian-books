@@ -70,6 +70,7 @@ function makeUserBook(book: Book, overrides: Partial<UserBookWithBook> = {}): Us
     userId: "test-user-001",
     bookId: book.id,
     status: BookStatus.WISHLIST,
+    ownershipStatus: "UNKNOWN",
     finishedAt: null,
     rating: null,
     notes: null,

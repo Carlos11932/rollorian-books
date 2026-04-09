@@ -13,3 +13,7 @@ export class LoanInvalidTransitionError extends Error {
 export class LoanBookNotInLibraryError extends Error {
   constructor() { super("Book is not in the lender's library"); }
 }
+
+export class LoanBookNotOwnedError extends Error {
+  constructor() { super("Lender does not own this book (ownershipStatus is not OWNED)"); }
+}

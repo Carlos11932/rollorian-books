@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import { cn } from "@/lib/cn";
 import { Button } from "@/features/shared/components/button";
 import type { LibraryEntryView } from "../types";
-import { BOOK_STATUS_VALUES } from "@/lib/types/book";
+import { BOOK_STATUS_VALUES, OWNERSHIP_STATUS_VALUES } from "@/lib/types/book";
 import { useBookDetail, SAVE_STATE, DELETE_STATE } from "../hooks/use-book-detail";
 
 interface BookDetailClientProps {
@@ -15,6 +15,7 @@ export function BookDetailClient({ book }: BookDetailClientProps) {
   const t = useTranslations();
   const {
     status,
+    ownershipStatus,
     rating,
     notes,
     saveState,
@@ -24,6 +25,7 @@ export function BookDetailClient({ book }: BookDetailClientProps) {
     isSaving,
     isDeleting,
     setStatus,
+    setOwnershipStatus,
     setRating,
     setHoverRating,
     setNotes,
@@ -47,7 +49,7 @@ export function BookDetailClient({ book }: BookDetailClientProps) {
       </div>
 
       <div className="grid gap-5 max-w-lg">
-        {/* Status */}
+        {/* Reading Status */}
         <label className="grid gap-1.5">
           <span className="text-xs font-bold uppercase tracking-wide text-muted">{t('book.statusLabel')}</span>
           <select
@@ -69,6 +71,39 @@ export function BookDetailClient({ book }: BookDetailClientProps) {
             ))}
           </select>
         </label>
+
+        {/* Ownership */}
+        <div className="grid gap-1.5">
+          <span className="text-xs font-bold uppercase tracking-wide text-muted">{t('book.ownershipLabel')}</span>
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Ownership status">
+            {OWNERSHIP_STATUS_VALUES.map((o) => (
+              <button
+                key={o}
+                type="button"
+                disabled={isSaving || isDeleting}
+                onClick={() => setOwnershipStatus(o)}
+                aria-pressed={ownershipStatus === o}
+                className={cn(
+                  "inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold border transition-all duration-150",
+                  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent",
+                  "disabled:opacity-60 disabled:cursor-not-allowed",
+                  ownershipStatus === o
+                    ? o === "OWNED"
+                      ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40"
+                      : o === "NOT_OWNED"
+                        ? "bg-white/12 text-on-surface border-white/20"
+                        : "bg-white/8 text-on-surface/50 border-white/10"
+                    : "bg-white/4 text-muted border-white/8 hover:bg-white/8 hover:text-on-surface",
+                )}
+              >
+                {o === "OWNED" && ownershipStatus === o && (
+                  <span className="material-symbols-outlined text-[12px] mr-1">check_circle</span>
+                )}
+                {t(`book.ownership.${o}`)}
+              </button>
+            ))}
+          </div>
+        </div>
 
         {/* Star rating */}
         <div className="grid gap-1.5">

@@ -3,7 +3,15 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { BookStatus } from "@/lib/types/book";
-import type { LibraryBook } from "../components/library-book-card";
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+/** Minimal shape needed for batch select operations */
+export interface SelectableBook {
+  id: string;
+}
 
 // ---------------------------------------------------------------------------
 // Hook
@@ -15,7 +23,7 @@ export interface BatchSelection {
   enterSelectionMode: () => void;
   exitSelectionMode: () => void;
   toggleSelect: (bookId: string) => void;
-  selectAll: (books: LibraryBook[]) => void;
+  selectAll: (books: SelectableBook[]) => void;
   deselectAll: () => void;
   handleBatchStatusChange: (status: BookStatus) => Promise<void>;
 }
@@ -49,7 +57,7 @@ export function useBatchSelection(): BatchSelection {
     });
   }
 
-  function selectAll(books: LibraryBook[]): void {
+  function selectAll(books: SelectableBook[]): void {
     setSelectedIds(new Set(books.map((b) => b.id)));
   }
 

@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import type { UserBookWithBook } from "@/lib/types/book";
 import { BookCover } from "@/features/books/components/book-cover";
 import { Badge } from "@/features/shared/components/badge";
+import { OwnershipBadge } from "@/features/shared/components/ownership-badge";
 
 interface ProfileBookListProps {
   books: UserBookWithBook[];
@@ -10,6 +11,8 @@ interface ProfileBookListProps {
   isOwnProfile: boolean;
   isAuthenticated: boolean;
   targetUserName: string | null;
+  /** Whether to show ownership badges (default true) */
+  showOwnership?: boolean;
 }
 
 export async function ProfileBookList({
@@ -18,6 +21,7 @@ export async function ProfileBookList({
   isOwnProfile,
   isAuthenticated,
   targetUserName,
+  showOwnership = true,
 }: ProfileBookListProps) {
   const t = await getTranslations("profile");
   const name = targetUserName ?? "this user";
@@ -52,7 +56,7 @@ export async function ProfileBookList({
 
   return (
     <div className="flex flex-col gap-3">
-      {books.map(({ book, status, rating }) => (
+      {books.map(({ book, status, rating, ownershipStatus }) => (
         <article
           key={book.id}
           className="flex gap-4 rounded-xl border border-outline-variant/20 p-4 bg-surface-container-low hover:bg-surface-container transition-colors"
@@ -85,6 +89,9 @@ export async function ProfileBookList({
             )}
             <div className="flex items-center gap-2 flex-wrap">
               <Badge status={status} />
+              {showOwnership && ownershipStatus !== "UNKNOWN" && (
+                <OwnershipBadge status={ownershipStatus} />
+              )}
               {rating !== null && (
                 <span
                   className="text-xs text-amber-400 tabular-nums"
