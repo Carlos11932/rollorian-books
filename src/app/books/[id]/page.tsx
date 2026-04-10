@@ -11,9 +11,11 @@ import { LocalBookDetail } from "@/features/books/components/local-book-detail";
 import { GoogleBookDetail } from "@/features/books/components/google-book-detail";
 import { DiscoveredBookDetail } from "@/features/books/components/discovered-book-detail";
 import { fetchWorkById } from "@/lib/book-providers/open-library/client";
-import { USER_BOOK_SELECT } from "@/lib/books/user-book-select";
+import { getLibraryEntry, LibraryEntryNotFoundError } from "@/lib/books";
 import { getViewableUserIds } from "@/lib/privacy/can-view-user-books";
 import { isPrismaSchemaMismatchError } from "@/lib/prisma-schema-compat";
+
+type LocalLibraryEntry = Awaited<ReturnType<typeof getLibraryEntry>>;
 
 interface BookDetailPageProps {
   params: Promise<{ id: string }>;
@@ -29,7 +31,8 @@ export interface BookOwner {
 }
 
 type ResolvedBook =
-  | { source: "local"; userBook: UserBookWithBook }
+  | { source: "local"; userBook: LocalLibraryEntry }
+  | { source: "local-readonly"; userBook: LocalLibraryEntry }
   | { source: "discovered"; book: Book; owners: BookOwner[] }
   | GoogleBookView
   | ExternalBookView;
@@ -37,111 +40,78 @@ type ResolvedBook =
 const resolveBook = cache(async function resolveBook(id: string, userId: string): Promise<ResolvedBook | null> {
   // 1. Check if the current user has this book
   try {
-    const result = await prisma.userBook.findUnique({
-      where: { userId_bookId: { userId, bookId: id } },
-      select: USER_BOOK_SELECT,
-    });
-    if (result) {
-      return { source: "local", userBook: { ...result, finishedAt: null } };
+    const userBook = await getLibraryEntry(userId, id);
+
+    if (userBook.compatDegraded) {
+      return { source: "local-readonly", userBook };
     }
-  } catch (err) {
-    if (isPrismaSchemaMismatchError(err)) {
-      // ownershipStatus column missing — retry without it
-      const fallbackSelect = {
-        id: true,
-        userId: true,
-        bookId: true,
-        status: true,
-        rating: true,
-        notes: true,
-        createdAt: true,
-        updatedAt: true,
-        book: true,
-      } as const;
-      try {
-        const result = await prisma.userBook.findUnique({
-          where: { userId_bookId: { userId, bookId: id } },
-          select: fallbackSelect,
-        });
-        if (result) {
-          return {
-            source: "local",
-            userBook: { ...result, ownershipStatus: "UNKNOWN" as const, finishedAt: null },
-          };
-        }
-      } catch {
-        // Fall through
+
+    return { source: "local", userBook };
+  } catch (error) {
+    if (isPrismaSchemaMismatchError(error)) {
+      // Local UserBook lookup unavailable on a lagging schema — degrade to shared/external detail.
+    } else {
+      if (!(error instanceof LibraryEntryNotFoundError)) {
+        throw error;
       }
     }
-    // Invalid ID format for Prisma or other error — fall through
   }
 
   // 2. Check if the book exists in the DB (e.g. from a recommendation)
-  try {
-    const book = await prisma.book.findUnique({ where: { id } });
-    if (book) {
-      // Find who among the user's connections actually owns this book
-      let allOwners: { userId: string; status: string; rating: number | null; user: { id: string; name: string | null; image: string | null } }[];
-      try {
-        allOwners = await prisma.userBook.findMany({
-          where: { bookId: id, userId: { not: userId }, ownershipStatus: "OWNED" },
-          select: {
-            userId: true,
-            status: true,
-            rating: true,
-            user: { select: { id: true, name: true, image: true } },
-          },
-        });
-      } catch (ownershipErr) {
-        if (isPrismaSchemaMismatchError(ownershipErr)) {
-          // ownershipStatus column missing — fall back to all UserBook holders
-          allOwners = await prisma.userBook.findMany({
-            where: { bookId: id, userId: { not: userId } },
-            select: {
-              userId: true,
-              status: true,
-              rating: true,
-              user: { select: { id: true, name: true, image: true } },
-            },
-          });
-        } else {
-          throw ownershipErr;
-        }
+  const book = await prisma.book.findUnique({ where: { id } });
+  if (book) {
+    // Find who among the user's connections actually owns this book
+    let allOwners: { userId: string; status: string; rating: number | null; user: { id: string; name: string | null; image: string | null } }[];
+    try {
+      allOwners = await prisma.userBook.findMany({
+        where: { bookId: id, userId: { not: userId }, ownershipStatus: "OWNED" },
+        select: {
+          userId: true,
+          status: true,
+          rating: true,
+          user: { select: { id: true, name: true, image: true } },
+        },
+      });
+    } catch (ownershipErr) {
+      if (isPrismaSchemaMismatchError(ownershipErr)) {
+        // ownershipStatus column missing — cannot confirm ownership,
+        // show empty owners to avoid presenting non-owners as lenders
+        allOwners = [];
+      } else {
+        throw ownershipErr;
       }
-
-      // Bulk visibility check — 2 queries instead of N per owner
-      const ownerIds = allOwners.map((o) => o.userId);
-      const viewableIds = await getViewableUserIds(userId, ownerIds);
-
-      // Fetch active loans for this book from the visible owners
-      const visibleOwnerIds = ownerIds.filter((oid) => viewableIds.has(oid));
-      const activeLoans = visibleOwnerIds.length > 0
-        ? await prisma.loan.findMany({
-            where: {
-              bookId: id,
-              lenderId: { in: visibleOwnerIds },
-              status: "ACTIVE",
-            },
-            select: { lenderId: true },
-          })
-        : [];
-      const activeLenderIds = new Set(activeLoans.map((l) => l.lenderId));
-
-      const visibleOwners: BookOwner[] = allOwners
-        .filter((o) => viewableIds.has(o.userId))
-        .map((owner) => ({
-          userId: owner.userId,
-          userName: owner.user.name,
-          userImage: owner.user.image,
-          status: owner.status,
-          rating: owner.rating,
-          hasActiveLoan: activeLenderIds.has(owner.userId),
-        }));
-
-      return { source: "discovered", book, owners: visibleOwners };
     }
-  } catch {
-    // Fall through to Google Books
+
+    // Bulk visibility check — 2 queries instead of N per owner
+    const ownerIds = allOwners.map((o) => o.userId);
+    const viewableIds = await getViewableUserIds(userId, ownerIds);
+
+    // Fetch active loans for this book from the visible owners
+    const visibleOwnerIds = ownerIds.filter((oid) => viewableIds.has(oid));
+    const activeLoans = visibleOwnerIds.length > 0
+      ? await prisma.loan.findMany({
+          where: {
+            bookId: id,
+            lenderId: { in: visibleOwnerIds },
+            status: "ACTIVE",
+          },
+          select: { lenderId: true },
+        })
+      : [];
+    const activeLenderIds = new Set(activeLoans.map((l) => l.lenderId));
+
+    const visibleOwners: BookOwner[] = allOwners
+      .filter((o) => viewableIds.has(o.userId))
+      .map((owner) => ({
+        userId: owner.userId,
+        userName: owner.user.name,
+        userImage: owner.user.image,
+        status: owner.status,
+        rating: owner.rating,
+        hasActiveLoan: activeLenderIds.has(owner.userId),
+      }));
+
+    return { source: "discovered", book, owners: visibleOwners };
   }
 
   // 3. Try Google Books by external ID
@@ -226,7 +196,7 @@ export async function generateMetadata({ params }: BookDetailPageProps) {
 
   if (!resolved) return { title: "Book not found" };
 
-  if (resolved.source === "local") {
+  if (resolved.source === "local" || resolved.source === "local-readonly") {
     const { book } = resolved.userBook;
     return {
       title: `${book.title} — Rollorian`,
@@ -263,6 +233,45 @@ export default async function BookDetailPage({ params }: BookDetailPageProps) {
 
   if (resolved.source === "local") {
     return <LocalBookDetail userBook={resolved.userBook} />;
+  }
+
+  if (resolved.source === "local-readonly") {
+    const { userBook } = resolved;
+    const book = userBook.book;
+
+    return (
+      <section className="mx-auto max-w-4xl grid gap-6 pt-8 pb-12">
+        <div className="rounded-[var(--radius-xl)] border border-amber-400/30 bg-surface/70 p-6 backdrop-blur-[20px]">
+          <p className="text-xs font-bold uppercase tracking-widest text-amber-300">
+            Read-only compatibility mode
+          </p>
+          <h1 className="mt-3 text-3xl font-bold text-on-surface leading-tight">{book.title}</h1>
+          <p className="mt-2 text-base text-on-surface/60">{book.authors.join(", ")}</p>
+          <p className="mt-4 text-sm text-on-surface/75 leading-relaxed">
+            This library entry is available in read-only mode while the database schema catches up.
+            Editing and ownership controls are temporarily disabled so we do not present unsupported local actions.
+          </p>
+          <dl className="mt-6 grid gap-3 text-sm text-on-surface/75">
+            <div>
+              <dt className="font-semibold text-on-surface">Status</dt>
+              <dd>{userBook.status}</dd>
+            </div>
+            {userBook.rating != null && (
+              <div>
+                <dt className="font-semibold text-on-surface">Rating</dt>
+                <dd>{userBook.rating}/5</dd>
+              </div>
+            )}
+            {userBook.notes && (
+              <div>
+                <dt className="font-semibold text-on-surface">Notes</dt>
+                <dd>{userBook.notes}</dd>
+              </div>
+            )}
+          </dl>
+        </div>
+      </section>
+    );
   }
 
   if (resolved.source === "discovered") {

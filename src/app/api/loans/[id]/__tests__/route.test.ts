@@ -8,6 +8,10 @@ const {
   LoanNotFoundError,
   LoanForbiddenError,
   LoanInvalidTransitionError,
+  LoanBookNotInLibraryError,
+  LoanBookNotOwnedError,
+  LoanOwnershipVerificationUnavailableError,
+  LoanWriteConflictError,
 } = vi.hoisted(() => {
   class _LoanNotFoundError extends Error {
     constructor() { super("Loan not found"); }
@@ -18,6 +22,22 @@ const {
   class _LoanInvalidTransitionError extends Error {
     constructor(msg: string) { super(msg); }
   }
+  class _LoanBookNotInLibraryError extends Error {
+    constructor() { super("Book is not in the lender's library"); }
+  }
+  class _LoanBookNotOwnedError extends Error {
+    constructor() { super("Lender does not own this book (ownershipStatus is not OWNED)"); }
+  }
+  class _LoanOwnershipVerificationUnavailableError extends Error {
+    constructor() {
+      super("Loans requiring ownership verification are unavailable until the database schema is updated");
+    }
+  }
+  class _LoanWriteConflictError extends Error {
+    constructor(action = "accept the loan") {
+      super(`Could not ${action} because another loan update happened at the same time. Please retry.`);
+    }
+  }
   return {
     acceptLoanMock: vi.fn(),
     declineLoanMock: vi.fn(),
@@ -25,6 +45,10 @@ const {
     LoanNotFoundError: _LoanNotFoundError,
     LoanForbiddenError: _LoanForbiddenError,
     LoanInvalidTransitionError: _LoanInvalidTransitionError,
+    LoanBookNotInLibraryError: _LoanBookNotInLibraryError,
+    LoanBookNotOwnedError: _LoanBookNotOwnedError,
+    LoanOwnershipVerificationUnavailableError: _LoanOwnershipVerificationUnavailableError,
+    LoanWriteConflictError: _LoanWriteConflictError,
   };
 });
 
@@ -35,6 +59,10 @@ vi.mock("@/lib/loans", () => ({
   LoanNotFoundError,
   LoanForbiddenError,
   LoanInvalidTransitionError,
+  LoanBookNotInLibraryError,
+  LoanBookNotOwnedError,
+  LoanOwnershipVerificationUnavailableError,
+  LoanWriteConflictError,
 }));
 
 import { PATCH } from "../route";
@@ -128,6 +156,38 @@ describe("PATCH /api/loans/[id]", () => {
     expect(body.error).toBe("Missing action");
   });
 
+  it("returns 400 when body is null", async () => {
+    const res = await PATCH(makePatchRequest(null) as never, makeRouteContext());
+
+    expect(res.status).toBe(400);
+    const body = await res.json() as Record<string, unknown>;
+    expect(body.error).toBe("Missing action");
+    expect(acceptLoanMock).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 when body has the wrong shape", async () => {
+    const res = await PATCH(makePatchRequest(["accept"]) as never, makeRouteContext());
+
+    expect(res.status).toBe(400);
+    const body = await res.json() as Record<string, unknown>;
+    expect(body.error).toBe("Missing action");
+    expect(acceptLoanMock).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 when the JSON body is malformed", async () => {
+    const request = new Request("http://localhost/api/loans/loan-001", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: "{\"action\":",
+    });
+
+    const res = await PATCH(request as never, makeRouteContext());
+
+    expect(res.status).toBe(400);
+    const body = await res.json() as Record<string, unknown>;
+    expect(body.error).toBe("Invalid request");
+  });
+
   it("returns 400 when action is invalid", async () => {
     const res = await PATCH(makePatchRequest({ action: "borrow" }) as never, makeRouteContext());
     expect(res.status).toBe(400);
@@ -176,11 +236,77 @@ describe("PATCH /api/loans/[id]", () => {
     expect(body.error).toBe("Cannot accept RETURNED loan");
   });
 
+  it("returns 400 when LoanBookNotInLibraryError is thrown", async () => {
+    acceptLoanMock.mockRejectedValueOnce(new LoanBookNotInLibraryError());
+
+    const res = await PATCH(makePatchRequest({ action: "accept" }) as never, makeRouteContext());
+
+    expect(res.status).toBe(400);
+    const body = await res.json() as Record<string, unknown>;
+    expect(body.error).toBe("Book is not in the lender's library");
+  });
+
+  it("returns 400 when LoanBookNotOwnedError is thrown", async () => {
+    acceptLoanMock.mockRejectedValueOnce(new LoanBookNotOwnedError());
+
+    const res = await PATCH(makePatchRequest({ action: "accept" }) as never, makeRouteContext());
+
+    expect(res.status).toBe(400);
+    const body = await res.json() as Record<string, unknown>;
+    expect(body.error).toBe("Lender does not own this book (ownershipStatus is not OWNED)");
+  });
+
+  it("returns 503 when ownership verification is unavailable", async () => {
+    acceptLoanMock.mockRejectedValueOnce(new LoanOwnershipVerificationUnavailableError());
+
+    const res = await PATCH(makePatchRequest({ action: "accept" }) as never, makeRouteContext());
+
+    expect(res.status).toBe(503);
+    const body = await res.json() as Record<string, unknown>;
+    expect(body.error).toBe("Loans requiring ownership verification are unavailable until the database schema is updated");
+  });
+
   it("returns 500 on unexpected errors", async () => {
     acceptLoanMock.mockRejectedValueOnce(new Error("DB connection lost"));
 
     const res = await PATCH(makePatchRequest({ action: "accept" }) as never, makeRouteContext());
 
     expect(res.status).toBe(500);
+    const body = await res.json() as Record<string, string>;
+    expect(body.error).toBe("Internal server error");
+    expect(body.error).not.toContain("DB connection");
+  });
+
+  it("returns 409 when loan acceptance exhausts write-conflict retries", async () => {
+    acceptLoanMock.mockRejectedValueOnce(new LoanWriteConflictError());
+
+    const res = await PATCH(makePatchRequest({ action: "accept" }) as never, makeRouteContext());
+
+    expect(res.status).toBe(409);
+    await expect(res.json()).resolves.toEqual({
+      error: "Could not accept the loan because another loan update happened at the same time. Please retry.",
+    });
+  });
+
+  it("returns 409 when loan decline exhausts write-conflict retries", async () => {
+    declineLoanMock.mockRejectedValueOnce(new LoanWriteConflictError("decline the loan"));
+
+    const res = await PATCH(makePatchRequest({ action: "decline" }) as never, makeRouteContext());
+
+    expect(res.status).toBe(409);
+    await expect(res.json()).resolves.toEqual({
+      error: "Could not decline the loan because another loan update happened at the same time. Please retry.",
+    });
+  });
+
+  it("returns 409 when loan return exhausts write-conflict retries", async () => {
+    returnLoanMock.mockRejectedValueOnce(new LoanWriteConflictError("return the loan"));
+
+    const res = await PATCH(makePatchRequest({ action: "return" }) as never, makeRouteContext());
+
+    expect(res.status).toBe(409);
+    await expect(res.json()).resolves.toEqual({
+      error: "Could not return the loan because another loan update happened at the same time. Please retry.",
+    });
   });
 });

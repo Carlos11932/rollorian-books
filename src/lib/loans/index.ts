@@ -6,6 +6,10 @@ export {
   LoanForbiddenError,
   LoanInvalidTransitionError,
   LoanBookNotInLibraryError,
+  LoanBookNotOwnedError,
+  LoanOwnershipVerificationUnavailableError,
+  LoanSelfBorrowError,
+  LoanWriteConflictError,
 } from "./errors";
 export { getUserLoans, getActiveLoanForBook } from "./queries";
 export {

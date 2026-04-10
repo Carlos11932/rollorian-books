@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import type { LibraryEntryView } from "../types";
 import type { BookStatus, OwnershipStatus } from "@/lib/types/book";
 import { updateBook, deleteBook } from "@/lib/api/books";
@@ -50,6 +51,7 @@ export interface UseBookDetailReturn {
 
 export function useBookDetail(book: LibraryEntryView): UseBookDetailReturn {
   const router = useRouter();
+  const t = useTranslations("common");
   const saveStateResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [status, setStatus] = useState<BookStatus>(book.status);
@@ -79,11 +81,12 @@ export function useBookDetail(book: LibraryEntryView): UseBookDetailReturn {
     setErrorMessage(null);
 
     try {
+      const trimmedNotes = notes.trim() || null;
       await updateBook(book.id, {
         status,
-        ownershipStatus,
         rating: rating ?? null,
-        notes: notes.trim() || null,
+        notes: trimmedNotes,
+        ...(ownershipStatus !== book.ownershipStatus ? { ownershipStatus } : {}),
       });
 
       setSaveState(SAVE_STATE.saved);
@@ -96,7 +99,7 @@ export function useBookDetail(book: LibraryEntryView): UseBookDetailReturn {
       }, 2000);
     } catch (err) {
       setSaveState(SAVE_STATE.error);
-      setErrorMessage(err instanceof Error ? err.message : "An unexpected error occurred");
+      setErrorMessage(err instanceof Error ? err.message : t("error"));
     }
   }
 
@@ -109,7 +112,7 @@ export function useBookDetail(book: LibraryEntryView): UseBookDetailReturn {
       router.push("/library");
     } catch (err) {
       setDeleteState(DELETE_STATE.idle);
-      setErrorMessage(err instanceof Error ? err.message : "Failed to delete book");
+      setErrorMessage(err instanceof Error ? err.message : t("error"));
     }
   }
 

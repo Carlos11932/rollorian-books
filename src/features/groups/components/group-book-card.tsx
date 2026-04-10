@@ -93,7 +93,7 @@ export function GroupBookCard({ book, index = 0 }: GroupBookCardProps) {
                 <span className="material-symbols-outlined text-[9px]">
                   {owner.hasActiveLoan ? "schedule" : "person"}
                 </span>
-                <span className="truncate max-w-[40px]">{owner.userName ?? "?"}</span>
+                <span className="truncate max-w-[40px]">{owner.userName ?? t("common.anonymous")}</span>
               </span>
             ))}
             {book.owners.length > 2 && (

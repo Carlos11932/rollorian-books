@@ -28,6 +28,7 @@ type SaveVariant = "default" | "haveIt" | "alreadyRead";
 export function GoogleBookSaveClient({ payload }: GoogleBookSaveClientProps) {
   const router = useRouter();
   const t = useTranslations('book');
+  const tCommon = useTranslations('common');
   const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showOptions, setShowOptions] = useState(false);
@@ -36,11 +37,11 @@ export function GoogleBookSaveClient({ payload }: GoogleBookSaveClientProps) {
     setState("saving");
     setErrorMessage(null);
 
-    // Map variant to status + ownershipStatus
-    const statusMap: Record<SaveVariant, { status: string; ownershipStatus: string }> = {
-      default: { status: "WISHLIST", ownershipStatus: "UNKNOWN" },
+    // Only send ownershipStatus when the user explicitly chose a stronger value.
+    const statusMap: Record<SaveVariant, { status: string; ownershipStatus?: string }> = {
+      default: { status: "WISHLIST" },
       haveIt: { status: "WISHLIST", ownershipStatus: "OWNED" },
-      alreadyRead: { status: "READ", ownershipStatus: "UNKNOWN" },
+      alreadyRead: { status: "READ" },
     };
     const { status, ownershipStatus } = statusMap[variant];
 
@@ -48,12 +49,16 @@ export function GoogleBookSaveClient({ payload }: GoogleBookSaveClientProps) {
       const res = await fetch("/api/books", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...payload, status, ownershipStatus }),
+        body: JSON.stringify({
+          ...payload,
+          status,
+          ...(ownershipStatus ? { ownershipStatus } : {}),
+        }),
       });
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error((data as { error?: string }).error ?? "Failed to save book");
+        throw new Error((data as { error?: string }).error ?? tCommon('error'));
       }
 
       const created = (await res.json()) as { id: string; book: { id: string } };
@@ -63,7 +68,7 @@ export function GoogleBookSaveClient({ payload }: GoogleBookSaveClientProps) {
       router.push(`/books/${created.book?.id ?? created.id}`);
     } catch (err) {
       setState("error");
-      setErrorMessage(err instanceof Error ? err.message : "An unexpected error occurred");
+      setErrorMessage(err instanceof Error ? err.message : tCommon('error'));
     }
   }
 
@@ -72,7 +77,7 @@ export function GoogleBookSaveClient({ payload }: GoogleBookSaveClientProps) {
   return (
     <section
       className="card-glass backdrop-blur-xl border-accent/30 p-6"
-      aria-label="Save to library"
+      aria-label={t('saveToLibrary')}
     >
       <div className="grid gap-1 mb-4">
         <p className="text-xs font-bold uppercase tracking-widest text-accent">
@@ -95,7 +100,7 @@ export function GoogleBookSaveClient({ payload }: GoogleBookSaveClientProps) {
       )}
 
       <div className="flex flex-wrap items-center gap-2">
-        {/* Primary: quick save (WISHLIST + UNKNOWN — current behavior preserved) */}
+        {/* Primary: quick save (WISHLIST, ownership unspecified) */}
         <Button
           variant="primary"
           size="md"
@@ -145,7 +150,7 @@ export function GoogleBookSaveClient({ payload }: GoogleBookSaveClientProps) {
             {t('saveQuickOptions.haveIt')}
           </button>
 
-          {/* "Already read" — READ + UNKNOWN */}
+          {/* "Already read" — READ, ownership unspecified */}
           <button
             type="button"
             onClick={() => handleSave("alreadyRead")}

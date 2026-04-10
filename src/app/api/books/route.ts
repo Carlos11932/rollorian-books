@@ -11,6 +11,10 @@ import {
   saveLibraryEntry,
   DuplicateLibraryEntryError,
 } from "@/lib/books";
+import {
+  LibraryEntryCreateConflictError,
+  OwnershipStatusCreateCompatError,
+} from "@/lib/books/save-library-entry";
 import { fetchByIsbn } from "@/lib/book-providers/search-orchestrator";
 import { prisma } from "@/lib/prisma";
 import { createRateLimiter, rateLimitResponse } from "@/lib/rate-limit";
@@ -69,7 +73,8 @@ export async function POST(request: NextRequest): Promise<Response> {
       );
     }
 
-    const userBook = await saveLibraryEntry(userId, result.data);
+    const ownershipStatusRequested = hasExplicitOwnershipStatusRequest(body, result.data.ownershipStatus);
+    const userBook = await saveLibraryEntry(userId, result.data, { ownershipStatusRequested });
 
     // Fire-and-forget enrichment — fill missing metadata from other providers
     const book = userBook.book;
@@ -91,6 +96,24 @@ export async function POST(request: NextRequest): Promise<Response> {
     }
     if (error instanceof DuplicateLibraryEntryError) {
       return Response.json({ error: error.message }, { status: 409 });
+    }
+    if (error instanceof OwnershipStatusCreateCompatError) {
+      return Response.json(
+        {
+          error: error.message,
+          code: "OWNERSHIP_STATUS_UNSUPPORTED",
+        },
+        { status: 409 },
+      );
+    }
+    if (error instanceof LibraryEntryCreateConflictError) {
+      return Response.json(
+        {
+          error: error.message,
+          code: "CONCURRENT_CREATE_CONFLICT",
+        },
+        { status: 409 },
+      );
     }
     logger.error("Request failed", error, { endpoint: "POST /api/books" });
     return Response.json({ error: "Internal server error" }, { status: 500 });
@@ -136,4 +159,15 @@ async function enrichBookMetadata(
       await prisma.book.update({ where: { id: bookId }, data: filtered });
     }
   }
+}
+
+function hasOwn(value: unknown, key: string): boolean {
+  return typeof value === "object" && value !== null && Object.prototype.hasOwnProperty.call(value, key);
+}
+
+function hasExplicitOwnershipStatusRequest(
+  value: unknown,
+  ownershipStatus: string,
+): boolean {
+  return hasOwn(value, "ownershipStatus") && ownershipStatus !== "UNKNOWN";
 }

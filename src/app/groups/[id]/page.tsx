@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { isRetryableUserBookCompatError } from "@/lib/prisma-schema-compat";
 import { GroupLibraryCatalog } from "@/features/groups/components/group-library-catalog";
 import type { CatalogBookOwner } from "@/features/groups/components/group-library-catalog";
 
@@ -52,31 +53,9 @@ export default async function GroupFeedPage({ params }: GroupFeedPageProps) {
   const memberUserIds = acceptedMembers.map((m) => m.userId);
 
   // Fetch ALL unique books from group members with genres + current user status
-  const books =
-    memberUserIds.length > 0
-      ? await prisma.book.findMany({
-          where: {
-            userBooks: { some: { userId: { in: memberUserIds } } },
-          },
-          select: {
-            id: true,
-            title: true,
-            authors: true,
-            coverUrl: true,
-            genres: true,
-            userBooks: {
-              where: { userId: { in: [userId, ...memberUserIds] } },
-              select: {
-                userId: true,
-                status: true,
-                ownershipStatus: true,
-                user: { select: { name: true } },
-              },
-            },
-          },
-          orderBy: { title: "asc" },
-        })
-      : [];
+  const books = memberUserIds.length > 0
+    ? await getGroupBooks(userId, memberUserIds)
+    : [];
 
   // Batch-fetch active loans for this group's books by member lenders
   const allBookIds = books.map((b) => b.id);
@@ -153,7 +132,69 @@ export default async function GroupFeedPage({ params }: GroupFeedPageProps) {
       </div>
 
       {/* Shared library catalog */}
-      <GroupLibraryCatalog books={catalogBooks} />
+          <GroupLibraryCatalog books={catalogBooks} />
     </div>
   );
+}
+
+async function getGroupBooks(currentUserId: string, memberUserIds: string[]) {
+  const sharedWhere = {
+    where: {
+      userBooks: { some: { userId: { in: memberUserIds } } },
+    },
+    orderBy: { title: "asc" as const },
+  };
+
+  try {
+    return await prisma.book.findMany({
+      ...sharedWhere,
+      select: {
+        id: true,
+        title: true,
+        authors: true,
+        coverUrl: true,
+        genres: true,
+        userBooks: {
+          where: { userId: { in: [currentUserId, ...memberUserIds] } },
+          select: {
+            userId: true,
+            status: true,
+            ownershipStatus: true,
+            user: { select: { name: true } },
+          },
+        },
+      },
+    });
+  } catch (error) {
+    if (!isRetryableUserBookCompatError(error)) {
+      throw error;
+    }
+
+    const legacyBooks = await prisma.book.findMany({
+      ...sharedWhere,
+      select: {
+        id: true,
+        title: true,
+        authors: true,
+        coverUrl: true,
+        genres: true,
+        userBooks: {
+          where: { userId: { in: [currentUserId, ...memberUserIds] } },
+          select: {
+            userId: true,
+            status: true,
+            user: { select: { name: true } },
+          },
+        },
+      },
+    });
+
+    return legacyBooks.map((book) => ({
+      ...book,
+      userBooks: book.userBooks.map((userBook) => ({
+        ...userBook,
+        ownershipStatus: "UNKNOWN" as const,
+      })),
+    }));
+  }
 }
