@@ -2,6 +2,7 @@ import "server-only";
 
 export type { LoanView } from "./types";
 export {
+  LOAN_OWNERSHIP_VERIFICATION_UNAVAILABLE_MESSAGE,
   LoanNotFoundError,
   LoanForbiddenError,
   LoanInvalidTransitionError,

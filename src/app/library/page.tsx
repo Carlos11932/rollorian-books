@@ -1,43 +1,9 @@
 import { redirect } from "next/navigation";
 import { type BookStatus, BOOK_STATUS_VALUES } from "@/lib/types/book";
-import type { OwnershipStatus } from "@/lib/types/book";
-import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUserIdOrNull } from "@/lib/auth/require-auth";
 import type { StatusCounts, StatusTabValue } from "@/features/books/components/status-tabs";
 import { LibraryView } from "@/features/books/components/library-view";
-import {
-  isMissingOwnershipStatusError,
-  isPrismaSchemaMismatchError,
-} from "@/lib/prisma-schema-compat";
-
-interface LibraryBookRow {
-  id: string;
-  status: BookStatus;
-  ownershipStatus: OwnershipStatus;
-  rating: number | null;
-  notes: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-  book: {
-    id: string;
-    title: string;
-    subtitle: string | null;
-    authors: string[];
-    description: string | null;
-    coverUrl: string | null;
-    publisher: string | null;
-    publishedDate: string | null;
-    pageCount: number | null;
-    isbn10: string | null;
-    isbn13: string | null;
-    genres: string[];
-  };
-}
-
-interface StatusCountRow {
-  status: BookStatus;
-  _count: { id: number };
-}
+import { getLibrarySnapshot } from "@/lib/books";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -76,95 +42,38 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
   const activeStatus = resolveActiveStatus(statusParam);
   const tabSearchParams = toStringRecord(params);
 
-  let userBooks: LibraryBookRow[];
-  let groupedCounts: StatusCountRow[];
+  const librarySnapshot = await getLibrarySnapshot(userId);
 
-  try {
-    [userBooks, groupedCounts] = await Promise.all([
-      prisma.userBook.findMany({
-        where: activeStatus !== "all" ? { userId, status: activeStatus } : { userId },
-        orderBy: { createdAt: "desc" },
-        select: {
-          id: true,
-          status: true,
-          ownershipStatus: true,
-          rating: true,
-          notes: true,
-          createdAt: true,
-          updatedAt: true,
-          book: {
-            select: {
-              id: true,
-              title: true,
-              subtitle: true,
-              authors: true,
-              description: true,
-              coverUrl: true,
-              publisher: true,
-              publishedDate: true,
-              pageCount: true,
-              isbn10: true,
-              isbn13: true,
-              genres: true,
-            },
-          },
-        },
-      }),
-      prisma.userBook.groupBy({ by: ["status"], where: { userId }, _count: { id: true } }),
-    ]);
-  } catch (error) {
-    if (isMissingOwnershipStatusError(error) || isPrismaSchemaMismatchError(error)) {
-      // Migration not yet applied — fall back to querying without ownershipStatus
-      const [userBooksCompat, groupedCountsCompat] = await Promise.all([
-        prisma.userBook.findMany({
-          where: activeStatus !== "all" ? { userId, status: activeStatus } : { userId },
-          orderBy: { createdAt: "desc" },
-          select: {
-            id: true,
-            status: true,
-            rating: true,
-            notes: true,
-            createdAt: true,
-            updatedAt: true,
-            book: {
-              select: {
-                id: true,
-                title: true,
-                subtitle: true,
-                authors: true,
-                description: true,
-                coverUrl: true,
-                publisher: true,
-                publishedDate: true,
-                pageCount: true,
-                isbn10: true,
-                isbn13: true,
-                genres: true,
-              },
-            },
-          },
-        }) as unknown as Omit<LibraryBookRow, "ownershipStatus">[],
-        prisma.userBook.groupBy({ by: ["status"], where: { userId }, _count: { id: true } }),
-      ]);
-      userBooks = userBooksCompat.map((ub) => ({
-        ...ub,
-        ownershipStatus: "UNKNOWN" as OwnershipStatus,
-      }));
-      groupedCounts = groupedCountsCompat;
-    } else {
-      throw error;
-    }
+  if (librarySnapshot.state === "unavailable") {
+    return (
+      <div className="grid gap-6 px-12 md:px-20 pt-8 pb-24">
+        <section className="rounded-[var(--radius-xl)] border border-amber-400/30 bg-surface/70 p-6 backdrop-blur-[20px]">
+          <p className="text-xs font-bold uppercase tracking-widest text-amber-300">
+            Compatibility mode
+          </p>
+          <h1 className="mt-3 text-3xl font-bold text-on-surface">Library temporarily unavailable</h1>
+          <p className="mt-4 max-w-2xl text-sm leading-relaxed text-on-surface/75">
+            Rollorian could not read local library entries because the database schema is still catching up.
+            We are intentionally avoiding editable library state until the UserBook table is available again.
+          </p>
+        </section>
+      </div>
+    );
   }
 
-  const counts = groupedCounts.reduce<StatusCounts>(
+  const counts = librarySnapshot.entries.reduce<StatusCounts>(
     (acc, row) => {
-      acc[row.status] = row._count.id;
+      acc[row.status] += 1;
       return acc;
     },
     { WISHLIST: 0, TO_READ: 0, READING: 0, REREADING: 0, READ: 0, ON_HOLD: 0 },
   );
 
-  const books = userBooks.map((ub) => ({
+  const visibleEntries = activeStatus === "all"
+    ? librarySnapshot.entries
+    : librarySnapshot.entries.filter((entry) => entry.status === activeStatus);
+
+  const books = visibleEntries.map((ub) => ({
     id: ub.book.id,
     title: ub.book.title,
     subtitle: ub.book.subtitle,
@@ -181,6 +90,8 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
     ownershipStatus: ub.ownershipStatus,
     rating: ub.rating,
     notes: ub.notes,
+    compatDegraded: ub.compatDegraded,
+    compatDegradedFields: ub.compatDegradedFields,
     createdAt: ub.createdAt.toISOString(),
     updatedAt: ub.updatedAt.toISOString(),
   }));
@@ -189,6 +100,7 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
     <div className="grid gap-6 px-12 md:px-20 pt-8 pb-24">
       <LibraryView
         books={books}
+        readState={librarySnapshot.state}
         counts={counts}
         activeStatus={activeStatus}
         searchParams={tabSearchParams}

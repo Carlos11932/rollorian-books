@@ -15,7 +15,7 @@ vi.mock("@/lib/loans", () => ({
   },
   LoanOwnershipVerificationUnavailableError: class extends Error {
     constructor() {
-      super("Loans requiring ownership verification are unavailable until the database schema is updated");
+      super("Loan ownership and library verification are unavailable until the UserBook schema is updated");
     }
   },
   LoanWriteConflictError: class extends Error {
@@ -135,7 +135,7 @@ describe("POST /api/loans", () => {
 
     expect(res.status).toBe(503);
     const body = await res.json();
-    expect(body.error).toContain("ownership verification");
+    expect(body.error).toContain("ownership and library verification");
   });
 
   it("returns 400 when the book is already involved in another active loan", async () => {

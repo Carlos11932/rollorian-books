@@ -1,6 +1,23 @@
 import type { Book, BookStatus, OwnershipStatus, UserBookWithBook } from "@/lib/types/book";
 import type { GoogleBooksVolume } from "@/lib/google-books/types";
 
+export const LIBRARY_COMPAT_DEGRADED_FIELD = {
+  OWNERSHIP_STATUS: "ownershipStatus",
+  FINISHED_AT: "finishedAt",
+} as const;
+
+export type LibraryCompatDegradedField = (
+  typeof LIBRARY_COMPAT_DEGRADED_FIELD
+)[keyof typeof LIBRARY_COMPAT_DEGRADED_FIELD];
+
+export const LIBRARY_READ_STATE = {
+  FULL: "full",
+  DEGRADED: "degraded",
+  UNAVAILABLE: "unavailable",
+} as const;
+
+export type LibraryReadState = (typeof LIBRARY_READ_STATE)[keyof typeof LIBRARY_READ_STATE];
+
 /**
  * View model for a Google Books volume used in the book detail page.
  */
@@ -52,8 +69,15 @@ export type LibraryEntryView = Omit<Book, "createdAt" | "updatedAt"> & {
   ownershipStatus: OwnershipStatus;
   rating: number | null;
   notes: string | null;
+  compatDegraded?: true;
+  compatDegradedFields?: LibraryCompatDegradedField[];
   createdAt: string;
   updatedAt: string;
+};
+
+type CompatLibraryEntry = UserBookWithBook & {
+  compatDegraded?: true;
+  compatDegradedFields?: LibraryCompatDegradedField[];
 };
 
 /**
@@ -63,7 +87,7 @@ export type LibraryEntryView = Omit<Book, "createdAt" | "updatedAt"> & {
  * Book-level fields come from `userBook.book`, while reading-state fields
  * (`status`, `rating`, `notes`) and timestamps come from the `userBook` itself.
  */
-export function toLibraryEntryView(userBook: UserBookWithBook): LibraryEntryView {
+export function toLibraryEntryView(userBook: CompatLibraryEntry): LibraryEntryView {
   const { book } = userBook;
   return {
     ...book,
@@ -71,7 +95,16 @@ export function toLibraryEntryView(userBook: UserBookWithBook): LibraryEntryView
     ownershipStatus: userBook.ownershipStatus,
     rating: userBook.rating,
     notes: userBook.notes,
+    compatDegraded: "compatDegraded" in userBook ? userBook.compatDegraded : undefined,
+    compatDegradedFields: "compatDegradedFields" in userBook ? userBook.compatDegradedFields : undefined,
     createdAt: userBook.createdAt.toISOString(),
     updatedAt: userBook.updatedAt.toISOString(),
   };
+}
+
+export function hasCompatDegradedField(
+  book: Pick<LibraryEntryView, "compatDegradedFields">,
+  field: LibraryCompatDegradedField,
+): boolean {
+  return book.compatDegradedFields?.includes(field) ?? false;
 }

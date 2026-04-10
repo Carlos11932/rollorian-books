@@ -4,6 +4,7 @@ import { Prisma, type OwnershipStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import {
   getUserBookCompatAttempts,
+  isMissingUserBookSchemaError,
   isRetryableUserBookCompatError,
 } from "@/lib/prisma-schema-compat";
 import { revalidateBookCollectionPaths } from "@/lib/revalidation";
@@ -72,6 +73,10 @@ async function findLoanUserBook(
           ? { ...userBook, ownershipStatus: "UNKNOWN", ownershipSource: "missing-column" }
           : null;
     } catch (error) {
+      if (isMissingUserBookSchemaError(error)) {
+        throw new LoanOwnershipVerificationUnavailableError();
+      }
+
       lastError = error;
       if (!isRetryableUserBookCompatError(error)) {
         throw error;

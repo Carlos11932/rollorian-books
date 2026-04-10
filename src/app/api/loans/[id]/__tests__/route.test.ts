@@ -30,7 +30,7 @@ const {
   }
   class _LoanOwnershipVerificationUnavailableError extends Error {
     constructor() {
-      super("Loans requiring ownership verification are unavailable until the database schema is updated");
+      super("Loan ownership and library verification are unavailable until the UserBook schema is updated");
     }
   }
   class _LoanWriteConflictError extends Error {
@@ -263,7 +263,7 @@ describe("PATCH /api/loans/[id]", () => {
 
     expect(res.status).toBe(503);
     const body = await res.json() as Record<string, unknown>;
-    expect(body.error).toBe("Loans requiring ownership verification are unavailable until the database schema is updated");
+    expect(body.error).toBe("Loan ownership and library verification are unavailable until the UserBook schema is updated");
   });
 
   it("returns 500 on unexpected errors", async () => {

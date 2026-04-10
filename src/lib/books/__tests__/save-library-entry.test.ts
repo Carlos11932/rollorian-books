@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { UserBookSchemaUnavailableError } from "@/lib/prisma-schema-compat";
 import { DuplicateLibraryEntryError } from "../errors";
 import {
   LibraryEntryCreateConflictError,
@@ -243,6 +244,23 @@ describe("saveLibraryEntry", () => {
     })).rejects.toBeInstanceOf(OwnershipStatusCreateCompatError);
 
     expect(userBookCreateMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("fails explicitly when the UserBook table is missing before the write begins", async () => {
+    userBookFindUniqueMock.mockRejectedValueOnce(
+      makeKnownRequestError("P2021", "The table `public.UserBook` does not exist in the current database."),
+    );
+
+    await expect(saveLibraryEntry("user-1", {
+      title: "Clean Code",
+      authors: ["Robert C. Martin"],
+      genres: [],
+      status: "TO_READ",
+      ownershipStatus: "OWNED",
+    })).rejects.toBeInstanceOf(UserBookSchemaUnavailableError);
+
+    expect(userBookCreateMock).not.toHaveBeenCalled();
+    expect(revalidateBookCollectionPathsMock).not.toHaveBeenCalled();
   });
 
   it("returns the persisted finishedAt value after a successful READ save", async () => {

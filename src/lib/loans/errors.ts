@@ -1,3 +1,5 @@
+export const LOAN_OWNERSHIP_VERIFICATION_UNAVAILABLE_MESSAGE = "Loan ownership and library verification are unavailable until the UserBook schema is updated";
+
 export class LoanNotFoundError extends Error {
   constructor() { super("Loan not found"); }
 }
@@ -20,7 +22,7 @@ export class LoanBookNotOwnedError extends Error {
 
 export class LoanOwnershipVerificationUnavailableError extends Error {
   constructor() {
-    super("Loans requiring ownership verification are unavailable until the database schema is updated");
+    super(LOAN_OWNERSHIP_VERIFICATION_UNAVAILABLE_MESSAGE);
   }
 }
 

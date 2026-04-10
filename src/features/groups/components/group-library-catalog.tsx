@@ -17,7 +17,7 @@ import type { OwnershipStatus } from "@/lib/types/book";
 export interface CatalogBookOwner {
   userId: string;
   userName: string | null;
-  hasActiveLoan: boolean;
+  hasExclusiveLoan: boolean;
 }
 
 interface CatalogBook {
@@ -36,6 +36,10 @@ type ReadFilter = "all" | "read" | "unread" | "available";
 
 interface GroupLibraryCatalogProps {
   books: CatalogBook[];
+}
+
+export function isCatalogBookAvailable(book: CatalogBook): boolean {
+  return book.owners.some((owner) => !owner.hasExclusiveLoan);
 }
 
 // ---------------------------------------------------------------------------
@@ -80,11 +84,11 @@ export function GroupLibraryCatalog({ books }: GroupLibraryCatalogProps) {
   // Apply read/availability filter
   const filteredBooks =
     readFilter === "read"
-      ? books.filter((b) => b.isRead)
+        ? books.filter((b) => b.isRead)
       : readFilter === "unread"
         ? books.filter((b) => !b.isRead)
         : readFilter === "available"
-          ? books.filter((b) => b.owners.some((o) => !o.hasActiveLoan))
+          ? books.filter(isCatalogBookAvailable)
           : books;
 
   // Group by normalized genre for the genre view

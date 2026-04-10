@@ -105,6 +105,19 @@ function makeOwnershipStatusCompatError(): Prisma.PrismaClientKnownRequestError 
   ) as Prisma.PrismaClientKnownRequestError;
 }
 
+function makeMissingUserBookTableCompatError(): Prisma.PrismaClientKnownRequestError {
+  return Object.assign(
+    Object.create(Prisma.PrismaClientKnownRequestError.prototype),
+    {
+      code: "P2021",
+      message: "The table `public.UserBook` does not exist in the current database.",
+      clientVersion: "7.5.0",
+      meta: {},
+      name: "PrismaClientKnownRequestError",
+    },
+  ) as Prisma.PrismaClientKnownRequestError;
+}
+
 function makeWriteConflictError(): Prisma.PrismaClientKnownRequestError {
   return Object.assign(
     Object.create(Prisma.PrismaClientKnownRequestError.prototype),
@@ -181,6 +194,15 @@ describe("requestLoan", () => {
     userBookFindUniqueMock
       .mockRejectedValueOnce(makeOwnershipStatusCompatError())
       .mockResolvedValueOnce({ id: "ub-001" });
+
+    await expect(requestLoan("user-borrower", "user-lender", "book-001")).rejects.toThrow(
+      LoanOwnershipVerificationUnavailableError,
+    );
+    expect(loanCreateMock).not.toHaveBeenCalled();
+  });
+
+  it("fails closed when the UserBook table is missing on a lagging schema", async () => {
+    userBookFindUniqueMock.mockRejectedValueOnce(makeMissingUserBookTableCompatError());
 
     await expect(requestLoan("user-borrower", "user-lender", "book-001")).rejects.toThrow(
       LoanOwnershipVerificationUnavailableError,
@@ -330,6 +352,15 @@ describe("offerLoan", () => {
     userBookFindUniqueMock
       .mockRejectedValueOnce(makeOwnershipStatusCompatError())
       .mockResolvedValueOnce({ id: "ub-001" });
+
+    await expect(offerLoan("user-lender", "user-borrower", "book-001")).rejects.toThrow(
+      LoanOwnershipVerificationUnavailableError,
+    );
+    expect(loanCreateMock).not.toHaveBeenCalled();
+  });
+
+  it("fails closed when the UserBook table is missing on a lagging schema", async () => {
+    userBookFindUniqueMock.mockRejectedValueOnce(makeMissingUserBookTableCompatError());
 
     await expect(offerLoan("user-lender", "user-borrower", "book-001")).rejects.toThrow(
       LoanOwnershipVerificationUnavailableError,
@@ -515,6 +546,28 @@ describe("acceptLoan", () => {
           findUnique: userBookFindUniqueInTxMock
             .mockRejectedValueOnce(makeOwnershipStatusCompatError())
             .mockResolvedValueOnce({ id: "ub-lender" }),
+        },
+      };
+      return fn(tx);
+    });
+
+    await expect(acceptLoan("loan-001", "user-lender")).rejects.toThrow(
+      LoanOwnershipVerificationUnavailableError,
+    );
+    expect(loanUpdateManyMock).not.toHaveBeenCalled();
+    expect(userBookCreateMock).not.toHaveBeenCalled();
+  });
+
+  it("fails closed when activation cannot read the UserBook table on a lagging schema", async () => {
+    const loan = makePrismaLoan({ status: "REQUESTED", lenderId: "user-lender", borrowerId: "user-borrower" });
+    loanFindUniqueMock.mockResolvedValueOnce(loan);
+
+    transactionMock.mockImplementationOnce(async (fn: (tx: unknown) => Promise<unknown>) => {
+      const tx = {
+        loan: { updateMany: loanUpdateManyMock },
+        userBook: {
+          findUnique: userBookFindUniqueInTxMock
+            .mockRejectedValueOnce(makeMissingUserBookTableCompatError()),
         },
       };
       return fn(tx);

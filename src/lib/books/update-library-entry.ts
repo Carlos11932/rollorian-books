@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import {
   getUserBookCompatFallbackAttempts,
   isRetryableUserBookCompatError,
+  rethrowMissingUserBookSchemaError,
   type UserBookCompatAttempt,
 } from "@/lib/prisma-schema-compat";
 import type { BookStatus, OwnershipStatus, UserBookWithBook } from "@/lib/types/book";
@@ -80,6 +81,7 @@ export async function updateLibraryEntry(
 
       return updated;
     } catch (error) {
+      rethrowMissingUserBookSchemaError(error);
       if (error instanceof ReadStatusSnapshotRetryError) {
         continue;
       }
@@ -122,6 +124,7 @@ async function updateUserBookWithCompat(
       return await runUserBookUpdateAttempt(client, where, userId, bookId, input, attempt);
     } catch (error) {
       lastError = error;
+      rethrowMissingUserBookSchemaError(error);
       if (!isRetryableUserBookCompatError(error)) {
         throw error;
       }
@@ -253,6 +256,7 @@ async function findUpdatedUserBook(
       return await readUpdatedUserBook(client, where, attempt);
     } catch (error) {
       lastError = error;
+      rethrowMissingUserBookSchemaError(error);
 
       if (!isRetryableUserBookCompatError(error)) {
         throw error;

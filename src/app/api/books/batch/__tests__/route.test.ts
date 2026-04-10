@@ -237,6 +237,24 @@ describe("PATCH /api/books/batch", () => {
     expect(mockUpdateMany).toHaveBeenCalledTimes(1);
   });
 
+  it("returns 503 when the UserBook table is missing on a lagging schema", async () => {
+    mockFindUnique.mockRejectedValueOnce(
+      makeKnownRequestError("P2021", "The table `public.UserBook` does not exist in the current database."),
+    );
+
+    const res = await PATCH(makeRequest({
+      bookIds: ["id1"],
+      status: "READ",
+    }));
+
+    expect(res.status).toBe(503);
+    await expect(res.json()).resolves.toEqual({
+      error: "Library write operations are unavailable until the database schema includes UserBook",
+      code: "USER_BOOK_SCHEMA_UNAVAILABLE",
+    });
+    expect(mockUpdateMany).not.toHaveBeenCalled();
+  });
+
   it("retries without finishedAt when the column is unavailable", async () => {
     isRetryableUserBookCompatErrorMock.mockReturnValue(true);
     mockFindUnique

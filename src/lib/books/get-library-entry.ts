@@ -3,6 +3,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import {
   getUserBookCompatFallbackAttempts,
+  isMissingUserBookSchemaError,
   isRetryableUserBookCompatError,
   type UserBookCompatAttempt,
 } from "@/lib/prisma-schema-compat";
@@ -15,9 +16,26 @@ const FULL_USER_BOOK_READ_ATTEMPT: UserBookCompatAttempt = {
   includeFinishedAt: true,
 };
 
-export type LibraryEntryResult = UserBookWithBook & {
+const COMPAT_DEGRADED_FIELD = {
+  OWNERSHIP_STATUS: "ownershipStatus",
+  FINISHED_AT: "finishedAt",
+} as const;
+
+type CompatDegradedField = (typeof COMPAT_DEGRADED_FIELD)[keyof typeof COMPAT_DEGRADED_FIELD];
+
+interface LibraryEntryCompatMetadata {
   compatDegraded?: true;
-};
+  compatDegradedFields?: CompatDegradedField[];
+}
+
+export type LibraryEntryResult = UserBookWithBook & LibraryEntryCompatMetadata;
+
+export type LibraryEntryReadState = "full" | "degraded" | "missing" | "unavailable";
+
+export interface LibraryEntrySnapshotResult {
+  entry: LibraryEntryResult | null;
+  state: LibraryEntryReadState;
+}
 
 /**
  * Fetches a single library entry by user + book ID.
@@ -26,16 +44,46 @@ export async function getLibraryEntry(
   userId: string,
   bookId: string,
 ): Promise<LibraryEntryResult> {
-  const result = await findLibraryEntryWithCompat(
-    { userId_bookId: { userId, bookId } },
-    FULL_USER_BOOK_READ_ATTEMPT,
-  );
+  const snapshot = await getLibraryEntrySnapshot(userId, bookId);
 
-  if (!result) {
+  if (!snapshot.entry) {
     throw new LibraryEntryNotFoundError();
   }
 
-  return result;
+  return snapshot.entry;
+}
+
+export async function getLibraryEntrySnapshot(
+  userId: string,
+  bookId: string,
+): Promise<LibraryEntrySnapshotResult> {
+  try {
+    const entry = await findLibraryEntryWithCompat(
+      { userId_bookId: { userId, bookId } },
+      FULL_USER_BOOK_READ_ATTEMPT,
+    );
+
+    if (!entry) {
+      return {
+        entry: null,
+        state: "missing",
+      };
+    }
+
+    return {
+      entry,
+      state: entry.compatDegraded ? "degraded" : "full",
+    };
+  } catch (error) {
+    if (isMissingUserBookSchemaError(error)) {
+      return {
+        entry: null,
+        state: "unavailable",
+      };
+    }
+
+    throw error;
+  }
 }
 
 async function findLibraryEntryWithCompat(
@@ -56,6 +104,10 @@ async function findLibraryEntryWithCompat(
       return await readLibraryEntryAttempt(where, attempt);
     } catch (error) {
       lastError = error;
+
+      if (isMissingUserBookSchemaError(error)) {
+        throw error;
+      }
 
       if (!isRetryableUserBookCompatError(error)) {
         throw error;
@@ -92,7 +144,14 @@ async function readLibraryEntryAttempt(
       select: USER_BOOK_SELECT,
     });
 
-    return userBook ? { ...userBook, finishedAt: null, compatDegraded: true } : null;
+    return userBook
+      ? {
+          ...userBook,
+          finishedAt: null,
+          compatDegraded: true,
+          compatDegradedFields: [COMPAT_DEGRADED_FIELD.FINISHED_AT],
+        }
+      : null;
   }
 
   if (attempt.includeFinishedAt) {
@@ -112,7 +171,14 @@ async function readLibraryEntryAttempt(
       },
     });
 
-    return userBook ? { ...userBook, ownershipStatus: "UNKNOWN", compatDegraded: true } : null;
+    return userBook
+      ? {
+          ...userBook,
+          ownershipStatus: "UNKNOWN",
+          compatDegraded: true,
+          compatDegradedFields: [COMPAT_DEGRADED_FIELD.OWNERSHIP_STATUS],
+        }
+      : null;
   }
 
   const userBook = await prisma.userBook.findUnique({
@@ -131,7 +197,16 @@ async function readLibraryEntryAttempt(
   });
 
   return userBook
-    ? { ...userBook, ownershipStatus: "UNKNOWN", finishedAt: null, compatDegraded: true }
+    ? {
+        ...userBook,
+        ownershipStatus: "UNKNOWN",
+        finishedAt: null,
+        compatDegraded: true,
+        compatDegradedFields: [
+          COMPAT_DEGRADED_FIELD.OWNERSHIP_STATUS,
+          COMPAT_DEGRADED_FIELD.FINISHED_AT,
+        ],
+      }
     : null;
 }
 

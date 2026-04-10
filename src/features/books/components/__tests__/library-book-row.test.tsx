@@ -1,0 +1,78 @@
+import type { ReactNode } from "react";
+import { describe, expect, it, vi } from "vitest";
+import { renderToStaticMarkup } from "react-dom/server";
+
+const { refreshMock } = vi.hoisted(() => ({
+  refreshMock: vi.fn(),
+}));
+
+vi.mock("next/link", () => ({
+  default: ({ children, href, ...props }: { children: ReactNode; href: string }) => (
+    <a href={href} {...props}>{children}</a>
+  ),
+}));
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: refreshMock }),
+}));
+
+vi.mock("next-intl", () => ({
+  useTranslations: () => (key: string, values?: Record<string, string | number>) => {
+    if (values?.title) return `${key}:${String(values.title)}`;
+    if (values?.rating) return `${key}:${String(values.rating)}`;
+    return key;
+  },
+}));
+
+vi.mock("@/features/books/components/book-cover", () => ({
+  BookCover: ({ title }: { title: string }) => <div>{title}</div>,
+}));
+
+vi.mock("@/features/shared/components/badge", () => ({
+  Badge: ({ status }: { status: string }) => <span>{status}</span>,
+}));
+
+vi.mock("@/features/shared/components/ownership-badge", () => ({
+  OwnershipBadge: ({ status }: { status: string }) => <span>{status}</span>,
+}));
+
+import { LibraryBookRow } from "../library-book-row";
+
+describe("LibraryBookRow", () => {
+  it("renders compatibility read-only messaging instead of edit controls", () => {
+    const html = renderToStaticMarkup(
+      <LibraryBookRow
+        readOnly
+        book={{
+          id: "book-1",
+          title: "Clean Code",
+          subtitle: null,
+          authors: ["Robert C. Martin"],
+          description: null,
+          coverUrl: null,
+          publisher: null,
+          publishedDate: null,
+          pageCount: null,
+          isbn10: null,
+          isbn13: null,
+          genres: [],
+          status: "READ",
+          ownershipStatus: "UNKNOWN",
+          rating: 4,
+          notes: "compat",
+          compatDegraded: true,
+          compatDegradedFields: ["ownershipStatus"],
+          createdAt: "2024-01-01T00:00:00.000Z",
+          updatedAt: "2024-01-01T00:00:00.000Z",
+        }}
+      />,
+    );
+
+    expect(html).toContain("Read-only");
+    expect(html).toContain("Compatibility snapshot");
+    expect(html).toContain("Ownership availability is synthesized in compatibility mode.");
+    expect(html).not.toContain("<select");
+    expect(html).not.toContain("more_horiz");
+    expect(html).not.toContain(">UNKNOWN<");
+  });
+});

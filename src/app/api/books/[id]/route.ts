@@ -4,6 +4,7 @@ import type { NextRequest } from "next/server";
 import { updateBookSchema } from "@/lib/schemas/book";
 import { requireAuth, UnauthorizedError } from "@/lib/auth/require-auth";
 import { logger } from "@/lib/logger";
+import { UserBookSchemaUnavailableError } from "@/lib/prisma-schema-compat";
 import {
   EmptyLibraryEntryUpdateError,
   LibraryEntryWriteConflictError,
@@ -128,6 +129,15 @@ export async function PATCH(
           code: "CONCURRENT_UPDATE_CONFLICT",
         },
         { status: 409 },
+      );
+    }
+    if (error instanceof UserBookSchemaUnavailableError) {
+      return Response.json(
+        {
+          error: error.message,
+          code: "USER_BOOK_SCHEMA_UNAVAILABLE",
+        },
+        { status: 503 },
       );
     }
     if (error instanceof EmptyLibraryEntryUpdateError) {

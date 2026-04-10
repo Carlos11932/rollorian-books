@@ -1,5 +1,11 @@
 import { Prisma } from "@prisma/client";
 
+export class UserBookSchemaUnavailableError extends Error {
+  constructor() {
+    super("Library write operations are unavailable until the database schema includes UserBook");
+  }
+}
+
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "";
 }
@@ -19,6 +25,16 @@ export function isMissingFinishedAtError(error: unknown): boolean {
 
 export function isMissingUserBookSchemaError(error: unknown): boolean {
   return isPrismaSchemaMismatchError(error) && /UserBook|userBook/i.test(getErrorMessage(error));
+}
+
+export function isUserBookSchemaUnavailableError(error: unknown): error is UserBookSchemaUnavailableError {
+  return error instanceof UserBookSchemaUnavailableError;
+}
+
+export function rethrowMissingUserBookSchemaError(error: unknown): void {
+  if (isMissingUserBookSchemaError(error)) {
+    throw new UserBookSchemaUnavailableError();
+  }
 }
 
 export function isMissingListsSchemaError(error: unknown): boolean {

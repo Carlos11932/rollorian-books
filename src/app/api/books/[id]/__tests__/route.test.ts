@@ -11,6 +11,7 @@ const {
   LibraryEntryWriteConflictError,
   EmptyLibraryEntryUpdateError,
   OwnershipStatusSchemaCompatError,
+  UserBookSchemaUnavailableError,
 } = vi.hoisted(() => {
   class _LibraryEntryNotFoundError extends Error {
     constructor() {
@@ -32,6 +33,11 @@ const {
       super("At least one field must be provided");
     }
   }
+  class _UserBookSchemaUnavailableError extends Error {
+    constructor() {
+      super("Library write operations are unavailable until the database schema includes UserBook");
+    }
+  }
   return {
     revalidatePathMock: vi.fn(),
     getLibraryEntryMock: vi.fn(),
@@ -41,6 +47,7 @@ const {
     LibraryEntryWriteConflictError: _LibraryEntryWriteConflictError,
     EmptyLibraryEntryUpdateError: _EmptyLibraryEntryUpdateError,
     OwnershipStatusSchemaCompatError: _OwnershipStatusSchemaCompatError,
+    UserBookSchemaUnavailableError: _UserBookSchemaUnavailableError,
   };
 });
 
@@ -60,6 +67,10 @@ vi.mock("@/lib/books/update-library-entry", () => ({
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {},
+}));
+
+vi.mock("@/lib/prisma-schema-compat", () => ({
+  UserBookSchemaUnavailableError,
 }));
 
 vi.mock("next/cache", () => ({
@@ -331,6 +342,20 @@ describe("PATCH /api/books/[id]", () => {
     expect(json).toEqual({
       error: "Ownership status updates require a database schema that includes ownershipStatus",
       code: "OWNERSHIP_STATUS_UNSUPPORTED",
+    });
+  });
+
+  it("returns 503 when the UserBook table is unavailable on a lagging schema", async () => {
+    updateLibraryEntryMock.mockRejectedValueOnce(new UserBookSchemaUnavailableError());
+
+    const request = makePatchRequest({ status: "READ" });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = await PATCH(request as any, makeRouteContext());
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({
+      error: "Library write operations are unavailable until the database schema includes UserBook",
+      code: "USER_BOOK_SCHEMA_UNAVAILABLE",
     });
   });
 

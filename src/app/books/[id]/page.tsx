@@ -11,11 +11,11 @@ import { LocalBookDetail } from "@/features/books/components/local-book-detail";
 import { GoogleBookDetail } from "@/features/books/components/google-book-detail";
 import { DiscoveredBookDetail } from "@/features/books/components/discovered-book-detail";
 import { fetchWorkById } from "@/lib/book-providers/open-library/client";
-import { getLibraryEntry, LibraryEntryNotFoundError } from "@/lib/books";
+import { getLibraryEntrySnapshot } from "@/lib/books";
 import { getViewableUserIds } from "@/lib/privacy/can-view-user-books";
 import { isPrismaSchemaMismatchError } from "@/lib/prisma-schema-compat";
 
-type LocalLibraryEntry = Awaited<ReturnType<typeof getLibraryEntry>>;
+type LocalLibraryEntry = NonNullable<Awaited<ReturnType<typeof getLibraryEntrySnapshot>>["entry"]>;
 
 interface BookDetailPageProps {
   params: Promise<{ id: string }>;
@@ -27,34 +27,35 @@ export interface BookOwner {
   userImage: string | null;
   status: string;
   rating: number | null;
-  hasActiveLoan: boolean;
+  hasExclusiveLoan: boolean;
 }
+
+const UNAVAILABLE_LOAN_STATUSES = ["REQUESTED", "OFFERED", "ACTIVE"] as const;
 
 type ResolvedBook =
   | { source: "local"; userBook: LocalLibraryEntry }
   | { source: "local-readonly"; userBook: LocalLibraryEntry }
+  | { source: "local-unavailable"; book: Book | null }
   | { source: "discovered"; book: Book; owners: BookOwner[] }
   | GoogleBookView
   | ExternalBookView;
 
 const resolveBook = cache(async function resolveBook(id: string, userId: string): Promise<ResolvedBook | null> {
   // 1. Check if the current user has this book
-  try {
-    const userBook = await getLibraryEntry(userId, id);
+  const libraryEntrySnapshot = await getLibraryEntrySnapshot(userId, id);
 
-    if (userBook.compatDegraded) {
-      return { source: "local-readonly", userBook };
+  if (libraryEntrySnapshot.entry) {
+    if (libraryEntrySnapshot.state === "degraded") {
+      return { source: "local-readonly", userBook: libraryEntrySnapshot.entry };
     }
 
-    return { source: "local", userBook };
-  } catch (error) {
-    if (isPrismaSchemaMismatchError(error)) {
-      // Local UserBook lookup unavailable on a lagging schema — degrade to shared/external detail.
-    } else {
-      if (!(error instanceof LibraryEntryNotFoundError)) {
-        throw error;
-      }
-    }
+    return { source: "local", userBook: libraryEntrySnapshot.entry };
+  }
+
+  if (libraryEntrySnapshot.state === "unavailable") {
+    const localBook = await prisma.book.findUnique({ where: { id } });
+
+    return { source: "local-unavailable", book: localBook };
   }
 
   // 2. Check if the book exists in the DB (e.g. from a recommendation)
@@ -86,19 +87,19 @@ const resolveBook = cache(async function resolveBook(id: string, userId: string)
     const ownerIds = allOwners.map((o) => o.userId);
     const viewableIds = await getViewableUserIds(userId, ownerIds);
 
-    // Fetch active loans for this book from the visible owners
+    // Fetch unavailable loans for this book from the visible owners
     const visibleOwnerIds = ownerIds.filter((oid) => viewableIds.has(oid));
-    const activeLoans = visibleOwnerIds.length > 0
+    const unavailableLoans = visibleOwnerIds.length > 0
       ? await prisma.loan.findMany({
           where: {
             bookId: id,
             lenderId: { in: visibleOwnerIds },
-            status: "ACTIVE",
+            status: { in: UNAVAILABLE_LOAN_STATUSES.slice() },
           },
           select: { lenderId: true },
         })
       : [];
-    const activeLenderIds = new Set(activeLoans.map((l) => l.lenderId));
+    const unavailableLenderIds = new Set(unavailableLoans.map((l) => l.lenderId));
 
     const visibleOwners: BookOwner[] = allOwners
       .filter((o) => viewableIds.has(o.userId))
@@ -108,7 +109,7 @@ const resolveBook = cache(async function resolveBook(id: string, userId: string)
         userImage: owner.user.image,
         status: owner.status,
         rating: owner.rating,
-        hasActiveLoan: activeLenderIds.has(owner.userId),
+        hasExclusiveLoan: unavailableLenderIds.has(owner.userId),
       }));
 
     return { source: "discovered", book, owners: visibleOwners };
@@ -204,6 +205,16 @@ export async function generateMetadata({ params }: BookDetailPageProps) {
     };
   }
 
+  if (resolved.source === "local-unavailable") {
+    const title = resolved.book?.title ?? "Book temporarily unavailable";
+    const authors = resolved.book?.authors.join(", ") ?? "your library";
+
+    return {
+      title: `${title} — Rollorian`,
+      description: `Book detail temporarily unavailable while Rollorian waits for ${authors} to resync`,
+    };
+  }
+
   if (resolved.source === "discovered") {
     return {
       title: `${resolved.book.title} — Rollorian`,
@@ -269,6 +280,28 @@ export default async function BookDetailPage({ params }: BookDetailPageProps) {
               </div>
             )}
           </dl>
+        </div>
+      </section>
+    );
+  }
+
+  if (resolved.source === "local-unavailable") {
+    return (
+      <section className="mx-auto max-w-4xl grid gap-6 pt-8 pb-12">
+        <div className="rounded-[var(--radius-xl)] border border-amber-400/30 bg-surface/70 p-6 backdrop-blur-[20px]">
+          <p className="text-xs font-bold uppercase tracking-widest text-amber-300">
+            Compatibility mode
+          </p>
+          <h1 className="mt-3 text-3xl font-bold text-on-surface leading-tight">
+            {resolved.book?.title ?? "Book detail temporarily unavailable"}
+          </h1>
+          {resolved.book?.authors.length ? (
+            <p className="mt-2 text-base text-on-surface/60">{resolved.book.authors.join(", ")}</p>
+          ) : null}
+          <p className="mt-4 text-sm text-on-surface/75 leading-relaxed">
+            Rollorian could not load your local book entry because the UserBook table is missing on this database.
+            We are intentionally avoiding discovered or editable local detail until the schema catches up.
+          </p>
         </div>
       </section>
     );

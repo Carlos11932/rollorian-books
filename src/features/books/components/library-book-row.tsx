@@ -10,7 +10,11 @@ import { OwnershipBadge } from "@/features/shared/components/ownership-badge";
 import { type BookStatus, BOOK_STATUS_VALUES } from "@/lib/types/book";
 import { cn } from "@/lib/cn";
 import { updateBook, deleteBook } from "@/lib/api/books";
-import type { LibraryEntryView } from "../types";
+import {
+  hasCompatDegradedField,
+  LIBRARY_COMPAT_DEGRADED_FIELD,
+  type LibraryEntryView,
+} from "../types";
 
 // ---------------------------------------------------------------------------
 // Props
@@ -18,6 +22,7 @@ import type { LibraryEntryView } from "../types";
 
 interface LibraryBookRowProps {
   book: LibraryEntryView;
+  readOnly?: boolean;
   selectionMode?: boolean;
   selected?: boolean;
   onToggle?: (id: string) => void;
@@ -29,6 +34,7 @@ interface LibraryBookRowProps {
 
 export function LibraryBookRow({
   book,
+  readOnly = false,
   selectionMode = false,
   selected = false,
   onToggle,
@@ -46,6 +52,10 @@ export function LibraryBookRow({
 
   const authorLine =
     book.authors.length > 0 ? book.authors.join(", ") : t("common.unknownAuthor");
+  const ownershipSynthesized = hasCompatDegradedField(book, LIBRARY_COMPAT_DEGRADED_FIELD.OWNERSHIP_STATUS);
+  const readOnlyReason = ownershipSynthesized
+    ? "Ownership availability is synthesized in compatibility mode."
+    : "Compatibility mode disables local edits until schema support is restored.";
 
   async function handleStatusChange(newStatus: BookStatus) {
     if (newStatus === status) return;
@@ -173,7 +183,12 @@ export function LibraryBookRow({
         {/* Status chips */}
         <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
           <Badge status={status} />
-          <OwnershipBadge status={book.ownershipStatus} />
+          {!ownershipSynthesized && <OwnershipBadge status={book.ownershipStatus} />}
+          {readOnly && (
+            <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-amber-300">
+              Read-only
+            </span>
+          )}
         </div>
 
         {/* Rating + notes */}
@@ -199,98 +214,105 @@ export function LibraryBookRow({
         className="flex flex-col gap-2 shrink-0 items-end justify-start"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Status dropdown */}
-        <div className="relative">
-          <select
-            value={status}
-            disabled={isStatusLoading}
-            onChange={(e) => void handleStatusChange(e.target.value as BookStatus)}
-            aria-label={t("book.statusLabel")}
-            className={cn(
-              "appearance-none cursor-pointer rounded-full border border-line bg-white/6 px-3 py-1.5 text-xs font-bold text-muted",
-              "focus:border-accent focus:outline-none focus:text-text",
-              "hover:border-white/25 hover:text-text",
-              "transition-colors duration-150 pr-6",
-              isStatusLoading && "opacity-60 cursor-wait",
-            )}
-          >
-            {BOOK_STATUS_VALUES.map((s) => (
-              <option key={s} value={s} className="bg-bg text-text">
-                {t(`book.status.${s}`)}
-              </option>
-            ))}
-          </select>
-          <span
-            className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-muted text-[0.6rem]"
-            aria-hidden="true"
-          >
-            ▾
-          </span>
-        </div>
-
-        {/* More button / delete controls */}
-        {showDeleteConfirm ? (
-          <div className="flex gap-1.5">
-            <button
-              type="button"
-              disabled={isDeleting}
-              onClick={handleDelete}
-              aria-label={t("book.confirmRemove")}
-              className={cn(
-                "rounded-full border border-danger/40 bg-danger/10 px-2.5 py-1 text-xs font-bold text-danger",
-                "hover:bg-danger/20 transition-colors duration-150",
-                "focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent",
-                isDeleting && "opacity-60 cursor-wait",
-              )}
-            >
-              {isDeleting ? "…" : t("common.confirm")}
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowDeleteConfirm(false)}
-              aria-label={t("common.cancel")}
-              className="rounded-full border border-line bg-white/6 px-2.5 py-1 text-xs font-bold text-muted hover:text-text transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
-            >
-              {t("common.cancel")}
-            </button>
-          </div>
-        ) : showMoreMenu ? (
-          <div className="flex flex-col gap-1 p-1 rounded-xl border border-line bg-surface/95 backdrop-blur-xl shadow-xl">
-            <button
-              type="button"
-              onClick={() => {
-                setShowDeleteConfirm(true);
-                setShowMoreMenu(false);
-              }}
-              className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-danger/80 hover:text-danger hover:bg-danger/8 rounded-lg transition-colors duration-150 whitespace-nowrap"
-            >
-              <span className="material-symbols-outlined text-[14px]">delete</span>
-              {t("common.delete")}
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowMoreMenu(false)}
-              className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-muted hover:text-text hover:bg-white/5 rounded-lg transition-colors duration-150 whitespace-nowrap"
-            >
-              <span className="material-symbols-outlined text-[14px]">close</span>
-              {t("common.cancel")}
-            </button>
+        {readOnly ? (
+          <div className="max-w-[12rem] rounded-2xl border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-right text-[11px] leading-relaxed text-amber-100/90">
+            <p className="font-bold uppercase tracking-wide text-amber-300">Compatibility snapshot</p>
+            <p className="mt-1">{readOnlyReason}</p>
           </div>
         ) : (
-          <button
-            type="button"
-            onClick={() => setShowMoreMenu(true)}
-            aria-label={t("common.moreOptions")}
-            className={cn(
-              "w-7 h-7 flex items-center justify-center rounded-full",
-              "border border-transparent bg-transparent text-muted/50",
-              "hover:border-line hover:text-text hover:bg-white/6",
-              "transition-all duration-150",
-              "focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent",
+          <>
+            <div className="relative">
+              <select
+                value={status}
+                disabled={isStatusLoading}
+                onChange={(e) => void handleStatusChange(e.target.value as BookStatus)}
+                aria-label={t("book.statusLabel")}
+                className={cn(
+                  "appearance-none cursor-pointer rounded-full border border-line bg-white/6 px-3 py-1.5 text-xs font-bold text-muted",
+                  "focus:border-accent focus:outline-none focus:text-text",
+                  "hover:border-white/25 hover:text-text",
+                  "transition-colors duration-150 pr-6",
+                  isStatusLoading && "opacity-60 cursor-wait",
+                )}
+              >
+                {BOOK_STATUS_VALUES.map((s) => (
+                  <option key={s} value={s} className="bg-bg text-text">
+                    {t(`book.status.${s}`)}
+                  </option>
+                ))}
+              </select>
+              <span
+                className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-muted text-[0.6rem]"
+                aria-hidden="true"
+              >
+                ▾
+              </span>
+            </div>
+
+            {showDeleteConfirm ? (
+              <div className="flex gap-1.5">
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={handleDelete}
+                  aria-label={t("book.confirmRemove")}
+                  className={cn(
+                    "rounded-full border border-danger/40 bg-danger/10 px-2.5 py-1 text-xs font-bold text-danger",
+                    "hover:bg-danger/20 transition-colors duration-150",
+                    "focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent",
+                    isDeleting && "opacity-60 cursor-wait",
+                  )}
+                >
+                  {isDeleting ? "…" : t("common.confirm")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  aria-label={t("common.cancel")}
+                  className="rounded-full border border-line bg-white/6 px-2.5 py-1 text-xs font-bold text-muted hover:text-text transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+                >
+                  {t("common.cancel")}
+                </button>
+              </div>
+            ) : showMoreMenu ? (
+              <div className="flex flex-col gap-1 p-1 rounded-xl border border-line bg-surface/95 backdrop-blur-xl shadow-xl">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDeleteConfirm(true);
+                    setShowMoreMenu(false);
+                  }}
+                  className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-danger/80 hover:text-danger hover:bg-danger/8 rounded-lg transition-colors duration-150 whitespace-nowrap"
+                >
+                  <span className="material-symbols-outlined text-[14px]">delete</span>
+                  {t("common.delete")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowMoreMenu(false)}
+                  className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-muted hover:text-text hover:bg-white/5 rounded-lg transition-colors duration-150 whitespace-nowrap"
+                >
+                  <span className="material-symbols-outlined text-[14px]">close</span>
+                  {t("common.cancel")}
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowMoreMenu(true)}
+                aria-label={t("common.moreOptions")}
+                className={cn(
+                  "w-7 h-7 flex items-center justify-center rounded-full",
+                  "border border-transparent bg-transparent text-muted/50",
+                  "hover:border-line hover:text-text hover:bg-white/6",
+                  "transition-all duration-150",
+                  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent",
+                )}
+              >
+                <span className="material-symbols-outlined text-[18px]">more_horiz</span>
+              </button>
             )}
-          >
-            <span className="material-symbols-outlined text-[18px]">more_horiz</span>
-          </button>
+          </>
         )}
       </div>
     </article>

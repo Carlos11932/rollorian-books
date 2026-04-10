@@ -85,13 +85,13 @@ export function GroupBookCard({ book, index = 0 }: GroupBookCardProps) {
                 title={t("groups.ownedBy", { name: owner.userName ?? t("common.anonymous") })}
                 className={cn(
                   "inline-flex items-center gap-0.5 text-[0.6rem] font-bold rounded-full px-1.5 py-0.5 border",
-                  owner.hasActiveLoan
+                  owner.hasExclusiveLoan
                     ? "bg-amber-500/10 text-amber-400 border-amber-500/15"
                     : "bg-emerald-500/10 text-emerald-400 border-emerald-500/15",
                 )}
               >
                 <span className="material-symbols-outlined text-[9px]">
-                  {owner.hasActiveLoan ? "schedule" : "person"}
+                  {owner.hasExclusiveLoan ? "schedule" : "person"}
                 </span>
                 <span className="truncate max-w-[40px]">{owner.userName ?? t("common.anonymous")}</span>
               </span>

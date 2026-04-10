@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Prisma } from "@prisma/client";
+import { UserBookSchemaUnavailableError } from "@/lib/prisma-schema-compat";
 
 const {
   transactionMock,
@@ -224,6 +225,19 @@ describe("updateLibraryEntry", () => {
     })).rejects.toBeInstanceOf(OwnershipStatusSchemaCompatError);
 
     expect(userBookUpdateManyMock).toHaveBeenCalledTimes(1);
+    expect(revalidateBookCollectionPathsMock).not.toHaveBeenCalled();
+  });
+
+  it("fails explicitly when the UserBook table is missing during the snapshot read", async () => {
+    userBookFindUniqueOrThrowMock.mockRejectedValueOnce(
+      makeKnownRequestError("P2021", "The table `public.UserBook` does not exist in the current database."),
+    );
+
+    await expect(updateLibraryEntry("user-1", "book-1", {
+      status: "READ",
+    })).rejects.toBeInstanceOf(UserBookSchemaUnavailableError);
+
+    expect(userBookUpdateManyMock).not.toHaveBeenCalled();
     expect(revalidateBookCollectionPathsMock).not.toHaveBeenCalled();
   });
 

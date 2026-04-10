@@ -17,6 +17,7 @@ import {
 } from "@/lib/books/save-library-entry";
 import { fetchByIsbn } from "@/lib/book-providers/search-orchestrator";
 import { prisma } from "@/lib/prisma";
+import { UserBookSchemaUnavailableError } from "@/lib/prisma-schema-compat";
 import { createRateLimiter, rateLimitResponse } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 
@@ -113,6 +114,15 @@ export async function POST(request: NextRequest): Promise<Response> {
           code: "CONCURRENT_CREATE_CONFLICT",
         },
         { status: 409 },
+      );
+    }
+    if (error instanceof UserBookSchemaUnavailableError) {
+      return Response.json(
+        {
+          error: error.message,
+          code: "USER_BOOK_SCHEMA_UNAVAILABLE",
+        },
+        { status: 503 },
       );
     }
     logger.error("Request failed", error, { endpoint: "POST /api/books" });

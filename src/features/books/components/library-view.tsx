@@ -10,7 +10,13 @@ import { SelectionToolbar } from "./selection-toolbar";
 import { EmptyState } from "@/features/shared/components/empty-state";
 import { useBatchSelection } from "../hooks/use-batch-selection";
 import { cn } from "@/lib/cn";
-import type { LibraryEntryView } from "../types";
+import {
+  hasCompatDegradedField,
+  LIBRARY_COMPAT_DEGRADED_FIELD,
+  LIBRARY_READ_STATE,
+  type LibraryEntryView,
+  type LibraryReadState,
+} from "../types";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -18,6 +24,7 @@ import type { LibraryEntryView } from "../types";
 
 interface LibraryViewProps {
   books: LibraryEntryView[];
+  readState: LibraryReadState;
   counts: StatusCounts;
   activeStatus: StatusTabValue;
   searchParams: Record<string, string>;
@@ -31,6 +38,7 @@ type OwnershipFilterValue = OwnershipStatus | "ALL";
 
 export function LibraryView({
   books,
+  readState,
   counts,
   activeStatus,
   searchParams,
@@ -55,6 +63,10 @@ export function LibraryView({
       ? books
       : books.filter((b) => b.ownershipStatus === ownershipFilter);
 
+  const isCompatReadOnly = readState === LIBRARY_READ_STATE.DEGRADED;
+  const hasSynthesizedOwnership = books.some((book) => (
+    hasCompatDegradedField(book, LIBRARY_COMPAT_DEGRADED_FIELD.OWNERSHIP_STATUS)
+  ));
   const isEmpty = filteredBooks.length === 0;
 
   return (
@@ -75,7 +87,7 @@ export function LibraryView({
           </div>
 
           {/* Selection toggle button */}
-          {books.length > 0 && (
+          {books.length > 0 && !isCompatReadOnly && (
             <button
               type="button"
               onClick={selectionMode ? exitSelectionMode : enterSelectionMode}
@@ -96,7 +108,7 @@ export function LibraryView({
         </div>
 
         {/* Select all / deselect all — only in selection mode */}
-        {selectionMode && (
+        {selectionMode && !isCompatReadOnly && (
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -115,6 +127,18 @@ export function LibraryView({
           </div>
         )}
 
+        {isCompatReadOnly && (
+          <div className="rounded-2xl border border-amber-400/30 bg-amber-400/10 p-4 text-sm text-on-surface/80">
+            <p className="text-xs font-bold uppercase tracking-widest text-amber-300">
+              Compatibility snapshot
+            </p>
+            <p className="mt-2 leading-relaxed">
+              Rollorian synthesized part of this local library read. Editing and batch actions are
+              disabled until the database schema catches up, so the shelf stays explicitly read-only.
+            </p>
+          </div>
+        )}
+
         {/* Reading status tabs */}
         <StatusTabs
           activeStatus={activeStatus}
@@ -123,50 +147,55 @@ export function LibraryView({
         />
 
         {/* Ownership filter chips */}
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-bold text-muted uppercase tracking-wider mr-1">
-            {t("book.ownershipLabel")}:
-          </span>
+        {hasSynthesizedOwnership ? (
+          <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-xs leading-relaxed text-muted">
+            Ownership availability is temporarily unavailable in this compatibility snapshot, so
+            ownership filters stay disabled until Rollorian can read authoritative local values again.
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-bold text-muted uppercase tracking-wider mr-1">
+              {t("book.ownershipLabel")}:
+            </span>
 
-          {/* "All" chip */}
-          <button
-            type="button"
-            onClick={() => setOwnershipFilter("ALL")}
-            className={cn(
-              "inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border transition-all duration-150",
-              "focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent",
-              ownershipFilter === "ALL"
-                ? "bg-white/12 text-text border-white/20"
-                : "bg-white/5 text-muted border-white/8 hover:text-text hover:border-white/15",
-            )}
-          >
-            {t("library.ownershipFilter.ALL")}
-          </button>
-
-          {/* Status-specific chips */}
-          {OWNERSHIP_STATUS_VALUES.map((os) => (
             <button
-              key={os}
               type="button"
-              onClick={() => setOwnershipFilter(os)}
+              onClick={() => setOwnershipFilter("ALL")}
               className={cn(
                 "inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border transition-all duration-150",
                 "focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent",
-                ownershipFilter === os
-                  ? os === "OWNED"
-                    ? "bg-emerald-500/25 text-emerald-300 border-emerald-500/35"
-                    : os === "NOT_OWNED"
-                      ? "bg-white/12 text-text border-white/20"
-                      : "bg-white/8 text-white/60 border-white/12"
-                  : os === "OWNED"
-                    ? "bg-emerald-500/8 text-emerald-500/60 border-emerald-500/12 hover:bg-emerald-500/15 hover:text-emerald-400"
-                    : "bg-white/5 text-muted border-white/8 hover:text-text hover:border-white/15",
+                ownershipFilter === "ALL"
+                  ? "bg-white/12 text-text border-white/20"
+                  : "bg-white/5 text-muted border-white/8 hover:text-text hover:border-white/15",
               )}
             >
-              {t(`library.ownershipFilter.${os}`)}
+              {t("library.ownershipFilter.ALL")}
             </button>
-          ))}
-        </div>
+
+            {OWNERSHIP_STATUS_VALUES.map((os) => (
+              <button
+                key={os}
+                type="button"
+                onClick={() => setOwnershipFilter(os)}
+                className={cn(
+                  "inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border transition-all duration-150",
+                  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent",
+                  ownershipFilter === os
+                    ? os === "OWNED"
+                      ? "bg-emerald-500/25 text-emerald-300 border-emerald-500/35"
+                      : os === "NOT_OWNED"
+                        ? "bg-white/12 text-text border-white/20"
+                        : "bg-white/8 text-white/60 border-white/12"
+                    : os === "OWNED"
+                      ? "bg-emerald-500/8 text-emerald-500/60 border-emerald-500/12 hover:bg-emerald-500/15 hover:text-emerald-400"
+                      : "bg-white/5 text-muted border-white/8 hover:text-text hover:border-white/15",
+                )}
+              >
+                {t(`library.ownershipFilter.${os}`)}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Book list */}
@@ -191,8 +220,9 @@ export function LibraryView({
             <LibraryBookRow
               key={book.id}
               book={book}
-              selectionMode={selectionMode}
-              selected={selectedIds.has(book.id)}
+              readOnly={isCompatReadOnly}
+              selectionMode={!isCompatReadOnly && selectionMode}
+              selected={!isCompatReadOnly && selectedIds.has(book.id)}
               onToggle={toggleSelect}
             />
           ))}
@@ -200,7 +230,7 @@ export function LibraryView({
       )}
 
       {/* Floating selection toolbar */}
-      {selectionMode && selectedIds.size > 0 && (
+      {selectionMode && !isCompatReadOnly && selectedIds.size > 0 && (
         <SelectionToolbar
           selectedCount={selectedIds.size}
           onBatchStatusChange={handleBatchStatusChange}

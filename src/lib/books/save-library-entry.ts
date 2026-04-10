@@ -6,6 +6,7 @@ import {
   getUserBookCompatFallbackAttempts,
   getUserBookCompatAttempts,
   isRetryableUserBookCompatError,
+  rethrowMissingUserBookSchemaError,
   type UserBookCompatAttempt,
 } from "@/lib/prisma-schema-compat";
 import type { UserBookWithBook } from "@/lib/types/book";
@@ -106,6 +107,7 @@ export async function saveLibraryEntry(
             break;
           } catch (error) {
             lastError = error;
+            rethrowMissingUserBookSchemaError(error);
             if (isUniqueUserBookConflict(error)) {
               throw new DuplicateLibraryEntryError();
             }
@@ -134,6 +136,7 @@ export async function saveLibraryEntry(
 
       return userBook;
     } catch (error) {
+      rethrowMissingUserBookSchemaError(error);
       if (!isTransactionWriteConflict(error)) {
         throw error;
       }
@@ -271,6 +274,7 @@ async function findSavedUserBook(
       return await readSavedUserBook(tx, userId, bookId, attempt);
     } catch (error) {
       lastError = error;
+      rethrowMissingUserBookSchemaError(error);
 
       if (!isRetryableUserBookCompatError(error)) {
         throw error;

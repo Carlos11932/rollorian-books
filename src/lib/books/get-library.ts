@@ -16,13 +16,30 @@ const FULL_USER_BOOK_READ_ATTEMPT: UserBookCompatAttempt = {
   includeFinishedAt: true,
 };
 
+const COMPAT_DEGRADED_FIELD = {
+  OWNERSHIP_STATUS: "ownershipStatus",
+  FINISHED_AT: "finishedAt",
+} as const;
+
+type CompatDegradedField = (typeof COMPAT_DEGRADED_FIELD)[keyof typeof COMPAT_DEGRADED_FIELD];
+
+interface LibraryListCompatMetadata {
+  compatDegraded?: true;
+  compatDegradedFields?: CompatDegradedField[];
+}
+
 export function isBookStatus(value: string): value is BookStatus {
   return VALID_STATUSES.has(value);
 }
 
-export type LibraryListEntryResult = UserBookWithBook & {
-  compatDegraded?: true;
-};
+export type LibraryListEntryResult = UserBookWithBook & LibraryListCompatMetadata;
+
+export type LibraryReadState = "full" | "degraded" | "unavailable";
+
+export interface LibrarySnapshotResult {
+  entries: LibraryListEntryResult[];
+  state: LibraryReadState;
+}
 
 /**
  * Fetches all library entries for a user, optionally filtered by status and search query.
@@ -31,6 +48,15 @@ export async function getLibrary(
   userId: string,
   options?: { status?: BookStatus; q?: string },
 ): Promise<LibraryListEntryResult[]> {
+  const snapshot = await getLibrarySnapshot(userId, options);
+
+  return snapshot.entries;
+}
+
+export async function getLibrarySnapshot(
+  userId: string,
+  options?: { status?: BookStatus; q?: string },
+): Promise<LibrarySnapshotResult> {
   const where = {
     userId,
     ...(options?.status ? { status: options.status } : {}),
@@ -47,10 +73,18 @@ export async function getLibrary(
   };
 
   try {
-    return await findLibraryEntriesWithCompat(where, FULL_USER_BOOK_READ_ATTEMPT);
+    const entries = await findLibraryEntriesWithCompat(where, FULL_USER_BOOK_READ_ATTEMPT);
+
+    return {
+      entries,
+      state: entries.some((entry) => entry.compatDegraded) ? "degraded" : "full",
+    };
   } catch (error) {
     if (isMissingUserBookSchemaError(error)) {
-      return [];
+      return {
+        entries: [],
+        state: "unavailable",
+      };
     }
 
     throw error;
@@ -86,6 +120,10 @@ async function findLibraryEntriesWithCompat(
       return await readLibraryEntriesAttempt(where, attempt);
     } catch (error) {
       lastError = error;
+
+      if (isMissingUserBookSchemaError(error)) {
+        throw error;
+      }
 
       if (!isRetryableUserBookCompatError(error)) {
         throw error;
@@ -124,7 +162,12 @@ async function readLibraryEntriesAttempt(
       orderBy: { createdAt: "desc" },
     });
 
-    return results.map((entry) => ({ ...entry, finishedAt: null, compatDegraded: true }));
+    return results.map((entry) => ({
+      ...entry,
+      finishedAt: null,
+      compatDegraded: true,
+      compatDegradedFields: [COMPAT_DEGRADED_FIELD.FINISHED_AT],
+    }));
   }
 
   if (attempt.includeFinishedAt) {
@@ -145,7 +188,12 @@ async function readLibraryEntriesAttempt(
       orderBy: { createdAt: "desc" },
     });
 
-    return results.map((entry) => ({ ...entry, ownershipStatus: "UNKNOWN", compatDegraded: true }));
+    return results.map((entry) => ({
+      ...entry,
+      ownershipStatus: "UNKNOWN",
+      compatDegraded: true,
+      compatDegradedFields: [COMPAT_DEGRADED_FIELD.OWNERSHIP_STATUS],
+    }));
   }
 
   const results = await prisma.userBook.findMany({
@@ -164,12 +212,16 @@ async function readLibraryEntriesAttempt(
     orderBy: { createdAt: "desc" },
   });
 
-    return results.map((entry) => ({
-      ...entry,
-      ownershipStatus: "UNKNOWN",
-      finishedAt: null,
-      compatDegraded: true,
-    }));
+  return results.map((entry) => ({
+    ...entry,
+    ownershipStatus: "UNKNOWN",
+    finishedAt: null,
+    compatDegraded: true,
+    compatDegradedFields: [
+      COMPAT_DEGRADED_FIELD.OWNERSHIP_STATUS,
+      COMPAT_DEGRADED_FIELD.FINISHED_AT,
+    ],
+  }));
 }
 
 function hasAttempt(

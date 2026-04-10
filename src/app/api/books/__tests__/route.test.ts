@@ -227,6 +227,23 @@ describe("POST /api/books", () => {
     });
   });
 
+  it("returns 503 when the UserBook table is missing on a lagging schema", async () => {
+    userBookMock.findUnique.mockRejectedValueOnce(
+      makeKnownRequestError("P2021", "The table `public.UserBook` does not exist in the current database."),
+    );
+
+    const request = makePostRequest(validBody);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = await POST(request as any);
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({
+      error: "Library write operations are unavailable until the database schema includes UserBook",
+      code: "USER_BOOK_SCHEMA_UNAVAILABLE",
+    });
+    expect(userBookMock.create).not.toHaveBeenCalled();
+  });
+
   it("drops explicit UNKNOWN ownershipStatus instead of treating it as a hard persistence requirement", async () => {
     const createdBook = makeBook();
     const createdUserBook = makeUserBook(createdBook);

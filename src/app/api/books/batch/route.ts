@@ -7,7 +7,9 @@ import { requireAuth, UnauthorizedError } from "@/lib/auth/require-auth";
 import {
   getUserBookCompatFallbackAttempts,
   isRetryableUserBookCompatError,
+  rethrowMissingUserBookSchemaError,
   type UserBookCompatAttempt,
+  UserBookSchemaUnavailableError,
 } from "@/lib/prisma-schema-compat";
 import { BOOK_STATUS_VALUES, type BookStatus, OWNERSHIP_STATUS_VALUES, type OwnershipStatus } from "@/lib/types/book";
 import { revalidateBookCollectionPaths } from "@/lib/revalidation";
@@ -107,6 +109,15 @@ export async function PATCH(request: Request): Promise<Response> {
         { status: 409 },
       );
     }
+    if (error instanceof UserBookSchemaUnavailableError) {
+      return Response.json(
+        {
+          error: error.message,
+          code: "USER_BOOK_SCHEMA_UNAVAILABLE",
+        },
+        { status: 503 },
+      );
+    }
     if (error instanceof SyntaxError) {
       return Response.json({ error: "Invalid request" }, { status: 400 });
     }
@@ -164,6 +175,7 @@ async function updateManyWithCompat({
       };
     } catch (error) {
       lastError = error;
+      rethrowMissingUserBookSchemaError(error);
       if (!isRetryableUserBookCompatError(error)) {
         throw error;
       }
@@ -212,6 +224,7 @@ async function updateManyBooks({
         isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
       });
     } catch (error) {
+      rethrowMissingUserBookSchemaError(error);
       if (error instanceof ReadStatusSnapshotRetryError) {
         continue;
       }

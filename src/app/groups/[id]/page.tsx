@@ -3,9 +3,14 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { isRetryableUserBookCompatError } from "@/lib/prisma-schema-compat";
+import {
+  isMissingUserBookSchemaError,
+  isRetryableUserBookCompatError,
+} from "@/lib/prisma-schema-compat";
 import { GroupLibraryCatalog } from "@/features/groups/components/group-library-catalog";
 import type { CatalogBookOwner } from "@/features/groups/components/group-library-catalog";
+
+const UNAVAILABLE_LOAN_STATUSES = ["REQUESTED", "OFFERED", "ACTIVE"] as const;
 
 interface GroupFeedPageProps {
   params: Promise<{ id: string }>;
@@ -53,34 +58,34 @@ export default async function GroupFeedPage({ params }: GroupFeedPageProps) {
   const memberUserIds = acceptedMembers.map((m) => m.userId);
 
   // Fetch ALL unique books from group members with genres + current user status
-  const books = memberUserIds.length > 0
+  const groupBooksSnapshot = memberUserIds.length > 0
     ? await getGroupBooks(userId, memberUserIds)
-    : [];
+    : { books: [], state: "full" as const };
 
-  // Batch-fetch active loans for this group's books by member lenders
-  const allBookIds = books.map((b) => b.id);
-  const activeLoans = allBookIds.length > 0 && memberUserIds.length > 0
+  // Batch-fetch unavailable loans for this group's books by member lenders
+  const allBookIds = groupBooksSnapshot.books.map((b) => b.id);
+  const unavailableLoans = allBookIds.length > 0 && memberUserIds.length > 0
     ? await prisma.loan.findMany({
         where: {
           bookId: { in: allBookIds },
           lenderId: { in: memberUserIds },
-          status: "ACTIVE",
+          status: { in: UNAVAILABLE_LOAN_STATUSES.slice() },
         },
         select: { bookId: true, lenderId: true },
       })
     : [];
 
   // Build a Set keyed by "bookId:lenderId" for O(1) lookup
-  const activeLoanKey = new Set(activeLoans.map((l) => `${l.bookId}:${l.lenderId}`));
+  const unavailableLoanKey = new Set(unavailableLoans.map((l) => `${l.bookId}:${l.lenderId}`));
 
-  const catalogBooks = books.map((b) => {
+  const catalogBooks = groupBooksSnapshot.books.map((b) => {
     const myEntry = b.userBooks.find((ub) => ub.userId === userId) ?? null;
     const owners: CatalogBookOwner[] = b.userBooks
       .filter((ub) => memberUserIds.includes(ub.userId) && ub.ownershipStatus === "OWNED")
       .map((ub) => ({
         userId: ub.userId,
         userName: ub.user.name,
-        hasActiveLoan: activeLoanKey.has(`${b.id}:${ub.userId}`),
+        hasExclusiveLoan: unavailableLoanKey.has(`${b.id}:${ub.userId}`),
       }));
     return {
       id: b.id,
@@ -132,7 +137,19 @@ export default async function GroupFeedPage({ params }: GroupFeedPageProps) {
       </div>
 
       {/* Shared library catalog */}
-          <GroupLibraryCatalog books={catalogBooks} />
+      {groupBooksSnapshot.state === "unavailable" ? (
+        <section className="rounded-[var(--radius-xl)] border border-amber-400/30 bg-surface/70 p-6 backdrop-blur-[20px]">
+          <p className="text-xs font-bold uppercase tracking-widest text-amber-300">
+            Compatibility mode
+          </p>
+          <p className="mt-3 text-sm leading-relaxed text-on-surface/75">
+            Shared library data is temporarily unavailable while the database schema catches up.
+            Rollorian is avoiding misleading availability and ownership signals until UserBook is readable again.
+          </p>
+        </section>
+      ) : (
+        <GroupLibraryCatalog books={catalogBooks} />
+      )}
     </div>
   );
 }
@@ -146,7 +163,7 @@ async function getGroupBooks(currentUserId: string, memberUserIds: string[]) {
   };
 
   try {
-    return await prisma.book.findMany({
+    const books = await prisma.book.findMany({
       ...sharedWhere,
       select: {
         id: true,
@@ -165,7 +182,19 @@ async function getGroupBooks(currentUserId: string, memberUserIds: string[]) {
         },
       },
     });
+
+    return {
+      books,
+      state: "full" as const,
+    };
   } catch (error) {
+    if (isMissingUserBookSchemaError(error)) {
+      return {
+        books: [],
+        state: "unavailable" as const,
+      };
+    }
+
     if (!isRetryableUserBookCompatError(error)) {
       throw error;
     }
@@ -189,12 +218,15 @@ async function getGroupBooks(currentUserId: string, memberUserIds: string[]) {
       },
     });
 
-    return legacyBooks.map((book) => ({
-      ...book,
-      userBooks: book.userBooks.map((userBook) => ({
-        ...userBook,
-        ownershipStatus: "UNKNOWN" as const,
+    return {
+      books: legacyBooks.map((book) => ({
+        ...book,
+        userBooks: book.userBooks.map((userBook) => ({
+          ...userBook,
+          ownershipStatus: "UNKNOWN" as const,
+        })),
       })),
-    }));
+      state: "degraded" as const,
+    };
   }
 }

@@ -1,11 +1,22 @@
 import { notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getLibrarySnapshot } from "@/lib/books";
 import { canViewUserBooks } from "@/lib/privacy/can-view-user-books";
 import type { UserBookWithBook } from "@/lib/types/book";
+import {
+  LIBRARY_READ_STATE,
+  type LibraryCompatDegradedField,
+  type LibraryReadState,
+} from "@/features/books/types";
 import { ProfileHeader } from "@/features/profile/components/profile-header";
 import { ProfileBookList } from "@/features/profile/components/profile-book-list";
-import { USER_BOOK_SELECT } from "@/lib/books/user-book-select";
+import { isMissingUserBookSchemaError } from "@/lib/prisma-schema-compat";
+
+type ProfileLibraryEntry = UserBookWithBook & {
+  compatDegraded?: true;
+  compatDegradedFields?: LibraryCompatDegradedField[];
+};
 
 interface UserProfilePageProps {
   params: Promise<{ id: string }>;
@@ -35,21 +46,58 @@ export default async function UserProfilePage({
   const isOwnProfile = viewerId === targetUserId;
 
   // Fetch target user
-  const targetUser = await prisma.user.findUnique({
-    where: { id: targetUserId },
-    select: {
-      id: true,
-      name: true,
-      image: true,
-      _count: {
+  let localBooksUnavailable = false;
+
+  const targetUser = await (async () => {
+    try {
+      return await prisma.user.findUnique({
+        where: { id: targetUserId },
         select: {
-          followers: true,
-          following: true,
-          userBooks: true,
+          id: true,
+          name: true,
+          image: true,
+          _count: {
+            select: {
+              followers: true,
+              following: true,
+              userBooks: true,
+            },
+          },
         },
-      },
-    },
-  });
+      });
+    } catch (error) {
+      if (!isMissingUserBookSchemaError(error)) {
+        throw error;
+      }
+
+      localBooksUnavailable = true;
+
+      return prisma.user.findUnique({
+        where: { id: targetUserId },
+        select: {
+          id: true,
+          name: true,
+          image: true,
+          _count: {
+            select: {
+              followers: true,
+              following: true,
+            },
+          },
+        },
+      }).then((user) => (
+        user
+          ? {
+              ...user,
+              _count: {
+                ...user._count,
+                userBooks: 0,
+              },
+            }
+          : null
+      ));
+    }
+  })();
 
   if (!targetUser) {
     notFound();
@@ -72,19 +120,21 @@ export default async function UserProfilePage({
 
   // Privacy gate for books
   let canView = false;
-  let books: UserBookWithBook[] = [];
+  let books: ProfileLibraryEntry[] = [];
+  let libraryReadState: LibraryReadState = LIBRARY_READ_STATE.FULL;
 
   if (isAuthenticated && viewerId) {
     canView = await canViewUserBooks(viewerId, targetUserId);
   }
 
   if (canView) {
-    const results = await prisma.userBook.findMany({
-      where: { userId: targetUserId },
-      select: USER_BOOK_SELECT,
-      orderBy: { createdAt: "desc" },
-    });
-    books = results.map((r) => ({ ...r, finishedAt: null }));
+    const librarySnapshot = await getLibrarySnapshot(targetUserId);
+    localBooksUnavailable = localBooksUnavailable || librarySnapshot.state === "unavailable";
+    libraryReadState = librarySnapshot.state;
+
+    if (librarySnapshot.state !== "unavailable") {
+      books = librarySnapshot.entries;
+    }
   }
 
   return (
@@ -102,13 +152,26 @@ export default async function UserProfilePage({
       />
 
       <section>
-        <ProfileBookList
-          books={books}
-          canView={canView}
-          isOwnProfile={isOwnProfile}
-          isAuthenticated={isAuthenticated}
-          targetUserName={targetUser.name}
-        />
+        {localBooksUnavailable ? (
+          <div className="rounded-2xl border border-amber-400/30 bg-surface/70 p-6 text-sm text-on-surface/75">
+            <p className="text-xs font-bold uppercase tracking-widest text-amber-300">
+              Compatibility mode
+            </p>
+            <p className="mt-3 leading-relaxed">
+              This profile&apos;s library is temporarily unavailable while the database schema catches up.
+              Rollorian is intentionally hiding local reading state instead of pretending the shelf is empty.
+            </p>
+          </div>
+        ) : (
+          <ProfileBookList
+            books={books}
+            readState={libraryReadState}
+            canView={canView}
+            isOwnProfile={isOwnProfile}
+            isAuthenticated={isAuthenticated}
+            targetUserName={targetUser.name}
+          />
+        )}
       </section>
     </div>
   );

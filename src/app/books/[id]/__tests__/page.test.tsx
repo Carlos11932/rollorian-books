@@ -14,14 +14,7 @@ const {
   LocalBookDetailMock,
   DiscoveredBookDetailMock,
   GoogleBookDetailMock,
-  LibraryEntryNotFoundError,
 } = vi.hoisted(() => {
-  class _LibraryEntryNotFoundError extends Error {
-    constructor() {
-      super("Book not found in library");
-    }
-  }
-
   return {
     authMock: vi.fn(),
     getLibraryEntryMock: vi.fn(),
@@ -35,7 +28,6 @@ const {
     LocalBookDetailMock: vi.fn((_props?: unknown) => null),
     DiscoveredBookDetailMock: vi.fn((_props?: unknown) => null),
     GoogleBookDetailMock: vi.fn((_props?: unknown) => null),
-    LibraryEntryNotFoundError: _LibraryEntryNotFoundError,
   };
 });
 
@@ -49,8 +41,7 @@ vi.mock("@/lib/auth", () => ({
 }));
 
 vi.mock("@/lib/books", () => ({
-  getLibraryEntry: (...args: unknown[]) => getLibraryEntryMock(...args),
-  LibraryEntryNotFoundError,
+  getLibraryEntrySnapshot: (...args: unknown[]) => getLibraryEntryMock(...args),
 }));
 
 vi.mock("@/lib/prisma", () => ({
@@ -110,7 +101,7 @@ describe("Book detail page local resolution", () => {
   });
 
   it("rethrows unexpected local book lookup errors after a library miss", async () => {
-    getLibraryEntryMock.mockRejectedValueOnce(new LibraryEntryNotFoundError());
+    getLibraryEntryMock.mockResolvedValueOnce({ entry: null, state: "missing" });
     bookFindUniqueMock.mockRejectedValueOnce(new Error("database unavailable"));
 
     await expect(BookDetailPage({ params: Promise.resolve({ id: "book-2" }) })).rejects.toThrow("database unavailable");
@@ -120,9 +111,7 @@ describe("Book detail page local resolution", () => {
   });
 
   it("degrades gracefully when local UserBook lookup hits a schema mismatch", async () => {
-    const schemaError = new Error("UserBook column missing");
-    getLibraryEntryMock.mockRejectedValueOnce(schemaError);
-    isPrismaSchemaMismatchErrorMock.mockReturnValueOnce(true);
+    getLibraryEntryMock.mockResolvedValueOnce({ entry: null, state: "unavailable" });
     bookFindUniqueMock.mockResolvedValueOnce({
       id: "book-3",
       title: "Clean Code",
@@ -134,39 +123,42 @@ describe("Book detail page local resolution", () => {
     await expect(BookDetailPage({ params: Promise.resolve({ id: "book-3" }) })).resolves.toBeTruthy();
 
     expect(bookFindUniqueMock).toHaveBeenCalledWith({ where: { id: "book-3" } });
-    expect(fetchBookByIdMock).not.toHaveBeenCalled();
-    expect(fetchWorkByIdMock).not.toHaveBeenCalled();
+    expect(DiscoveredBookDetailMock).not.toHaveBeenCalled();
+    expect(GoogleBookDetailMock).not.toHaveBeenCalled();
   });
 
   it("renders a read-only fallback instead of editable local UI for compat-degraded local entries", async () => {
     getLibraryEntryMock.mockResolvedValueOnce({
-      id: "ub-3",
-      userId: "user-1",
-      bookId: "book-3",
-      status: "READ",
-      ownershipStatus: "UNKNOWN",
-      finishedAt: null,
-      rating: 4,
-      notes: "Keep this read-only",
-      compatDegraded: true,
-      createdAt: new Date("2024-01-01T00:00:00.000Z"),
-      updatedAt: new Date("2024-01-01T00:00:00.000Z"),
-      book: {
-        id: "book-3",
-        title: "Clean Code",
-        subtitle: null,
-        authors: ["Robert C. Martin"],
-        description: null,
-        coverUrl: null,
-        publisher: null,
-        publishedDate: null,
-        pageCount: null,
-        isbn10: null,
-        isbn13: null,
-        genres: [],
+      entry: {
+        id: "ub-3",
+        userId: "user-1",
+        bookId: "book-3",
+        status: "READ",
+        ownershipStatus: "UNKNOWN",
+        finishedAt: null,
+        rating: 4,
+        notes: "Keep this read-only",
+        compatDegraded: true,
         createdAt: new Date("2024-01-01T00:00:00.000Z"),
         updatedAt: new Date("2024-01-01T00:00:00.000Z"),
+        book: {
+          id: "book-3",
+          title: "Clean Code",
+          subtitle: null,
+          authors: ["Robert C. Martin"],
+          description: null,
+          coverUrl: null,
+          publisher: null,
+          publishedDate: null,
+          pageCount: null,
+          isbn10: null,
+          isbn13: null,
+          genres: [],
+          createdAt: new Date("2024-01-01T00:00:00.000Z"),
+          updatedAt: new Date("2024-01-01T00:00:00.000Z"),
+        },
       },
+      state: "degraded",
     });
 
     const html = renderToStaticMarkup(await BookDetailPage({ params: Promise.resolve({ id: "book-3" }) }));
@@ -177,4 +169,33 @@ describe("Book detail page local resolution", () => {
     expect(DiscoveredBookDetailMock).not.toHaveBeenCalled();
     expect(GoogleBookDetailMock).not.toHaveBeenCalled();
   });
+
+  it("renders compatibility messaging instead of discovered detail when local UserBook data is unavailable", async () => {
+    getLibraryEntryMock.mockResolvedValueOnce({ entry: null, state: "unavailable" });
+    bookFindUniqueMock.mockResolvedValueOnce({
+      id: "book-9",
+      title: "Domain-Driven Design",
+      subtitle: null,
+      authors: ["Eric Evans"],
+      description: null,
+      coverUrl: null,
+      publisher: null,
+      publishedDate: null,
+      pageCount: null,
+      isbn10: null,
+      isbn13: null,
+      genres: [],
+      createdAt: new Date("2024-01-01T00:00:00.000Z"),
+      updatedAt: new Date("2024-01-01T00:00:00.000Z"),
+    });
+
+    const html = renderToStaticMarkup(await BookDetailPage({ params: Promise.resolve({ id: "book-9" }) }));
+
+    expect(html).toContain("Compatibility mode");
+    expect(html).toContain("UserBook table is missing");
+    expect(html).toContain("Domain-Driven Design");
+    expect(DiscoveredBookDetailMock).not.toHaveBeenCalled();
+    expect(LocalBookDetailMock).not.toHaveBeenCalled();
+  });
+
 });

@@ -13,7 +13,7 @@ vi.mock("@/lib/prisma", () => ({
   },
 }));
 
-import { getLibrary } from "../get-library";
+import { getLibrary, getLibrarySnapshot } from "../get-library";
 
 describe("getLibrary", () => {
   beforeEach(() => {
@@ -71,6 +71,7 @@ describe("getLibrary", () => {
 
     expect(result[0]?.finishedAt).toBeNull();
     expect(result[0]?.compatDegraded).toBe(true);
+    expect(result[0]?.compatDegradedFields).toEqual(["finishedAt"]);
     expect(userBookFindManyMock).toHaveBeenCalledTimes(2);
     expect(userBookFindManyMock.mock.calls[1]?.[0]).toEqual(
       expect.objectContaining({
@@ -101,6 +102,18 @@ describe("getLibrary", () => {
 
     expect(result[0]?.ownershipStatus).toBe("UNKNOWN");
     expect(result[0]?.compatDegraded).toBe(true);
+    expect(result[0]?.compatDegradedFields).toEqual(["ownershipStatus"]);
+  });
+
+  it("reports unavailable state when the UserBook table is missing", async () => {
+    userBookFindManyMock.mockRejectedValueOnce(
+      makeKnownRequestError("P2021", "The table `UserBook` does not exist"),
+    );
+
+    await expect(getLibrarySnapshot("user-1")).resolves.toEqual({
+      entries: [],
+      state: "unavailable",
+    });
   });
 });
 
