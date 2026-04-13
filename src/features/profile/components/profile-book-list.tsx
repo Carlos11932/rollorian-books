@@ -74,11 +74,10 @@ export async function ProfileBookList({
       {readState === LIBRARY_READ_STATE.DEGRADED && (
         <div className="rounded-2xl border border-amber-400/30 bg-amber-400/10 p-4 text-sm text-on-surface/80">
           <p className="text-xs font-bold uppercase tracking-widest text-amber-300">
-            Compatibility snapshot
+            {t("compat.snapshotEyebrow")}
           </p>
           <p className="mt-2 leading-relaxed">
-            Part of this profile library was synthesized from a compatibility reader. Rollorian shows
-            it as read-only and hides unsupported ownership details until authoritative local data is available.
+            {t("compat.snapshotDescription")}
           </p>
         </div>
       )}
@@ -128,7 +127,7 @@ export async function ProfileBookList({
                 )}
                 {entry.compatDegraded && (
                   <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-amber-300">
-                    Read-only snapshot
+                    {t("compat.readOnlyBadge")}
                   </span>
                 )}
                 {rating !== null && (

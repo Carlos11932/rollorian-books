@@ -201,7 +201,12 @@ export function LibraryBookRow({
         {/* Meta */}
         {(book.pageCount ?? publishYear) && (
           <p className="text-[11px] text-muted/35">
-            {[book.pageCount && `${book.pageCount} págs.`, publishYear]
+            {[
+              book.pageCount
+                ? t("book.pageCountCompact", { count: book.pageCount })
+                : null,
+              publishYear,
+            ]
               .filter(Boolean)
               .join(" · ")}
           </p>
@@ -211,7 +216,7 @@ export function LibraryBookRow({
         <div className="flex items-center gap-2 mt-auto pt-1" onClick={(e) => e.stopPropagation()}>
           {readOnly ? (
             <p className="text-[10px] text-amber-300/70 font-bold uppercase tracking-wide">
-              Compatibility snapshot
+              {t("library.compat.snapshotEyebrow")}
             </p>
           ) : (
             <>
@@ -260,7 +265,9 @@ export function LibraryBookRow({
                     "hover:bg-indigo-500/20 hover:text-indigo-200 transition-colors duration-150",
                     "focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent",
                   )}
-                  aria-label={`${book.friendActivityCount} ${book.friendActivityCount === 1 ? "amigo ha valorado" : "amigos han valorado"} este libro`}
+                  aria-label={t("book.friendActivityAriaLabel", {
+                    count: book.friendActivityCount ?? 0,
+                  })}
                 >
                   <span className="material-symbols-outlined text-[11px]">group</span>
                   {book.friendActivityCount}

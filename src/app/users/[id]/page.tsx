@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getLibrarySnapshot } from "@/lib/books";
@@ -39,6 +40,7 @@ export default async function UserProfilePage({
   params,
 }: UserProfilePageProps) {
   const { id: targetUserId } = await params;
+  const tProfile = await getTranslations("profile");
 
   const session = await auth();
   const viewerId = session?.user?.id ?? null;
@@ -155,11 +157,10 @@ export default async function UserProfilePage({
         {localBooksUnavailable ? (
           <div className="rounded-2xl border border-amber-400/30 bg-surface/70 p-6 text-sm text-on-surface/75">
             <p className="text-xs font-bold uppercase tracking-widest text-amber-300">
-              Compatibility mode
+              {tProfile("compat.modeEyebrow")}
             </p>
             <p className="mt-3 leading-relaxed">
-              This profile&apos;s library is temporarily unavailable while the database schema catches up.
-              Rollorian is intentionally hiding local reading state instead of pretending the shelf is empty.
+              {tProfile("compat.unavailableDescription")}
             </p>
           </div>
         ) : (

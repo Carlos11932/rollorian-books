@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { cache } from "react";
 import type { Book } from "@/lib/types/book";
 import { prisma } from "@/lib/prisma";
@@ -231,6 +232,7 @@ export async function generateMetadata({ params }: BookDetailPageProps) {
 
 export default async function BookDetailPage({ params }: BookDetailPageProps) {
   const { id } = await params;
+  const tBook = await getTranslations("book");
   const session = await auth();
   if (!session?.user?.id) {
     redirect("/login");
@@ -255,28 +257,27 @@ export default async function BookDetailPage({ params }: BookDetailPageProps) {
       <section className="mx-auto max-w-4xl grid gap-6 pt-8 pb-12">
         <div className="rounded-[var(--radius-xl)] border border-amber-400/30 bg-surface/70 p-6 backdrop-blur-[20px]">
           <p className="text-xs font-bold uppercase tracking-widest text-amber-300">
-            Read-only compatibility mode
+            {tBook("compat.readOnlyModeEyebrow")}
           </p>
           <h1 className="mt-3 text-3xl font-bold text-on-surface leading-tight">{book.title}</h1>
           <p className="mt-2 text-base text-on-surface/60">{book.authors.join(", ")}</p>
           <p className="mt-4 text-sm text-on-surface/75 leading-relaxed">
-            This library entry is available in read-only mode while the database schema catches up.
-            Editing and ownership controls are temporarily disabled so we do not present unsupported local actions.
+            {tBook("compat.readOnlyDescription")}
           </p>
           <dl className="mt-6 grid gap-3 text-sm text-on-surface/75">
             <div>
-              <dt className="font-semibold text-on-surface">Status</dt>
-              <dd>{userBook.status}</dd>
+              <dt className="font-semibold text-on-surface">{tBook("statusLabel")}</dt>
+              <dd>{tBook(`status.${userBook.status}`)}</dd>
             </div>
             {userBook.rating != null && (
               <div>
-                <dt className="font-semibold text-on-surface">Rating</dt>
+                <dt className="font-semibold text-on-surface">{tBook("ratingLabel")}</dt>
                 <dd>{userBook.rating}/5</dd>
               </div>
             )}
             {userBook.notes && (
               <div>
-                <dt className="font-semibold text-on-surface">Notes</dt>
+                <dt className="font-semibold text-on-surface">{tBook("notesLabel")}</dt>
                 <dd>{userBook.notes}</dd>
               </div>
             )}
@@ -291,17 +292,16 @@ export default async function BookDetailPage({ params }: BookDetailPageProps) {
       <section className="mx-auto max-w-4xl grid gap-6 pt-8 pb-12">
         <div className="rounded-[var(--radius-xl)] border border-amber-400/30 bg-surface/70 p-6 backdrop-blur-[20px]">
           <p className="text-xs font-bold uppercase tracking-widest text-amber-300">
-            Compatibility mode
+            {tBook("compat.modeEyebrow")}
           </p>
           <h1 className="mt-3 text-3xl font-bold text-on-surface leading-tight">
-            {resolved.book?.title ?? "Book detail temporarily unavailable"}
+            {resolved.book?.title ?? tBook("compat.unavailableTitle")}
           </h1>
           {resolved.book?.authors.length ? (
             <p className="mt-2 text-base text-on-surface/60">{resolved.book.authors.join(", ")}</p>
           ) : null}
           <p className="mt-4 text-sm text-on-surface/75 leading-relaxed">
-            Rollorian could not load your local book entry because the UserBook table is missing on this database.
-            We are intentionally avoiding discovered or editable local detail until the schema catches up.
+            {tBook("compat.unavailableDescription")}
           </p>
         </div>
       </section>

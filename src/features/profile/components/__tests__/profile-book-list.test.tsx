@@ -10,6 +10,9 @@ vi.mock("next/link", () => ({
 
 vi.mock("next-intl/server", () => ({
   getTranslations: async () => (key: string, values?: Record<string, string | number>) => {
+    if (key === "compat.snapshotEyebrow") return "Compatibility snapshot";
+    if (key === "compat.snapshotDescription") return "compat snapshot description read-only";
+    if (key === "compat.readOnlyBadge") return "Read-only snapshot";
     if (values?.name) return `${key}:${String(values.name)}`;
     if (values?.rating) return `${key}:${String(values.rating)}`;
     return key;
@@ -71,7 +74,7 @@ describe("ProfileBookList", () => {
     }));
 
     expect(html).toContain("Compatibility snapshot");
-    expect(html).toContain("read-only");
+    expect(html).toContain("compat snapshot description read-only");
     expect(html).toContain("Read-only snapshot");
     expect(html).not.toContain(">UNKNOWN<");
   });

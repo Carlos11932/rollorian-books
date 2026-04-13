@@ -129,11 +129,10 @@ export function LibraryView({
         {isCompatReadOnly && (
           <div className="rounded-2xl border border-amber-400/30 bg-amber-400/10 p-4 text-sm text-on-surface/80">
             <p className="text-xs font-bold uppercase tracking-widest text-amber-300">
-              Compatibility snapshot
+              {t("library.compat.snapshotEyebrow")}
             </p>
             <p className="mt-2 leading-relaxed">
-              Rollorian synthesized part of this local library read. Editing and batch actions are
-              disabled until the database schema catches up, so the shelf stays explicitly read-only.
+              {t("library.compat.readOnlyDescription")}
             </p>
           </div>
         )}
@@ -148,8 +147,7 @@ export function LibraryView({
         {/* Ownership filter chips */}
         {hasSynthesizedOwnership ? (
           <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-xs leading-relaxed text-muted">
-            Ownership availability is temporarily unavailable in this compatibility snapshot, so
-            ownership filters stay disabled until Rollorian can read authoritative local values again.
+            {t("library.compat.ownershipUnavailable")}
           </div>
         ) : (
           <div className="flex flex-wrap items-center gap-2">

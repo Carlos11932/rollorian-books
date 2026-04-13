@@ -14,6 +14,7 @@ const {
   LocalBookDetailMock,
   DiscoveredBookDetailMock,
   GoogleBookDetailMock,
+  getTranslationsMock,
 } = vi.hoisted(() => {
   return {
     authMock: vi.fn(),
@@ -28,6 +29,7 @@ const {
     LocalBookDetailMock: vi.fn((_props?: unknown) => null),
     DiscoveredBookDetailMock: vi.fn((_props?: unknown) => null),
     GoogleBookDetailMock: vi.fn((_props?: unknown) => null),
+    getTranslationsMock: vi.fn(),
   };
 });
 
@@ -38,6 +40,10 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/lib/auth", () => ({
   auth: authMock,
+}));
+
+vi.mock("next-intl/server", () => ({
+  getTranslations: getTranslationsMock,
 }));
 
 vi.mock("@/lib/books", () => ({
@@ -88,6 +94,21 @@ describe("Book detail page local resolution", () => {
     authMock.mockResolvedValue({ user: { id: "user-1" } });
     getViewableUserIdsMock.mockResolvedValue(new Set());
     isPrismaSchemaMismatchErrorMock.mockReturnValue(false);
+    getTranslationsMock.mockResolvedValue((key: string) => {
+      const translations: Record<string, string> = {
+        "compat.readOnlyModeEyebrow": "Read-only compatibility mode",
+        "compat.readOnlyDescription": "Editing and ownership controls are temporarily disabled",
+        "compat.modeEyebrow": "Compatibility mode",
+        "compat.unavailableTitle": "Book detail temporarily unavailable",
+        "compat.unavailableDescription": "UserBook table is missing",
+        "statusLabel": "Status",
+        "status.READ": "Read",
+        "ratingLabel": "Rating",
+        "notesLabel": "Notes",
+      };
+
+      return translations[key] ?? key;
+    });
   });
 
   it("rethrows unexpected local library read errors instead of falling through to remote lookup", async () => {

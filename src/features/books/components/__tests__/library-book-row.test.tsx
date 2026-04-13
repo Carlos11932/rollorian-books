@@ -18,6 +18,14 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("next-intl", () => ({
   useTranslations: () => (key: string, values?: Record<string, string | number>) => {
+    if (key === "book.pageCountCompact") return `${String(values?.count)} pages`;
+    if (key === "book.friendActivityAriaLabel") {
+      const count = Number(values?.count ?? 0);
+      return count === 1
+        ? "1 friend has rated this book"
+        : `${String(count)} friends have rated this book`;
+    }
+    if (key === "library.compat.snapshotEyebrow") return "Compatibility snapshot";
     if (values?.title) return `${key}:${String(values.title)}`;
     if (values?.rating) return `${key}:${String(values.rating)}`;
     return key;
@@ -72,5 +80,40 @@ describe("LibraryBookRow", () => {
     expect(html).not.toContain("<select");
     expect(html).not.toContain("more_horiz");
     expect(html).not.toContain(">UNKNOWN<");
+  });
+
+  it("renders localized page count and friend activity labels via translations", () => {
+    const html = renderToStaticMarkup(
+      <LibraryBookRow
+        book={{
+          id: "book-2",
+          title: "Domain-Driven Design",
+          subtitle: null,
+          authors: ["Eric Evans"],
+          description: null,
+          coverUrl: null,
+          publisher: null,
+          publishedDate: "2003-08-30",
+          pageCount: 560,
+          isbn10: null,
+          isbn13: null,
+          genres: [],
+          status: "READ",
+          ownershipStatus: "OWNED",
+          rating: null,
+          notes: null,
+          compatDegraded: undefined,
+          compatDegradedFields: undefined,
+          friendActivityCount: 2,
+          createdAt: "2024-01-01T00:00:00.000Z",
+          updatedAt: "2024-01-01T00:00:00.000Z",
+        }}
+      />,
+    );
+
+    expect(html).toContain("560 pages · 2003");
+    expect(html).toContain("aria-label=\"2 friends have rated this book\"");
+    expect(html).not.toContain("págs.");
+    expect(html).not.toContain("amigos han valorado este libro");
   });
 });

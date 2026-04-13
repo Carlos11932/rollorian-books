@@ -7,12 +7,14 @@ const {
   getLibrarySnapshotMock,
   getFriendActivityForBooksMock,
   LibraryViewMock,
+  getTranslationsMock,
 } = vi.hoisted(() => ({
   getAuthenticatedUserIdOrNullMock: vi.fn(),
   redirectMock: vi.fn(),
   getLibrarySnapshotMock: vi.fn(),
   getFriendActivityForBooksMock: vi.fn(),
   LibraryViewMock: vi.fn((_props: unknown) => null),
+  getTranslationsMock: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -21,6 +23,10 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/lib/auth/require-auth", () => ({
   getAuthenticatedUserIdOrNull: getAuthenticatedUserIdOrNullMock,
+}));
+
+vi.mock("next-intl/server", () => ({
+  getTranslations: getTranslationsMock,
 }));
 
 vi.mock("@/lib/books", () => ({
@@ -39,6 +45,7 @@ describe("LibraryPage", () => {
     vi.clearAllMocks();
     getAuthenticatedUserIdOrNullMock.mockResolvedValue("user-1");
     getFriendActivityForBooksMock.mockResolvedValue(new Map());
+    getTranslationsMock.mockResolvedValue((key: string) => key);
   });
 
   it("passes degraded read state and compat metadata into the list view", async () => {
@@ -82,5 +89,25 @@ describe("LibraryPage", () => {
       readState: "degraded",
       books: [expect.objectContaining({ compatDegraded: true, compatDegradedFields: ["ownershipStatus"] })],
     }));
+  });
+
+  it("renders translated unavailable compatibility copy when library snapshot is unavailable", async () => {
+    getTranslationsMock.mockResolvedValue((key: string) => {
+      const translations: Record<string, string> = {
+        "compat.modeEyebrow": "Compatibility mode",
+        "compat.unavailableTitle": "Library temporarily unavailable",
+        "compat.unavailableDescription": "Translated library unavailable description",
+      };
+
+      return translations[key] ?? key;
+    });
+    getLibrarySnapshotMock.mockResolvedValueOnce({ state: "unavailable", entries: [] });
+
+    const html = renderToStaticMarkup(await LibraryPage({ searchParams: Promise.resolve({}) }));
+
+    expect(html).toContain("Compatibility mode");
+    expect(html).toContain("Library temporarily unavailable");
+    expect(html).toContain("Translated library unavailable description");
+    expect(LibraryViewMock).not.toHaveBeenCalled();
   });
 });

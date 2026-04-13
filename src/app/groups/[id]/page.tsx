@@ -139,11 +139,10 @@ export default async function GroupFeedPage({ params }: GroupFeedPageProps) {
       {groupBooksSnapshot.state === "unavailable" ? (
         <section className="rounded-[var(--radius-xl)] border border-amber-400/30 bg-surface/70 p-6 backdrop-blur-[20px]">
           <p className="text-xs font-bold uppercase tracking-widest text-amber-300">
-            Compatibility mode
+            {t("compat.modeEyebrow")}
           </p>
           <p className="mt-3 text-sm leading-relaxed text-on-surface/75">
-            Shared library data is temporarily unavailable while the database schema catches up.
-            Rollorian is avoiding misleading availability and ownership signals until UserBook is readable again.
+            {t("compat.unavailableDescription")}
           </p>
         </section>
       ) : (

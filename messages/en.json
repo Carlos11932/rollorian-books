@@ -221,6 +221,14 @@
       "NOT_OWNED": "Don't have it",
       "UNKNOWN": "Not specified"
     },
+    "compat": {
+      "snapshotEyebrow": "Compatibility snapshot",
+      "modeEyebrow": "Compatibility mode",
+      "readOnlyDescription": "Rollorian synthesized part of this local library read. Editing and batch actions are disabled until the database schema catches up, so the shelf stays explicitly read-only.",
+      "ownershipUnavailable": "Ownership availability is temporarily unavailable in this compatibility snapshot, so ownership filters stay disabled until Rollorian can read authoritative local values again.",
+      "unavailableTitle": "Library temporarily unavailable",
+      "unavailableDescription": "Rollorian could not read local library entries because the database schema is still catching up. We are intentionally avoiding editable library state until the UserBook table is available again."
+    },
     "selectBook": "Select {title}",
     "deselectBook": "Deselect {title}"
   },
@@ -307,6 +315,8 @@
     "savedRedirecting": "Saved — redirecting...",
     "openDetail": "Open detail",
     "ratingAriaLabel": "Rating: {rating} out of 5",
+    "pageCountCompact": "{count} pages",
+    "friendActivityAriaLabel": "{count, plural, one {# friend has rated this book} other {# friends have rated this book}}",
     "details": "Details",
     "publisher": "Publisher",
     "published": "Published",
@@ -332,7 +342,14 @@
     "bookRating": "Book rating",
     "clearRating": "Clear rating",
     "bookNotes": "Book notes",
-    "rateStar": "Rate {star} out of 5"
+    "rateStar": "Rate {star} out of 5",
+    "compat": {
+      "readOnlyModeEyebrow": "Read-only compatibility mode",
+      "readOnlyDescription": "This library entry is available in read-only mode while the database schema catches up. Editing and ownership controls are temporarily disabled so we do not present unsupported local actions.",
+      "modeEyebrow": "Compatibility mode",
+      "unavailableTitle": "Book detail temporarily unavailable",
+      "unavailableDescription": "Rollorian could not load your local book entry because the UserBook table is missing on this database. We are intentionally avoiding discovered or editable local detail until the schema catches up."
+    }
   },
   "profile": {
     "books": "Books",
@@ -346,7 +363,14 @@
     "unfollow": "Unfollow",
     "following_action": "Following",
     "editProfile": "Edit profile",
-    "thisUser": "this user"
+    "thisUser": "this user",
+    "compat": {
+      "snapshotEyebrow": "Compatibility snapshot",
+      "snapshotDescription": "Part of this profile library was synthesized from a compatibility reader. Rollorian shows it as read-only and hides unsupported ownership details until authoritative local data is available.",
+      "readOnlyBadge": "Read-only snapshot",
+      "modeEyebrow": "Compatibility mode",
+      "unavailableDescription": "This profile's library is temporarily unavailable while the database schema catches up. Rollorian is intentionally hiding local reading state instead of pretending the shelf is empty."
+    }
   },
   "groups": {
     "nav": "Groups",
@@ -416,7 +440,11 @@
     "emptyCatalog": "The shared library is empty.",
     "emptyCatalogDescription": "Members need to add books to their library first.",
     "emptyFiltered": "No books match this filter.",
-    "bookCount": "{count, plural, one {# book} other {# books}}"
+    "bookCount": "{count, plural, one {# book} other {# books}}",
+    "compat": {
+      "modeEyebrow": "Compatibility mode",
+      "unavailableDescription": "Shared library data is temporarily unavailable while the database schema catches up. Rollorian is avoiding misleading availability and ownership signals until UserBook is readable again."
+    }
   },
   "lists": {
     "title": "My Lists",

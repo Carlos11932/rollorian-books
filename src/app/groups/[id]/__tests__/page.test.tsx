@@ -150,4 +150,27 @@ describe("Group page availability", () => {
       ],
     }));
   });
+
+  it("renders translated compatibility copy when shared library data is unavailable", async () => {
+    getTranslationsMock.mockResolvedValue((key: string, values?: { count?: number }) => {
+      if (typeof values?.count === "number") {
+        return `${key}:${values.count}`;
+      }
+
+      const translations: Record<string, string> = {
+        "compat.modeEyebrow": "Compatibility mode",
+        "compat.unavailableDescription": "Translated group unavailable description",
+      };
+
+      return translations[key] ?? key;
+    });
+    bookFindManyMock.mockRejectedValueOnce(new Error("missing column"));
+    isMissingUserBookSchemaErrorMock.mockReturnValue(true);
+
+    const html = renderToStaticMarkup(await GroupFeedPage({ params: Promise.resolve({ id: "group-1" }) }));
+
+    expect(html).toContain("Compatibility mode");
+    expect(html).toContain("Translated group unavailable description");
+    expect(GroupLibraryCatalogMock).not.toHaveBeenCalled();
+  });
 });

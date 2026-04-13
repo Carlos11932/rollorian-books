@@ -9,6 +9,7 @@ const {
   getLibrarySnapshotMock,
   ProfileHeaderMock,
   ProfileBookListMock,
+  getTranslationsMock,
 } = vi.hoisted(() => ({
   authMock: vi.fn(),
   userFindUniqueMock: vi.fn(),
@@ -17,6 +18,7 @@ const {
   getLibrarySnapshotMock: vi.fn(),
   ProfileHeaderMock: vi.fn((_props: unknown) => null),
   ProfileBookListMock: vi.fn((_props: unknown) => null),
+  getTranslationsMock: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -25,6 +27,10 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/lib/auth", () => ({
   auth: authMock,
+}));
+
+vi.mock("next-intl/server", () => ({
+  getTranslations: getTranslationsMock,
 }));
 
 vi.mock("@/lib/prisma", () => ({
@@ -60,6 +66,7 @@ describe("UserProfilePage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     authMock.mockResolvedValue({ user: { id: "viewer-1" } });
+    getTranslationsMock.mockResolvedValue((key: string) => key);
     userFindUniqueMock.mockResolvedValue({
       id: "user-2",
       name: "Casey",
@@ -115,5 +122,23 @@ describe("UserProfilePage", () => {
       readState: "degraded",
       books: [expect.objectContaining({ compatDegraded: true, compatDegradedFields: ["ownershipStatus"] })],
     }));
+  });
+
+  it("renders translated unavailable compatibility copy when the local profile library is unavailable", async () => {
+    getTranslationsMock.mockResolvedValue((key: string) => {
+      const translations: Record<string, string> = {
+        "compat.modeEyebrow": "Compatibility mode",
+        "compat.unavailableDescription": "Translated profile unavailable description",
+      };
+
+      return translations[key] ?? key;
+    });
+    getLibrarySnapshotMock.mockResolvedValueOnce({ state: "unavailable", entries: [] });
+
+    const html = renderToStaticMarkup(await UserProfilePage({ params: Promise.resolve({ id: "user-2" }) }));
+
+    expect(html).toContain("Compatibility mode");
+    expect(html).toContain("Translated profile unavailable description");
+    expect(ProfileBookListMock).not.toHaveBeenCalled();
   });
 });
