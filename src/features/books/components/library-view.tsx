@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import type { BookStatus, OwnershipStatus } from "@/lib/types/book";
-import { OWNERSHIP_STATUS_VALUES } from "@/lib/types/book";
+import { type OwnershipStatus, OWNERSHIP_STATUS_VALUES } from "@/lib/types/book";
 import { StatusTabs, type StatusCounts, type StatusTabValue } from "./status-tabs";
 import { LibraryBookRow } from "./library-book-row";
 import { SelectionToolbar } from "./selection-toolbar";

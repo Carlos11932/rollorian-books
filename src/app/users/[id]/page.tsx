@@ -46,11 +46,9 @@ export default async function UserProfilePage({
   const isOwnProfile = viewerId === targetUserId;
 
   // Fetch target user
-  let localBooksUnavailable = false;
-
-  const targetUser = await (async () => {
+  const { targetUser, booksUnavailableFromUserLoad } = await (async () => {
     try {
-      return await prisma.user.findUnique({
+      const user = await prisma.user.findUnique({
         where: { id: targetUserId },
         select: {
           id: true,
@@ -65,14 +63,13 @@ export default async function UserProfilePage({
           },
         },
       });
+      return { targetUser: user, booksUnavailableFromUserLoad: false };
     } catch (error) {
       if (!isMissingUserBookSchemaError(error)) {
         throw error;
       }
 
-      localBooksUnavailable = true;
-
-      return prisma.user.findUnique({
+      const user = await prisma.user.findUnique({
         where: { id: targetUserId },
         select: {
           id: true,
@@ -85,17 +82,18 @@ export default async function UserProfilePage({
             },
           },
         },
-      }).then((user) => (
-        user
+      }).then((u) => (
+        u
           ? {
-              ...user,
+              ...u,
               _count: {
-                ...user._count,
+                ...u._count,
                 userBooks: 0,
               },
             }
           : null
       ));
+      return { targetUser: user, booksUnavailableFromUserLoad: true };
     }
   })();
 
@@ -126,6 +124,8 @@ export default async function UserProfilePage({
   if (isAuthenticated && viewerId) {
     canView = await canViewUserBooks(viewerId, targetUserId);
   }
+
+  let localBooksUnavailable = booksUnavailableFromUserLoad;
 
   if (canView) {
     const librarySnapshot = await getLibrarySnapshot(targetUserId);

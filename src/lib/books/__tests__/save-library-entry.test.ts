@@ -1,10 +1,12 @@
 import { Prisma } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type * as PrismaSchemaCompatModule from "@/lib/prisma-schema-compat";
 import { UserBookSchemaUnavailableError } from "@/lib/prisma-schema-compat";
 import { DuplicateLibraryEntryError } from "../errors";
 import {
   LibraryEntryCreateConflictError,
   OwnershipStatusCreateCompatError,
+  saveLibraryEntry,
 } from "../save-library-entry";
 
 const {
@@ -53,14 +55,12 @@ vi.mock("@/lib/revalidation", () => ({
 }));
 
 vi.mock("@/lib/prisma-schema-compat", async () => {
-  const actual = await vi.importActual<typeof import("@/lib/prisma-schema-compat")>("@/lib/prisma-schema-compat");
+  const actual = await vi.importActual<typeof PrismaSchemaCompatModule>("@/lib/prisma-schema-compat");
   return {
     ...actual,
     isRetryableUserBookCompatError: isRetryableUserBookCompatErrorMock,
   };
 });
-
-import { saveLibraryEntry } from "../save-library-entry";
 
 describe("saveLibraryEntry", () => {
   beforeEach(() => {

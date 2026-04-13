@@ -7,8 +7,7 @@ import {
   isMissingUserBookSchemaError,
   isRetryableUserBookCompatError,
 } from "@/lib/prisma-schema-compat";
-import { GroupLibraryCatalog } from "@/features/groups/components/group-library-catalog";
-import type { CatalogBookOwner } from "@/features/groups/components/group-library-catalog";
+import { GroupLibraryCatalog, type CatalogBookOwner } from "@/features/groups/components/group-library-catalog";
 
 const UNAVAILABLE_LOAN_STATUSES = ["REQUESTED", "OFFERED", "ACTIVE"] as const;
 

@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
-import type { UserBookWithBook, Book } from "@/lib/types/book";
+import type { Book } from "@/lib/types/book";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { fetchBookById } from "@/lib/google-books/client";

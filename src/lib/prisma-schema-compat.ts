@@ -24,7 +24,11 @@ export function isMissingFinishedAtError(error: unknown): boolean {
 }
 
 export function isMissingUserBookSchemaError(error: unknown): boolean {
-  return isPrismaSchemaMismatchError(error) && /UserBook|userBook/i.test(getErrorMessage(error));
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError
+    && error.code === "P2021"
+    && /UserBook|userBook/i.test(getErrorMessage(error))
+  );
 }
 
 export function isUserBookSchemaUnavailableError(error: unknown): error is UserBookSchemaUnavailableError {

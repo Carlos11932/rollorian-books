@@ -4,11 +4,9 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { BookRailSection } from "@/features/shared/ui/book-rail-section";
 import { EmptyState } from "@/features/shared/components/empty-state";
-import { OwnershipBadge } from "@/features/shared/components/ownership-badge";
 import { GroupBookCard } from "./group-book-card";
 import { groupByNormalizedGenre } from "@/lib/book-providers/genre-normalizer";
 import { cn } from "@/lib/cn";
-import type { OwnershipStatus } from "@/lib/types/book";
 
 // ---------------------------------------------------------------------------
 // Types
