@@ -9,6 +9,15 @@ import {
   type UserBookCompatAttempt,
 } from "@/lib/prisma-schema-compat";
 import { type BookStatus, type UserBookWithBook, BOOK_STATUS_VALUES } from "@/lib/types/book";
+
+export interface FriendBookActivity {
+  userId: string;
+  userName: string | null;
+  userImage: string | null;
+  status: BookStatus;
+  rating: number | null;
+  notes: string | null;
+}
 import { USER_BOOK_SELECT } from "./user-book-select";
 
 const VALID_STATUSES = new Set<string>(BOOK_STATUS_VALUES);
@@ -273,6 +282,56 @@ export async function getFriendActivityForBooks(
     // Follow or UserBook table not yet available — degrade silently
     if (isMissingSocialSchemaError(error) || isMissingUserBookSchemaError(error)) {
       return new Map();
+    }
+    throw error;
+  }
+}
+
+/**
+ * Returns ratings and notes from followed users for a single book.
+ * Degrades silently when Follow or UserBook tables are unavailable.
+ */
+export async function getFriendBookActivities(
+  viewerId: string,
+  bookId: string,
+): Promise<FriendBookActivity[]> {
+  try {
+    const follows = await prisma.follow.findMany({
+      where: { followerId: viewerId },
+      select: { followingId: true },
+    });
+
+    if (follows.length === 0) return [];
+
+    const followingIds = follows.map((f) => f.followingId);
+
+    const results = await prisma.userBook.findMany({
+      where: {
+        bookId,
+        userId: { in: followingIds },
+        OR: [{ rating: { not: null } }, { notes: { not: null } }],
+      },
+      select: {
+        userId: true,
+        status: true,
+        rating: true,
+        notes: true,
+        user: { select: { name: true, image: true } },
+      },
+      orderBy: { updatedAt: "desc" },
+    });
+
+    return results.map((r) => ({
+      userId: r.userId,
+      userName: r.user.name,
+      userImage: r.user.image,
+      status: r.status as BookStatus,
+      rating: r.rating,
+      notes: r.notes,
+    }));
+  } catch (error) {
+    if (isMissingSocialSchemaError(error) || isMissingUserBookSchemaError(error)) {
+      return [];
     }
     throw error;
   }

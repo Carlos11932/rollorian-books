@@ -11,7 +11,7 @@ import { LocalBookDetail } from "@/features/books/components/local-book-detail";
 import { GoogleBookDetail } from "@/features/books/components/google-book-detail";
 import { DiscoveredBookDetail } from "@/features/books/components/discovered-book-detail";
 import { fetchWorkById } from "@/lib/book-providers/open-library/client";
-import { getLibraryEntrySnapshot } from "@/lib/books";
+import { getLibraryEntrySnapshot, getFriendBookActivities } from "@/lib/books";
 import { getViewableUserIds } from "@/lib/privacy/can-view-user-books";
 import { isPrismaSchemaMismatchError } from "@/lib/prisma-schema-compat";
 
@@ -243,7 +243,8 @@ export default async function BookDetailPage({ params }: BookDetailPageProps) {
   }
 
   if (resolved.source === "local") {
-    return <LocalBookDetail userBook={resolved.userBook} />;
+    const friendActivities = await getFriendBookActivities(userId, resolved.userBook.book.id);
+    return <LocalBookDetail userBook={resolved.userBook} friendActivities={friendActivities} />;
   }
 
   if (resolved.source === "local-readonly") {
