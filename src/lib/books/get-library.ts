@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import {
   getUserBookCompatFallbackAttempts,
   isMissingUserBookSchemaError,
+  isMissingSocialSchemaError,
   isRetryableUserBookCompatError,
   type UserBookCompatAttempt,
 } from "@/lib/prisma-schema-compat";
@@ -232,4 +233,47 @@ function hasAttempt(
     attempt.includeOwnershipStatus === candidate.includeOwnershipStatus
     && attempt.includeFinishedAt === candidate.includeFinishedAt
   ));
+}
+
+/**
+ * Returns a map of bookId → number of followed users who have rated or
+ * commented on that book.  Returns an empty map when:
+ * - `viewerId` follows nobody
+ * - none of the books have friend activity
+ * - the Follow or UserBook table is not yet available (compat guard)
+ */
+export async function getFriendActivityForBooks(
+  viewerId: string,
+  bookIds: string[],
+): Promise<Map<string, number>> {
+  if (bookIds.length === 0) return new Map();
+
+  try {
+    const follows = await prisma.follow.findMany({
+      where: { followerId: viewerId },
+      select: { followingId: true },
+    });
+
+    if (follows.length === 0) return new Map();
+
+    const followingIds = follows.map((f) => f.followingId);
+
+    const results = await prisma.userBook.groupBy({
+      by: ["bookId"],
+      where: {
+        bookId: { in: bookIds },
+        userId: { in: followingIds },
+        OR: [{ rating: { not: null } }, { notes: { not: null } }],
+      },
+      _count: { bookId: true },
+    });
+
+    return new Map(results.map((r) => [r.bookId, r._count.bookId]));
+  } catch (error) {
+    // Follow or UserBook table not yet available — degrade silently
+    if (isMissingSocialSchemaError(error) || isMissingUserBookSchemaError(error)) {
+      return new Map();
+    }
+    throw error;
+  }
 }

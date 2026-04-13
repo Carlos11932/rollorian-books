@@ -249,6 +249,24 @@ export function LibraryBookRow({
                 <OwnershipBadge status={book.ownershipStatus} />
               )}
 
+              {/* Friend activity indicator */}
+              {(book.friendActivityCount ?? 0) > 0 && (
+                <Link
+                  href={`/books/${book.id}`}
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-full px-2 py-0.5",
+                    "border border-indigo-400/25 bg-indigo-500/10 text-indigo-300/80",
+                    "text-[11px] font-bold leading-none",
+                    "hover:bg-indigo-500/20 hover:text-indigo-200 transition-colors duration-150",
+                    "focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent",
+                  )}
+                  aria-label={`${book.friendActivityCount} ${book.friendActivityCount === 1 ? "amigo ha valorado" : "amigos han valorado"} este libro`}
+                >
+                  <span className="material-symbols-outlined text-[11px]">group</span>
+                  {book.friendActivityCount}
+                </Link>
+              )}
+
               {/* More menu */}
               <div className="relative ml-auto">
                 {showDeleteConfirm ? (

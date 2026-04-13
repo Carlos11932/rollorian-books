@@ -73,6 +73,8 @@ export type LibraryEntryView = Omit<Book, "createdAt" | "updatedAt"> & {
   compatDegradedFields?: LibraryCompatDegradedField[];
   createdAt: string;
   updatedAt: string;
+  /** Number of followed users who have rated or commented on this book. */
+  friendActivityCount?: number;
 };
 
 type CompatLibraryEntry = UserBookWithBook & {
