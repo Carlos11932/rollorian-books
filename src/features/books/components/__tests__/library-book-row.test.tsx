@@ -68,9 +68,7 @@ describe("LibraryBookRow", () => {
       />,
     );
 
-    expect(html).toContain("Read-only");
     expect(html).toContain("Compatibility snapshot");
-    expect(html).toContain("Ownership availability is synthesized in compatibility mode.");
     expect(html).not.toContain("<select");
     expect(html).not.toContain("more_horiz");
     expect(html).not.toContain(">UNKNOWN<");

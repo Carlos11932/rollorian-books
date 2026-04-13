@@ -5,11 +5,13 @@ const {
   getAuthenticatedUserIdOrNullMock,
   redirectMock,
   getLibrarySnapshotMock,
+  getFriendActivityForBooksMock,
   LibraryViewMock,
 } = vi.hoisted(() => ({
   getAuthenticatedUserIdOrNullMock: vi.fn(),
   redirectMock: vi.fn(),
   getLibrarySnapshotMock: vi.fn(),
+  getFriendActivityForBooksMock: vi.fn(),
   LibraryViewMock: vi.fn((_props: unknown) => null),
 }));
 
@@ -23,6 +25,7 @@ vi.mock("@/lib/auth/require-auth", () => ({
 
 vi.mock("@/lib/books", () => ({
   getLibrarySnapshot: getLibrarySnapshotMock,
+  getFriendActivityForBooks: getFriendActivityForBooksMock,
 }));
 
 vi.mock("@/features/books/components/library-view", () => ({
@@ -35,6 +38,7 @@ describe("LibraryPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     getAuthenticatedUserIdOrNullMock.mockResolvedValue("user-1");
+    getFriendActivityForBooksMock.mockResolvedValue(new Map());
   });
 
   it("passes degraded read state and compat metadata into the list view", async () => {
