@@ -6,11 +6,13 @@ const {
   countMock,
   aggregateMock,
   findManyMock,
+  loanFindManyMock,
 } = vi.hoisted(() => ({
   groupByMock: vi.fn(),
   countMock: vi.fn(),
   aggregateMock: vi.fn(),
   findManyMock: vi.fn(),
+  loanFindManyMock: vi.fn(),
 }));
 
 vi.mock("@/lib/prisma", () => ({
@@ -20,6 +22,9 @@ vi.mock("@/lib/prisma", () => ({
       count: countMock,
       aggregate: aggregateMock,
       findMany: findManyMock,
+    },
+    loan: {
+      findMany: loanFindManyMock,
     },
   },
 }));
@@ -38,7 +43,10 @@ describe("GET /api/stats", () => {
       { status: "WISHLIST", _count: 1 },
       { status: "READ", _count: 2 },
     ]);
-    countMock.mockResolvedValueOnce(2);
+    countMock
+      .mockResolvedValueOnce(2)   // booksReadThisYear
+      .mockResolvedValueOnce(1)   // booksOwned
+      .mockResolvedValueOnce(1);  // booksNotSpecified
     aggregateMock.mockResolvedValueOnce({ _avg: { rating: 4.5 } });
     findManyMock
       .mockResolvedValueOnce([{ book: { pageCount: 100 } }, { book: { pageCount: 250 } }])
@@ -49,7 +57,11 @@ describe("GET /api/stats", () => {
       .mockResolvedValueOnce([{ book: { genres: ["Fantasy", "Sci-Fi"] } }])
       .mockResolvedValueOnce([
         { finishedAt: new Date("2026-03-17T00:00:00.000Z") },
-      ]);
+      ])
+      .mockResolvedValueOnce([{ bookId: "book-1" }]); // ownedUserBooks
+    loanFindManyMock
+      .mockResolvedValueOnce([])  // activeLoanBookIds
+      .mockResolvedValueOnce([]); // currentlyLentBookIds
 
     const response = await GET();
 

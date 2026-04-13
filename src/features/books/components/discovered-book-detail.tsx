@@ -128,7 +128,7 @@ export async function DiscoveredBookDetail({ book, owners }: DiscoveredBookDetai
                     )}
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-on-surface truncate">
-                        {owner.userName ?? "Anonymous"}
+                        {owner.userName ?? t("common.anonymous")}
                       </p>
                       <p className="text-[10px] text-tertiary">
                         {t(`book.status.${owner.status}`)}
@@ -136,9 +136,16 @@ export async function DiscoveredBookDetail({ book, owners }: DiscoveredBookDetai
                           <span className="ml-1">· ⭐ {owner.rating}</span>
                         )}
                       </p>
+                      <p className={`text-[10px] font-semibold mt-0.5 ${owner.hasExclusiveLoan ? "text-amber-400" : "text-emerald-400"}`}>
+                        {owner.hasExclusiveLoan
+                          ? t("book.ownershipSocialLent")
+                          : t("book.ownershipSocialAvailable")}
+                      </p>
                     </div>
                   </Link>
-                  <RequestLoanButton lenderId={owner.userId} bookId={book.id} />
+                  {!owner.hasExclusiveLoan && (
+                    <RequestLoanButton lenderId={owner.userId} bookId={book.id} />
+                  )}
                 </div>
               ))}
             </div>

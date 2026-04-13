@@ -13,6 +13,7 @@ export const USER_BOOK_SELECT = {
   userId: true,
   bookId: true,
   status: true,
+  ownershipStatus: true,
   rating: true,
   notes: true,
   createdAt: true,

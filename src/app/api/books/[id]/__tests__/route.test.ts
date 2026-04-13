@@ -8,10 +8,34 @@ const {
   updateLibraryEntryMock,
   deleteLibraryEntryMock,
   LibraryEntryNotFoundError,
+  LibraryEntryWriteConflictError,
+  EmptyLibraryEntryUpdateError,
+  OwnershipStatusSchemaCompatError,
+  UserBookSchemaUnavailableError,
 } = vi.hoisted(() => {
   class _LibraryEntryNotFoundError extends Error {
     constructor() {
       super("Book not found in library");
+    }
+  }
+  class _OwnershipStatusSchemaCompatError extends Error {
+    constructor() {
+      super("Ownership status updates require a database schema that includes ownershipStatus");
+    }
+  }
+  class _LibraryEntryWriteConflictError extends Error {
+    constructor() {
+      super("Could not update this library entry because another update happened at the same time. Please retry.");
+    }
+  }
+  class _EmptyLibraryEntryUpdateError extends Error {
+    constructor() {
+      super("At least one field must be provided");
+    }
+  }
+  class _UserBookSchemaUnavailableError extends Error {
+    constructor() {
+      super("Library write operations are unavailable until the database schema includes UserBook");
     }
   }
   return {
@@ -20,6 +44,10 @@ const {
     updateLibraryEntryMock: vi.fn(),
     deleteLibraryEntryMock: vi.fn(),
     LibraryEntryNotFoundError: _LibraryEntryNotFoundError,
+    LibraryEntryWriteConflictError: _LibraryEntryWriteConflictError,
+    EmptyLibraryEntryUpdateError: _EmptyLibraryEntryUpdateError,
+    OwnershipStatusSchemaCompatError: _OwnershipStatusSchemaCompatError,
+    UserBookSchemaUnavailableError: _UserBookSchemaUnavailableError,
   };
 });
 
@@ -31,8 +59,18 @@ vi.mock("@/lib/books", () => ({
   LibraryEntryNotFoundError,
 }));
 
+vi.mock("@/lib/books/update-library-entry", () => ({
+  EmptyLibraryEntryUpdateError,
+  LibraryEntryWriteConflictError,
+  OwnershipStatusSchemaCompatError,
+}));
+
 vi.mock("@/lib/prisma", () => ({
   prisma: {},
+}));
+
+vi.mock("@/lib/prisma-schema-compat", () => ({
+  UserBookSchemaUnavailableError,
 }));
 
 vi.mock("next/cache", () => ({
@@ -78,6 +116,7 @@ function makeUserBook(book: Book, overrides: Partial<UserBookWithBook> = {}): Us
     userId: "test-user-001",
     bookId: book.id,
     status: BookStatus.WISHLIST,
+    ownershipStatus: "UNKNOWN",
     finishedAt: null,
     rating: null,
     notes: null,
@@ -225,17 +264,13 @@ describe("PATCH /api/books/[id]", () => {
   });
 
   it("returns 200 when body is empty (no-op update — all fields are optional)", async () => {
-    const book = makeBook();
-    const existing = makeUserBook(book);
-
-    updateLibraryEntryMock.mockResolvedValueOnce(existing);
-
     const request = makePatchRequest({});
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const response = await PATCH(request as any, makeRouteContext());
 
-    expect(response.status).toBe(200);
-    expect(updateLibraryEntryMock).toHaveBeenCalledOnce();
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ error: "At least one field must be provided" });
+    expect(updateLibraryEntryMock).not.toHaveBeenCalled();
   });
 
   it("returns 400 when status is an invalid enum value", async () => {
@@ -267,6 +302,21 @@ describe("PATCH /api/books/[id]", () => {
     expect(updateLibraryEntryMock).not.toHaveBeenCalled();
   });
 
+  it("returns 400 when the JSON body is malformed", async () => {
+    const request = new Request("http://localhost/api/books/book-123", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: "{",
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = await PATCH(request as any, makeRouteContext());
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ error: "Invalid request" });
+    expect(updateLibraryEntryMock).not.toHaveBeenCalled();
+  });
+
   it("returns 404 when the userBook does not exist", async () => {
     updateLibraryEntryMock.mockRejectedValueOnce(new LibraryEntryNotFoundError());
 
@@ -278,6 +328,49 @@ describe("PATCH /api/books/[id]", () => {
     const json: unknown = await response.json();
     expect((json as { error: string }).error).toBe("Book not found");
     expect(updateLibraryEntryMock).toHaveBeenCalledOnce();
+  });
+
+  it("returns 409 when ownershipStatus cannot be persisted on a lagging schema", async () => {
+    updateLibraryEntryMock.mockRejectedValueOnce(new OwnershipStatusSchemaCompatError());
+
+    const request = makePatchRequest({ ownershipStatus: "OWNED" });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = await PATCH(request as any, makeRouteContext());
+
+    expect(response.status).toBe(409);
+    const json: unknown = await response.json();
+    expect(json).toEqual({
+      error: "Ownership status updates require a database schema that includes ownershipStatus",
+      code: "OWNERSHIP_STATUS_UNSUPPORTED",
+    });
+  });
+
+  it("returns 503 when the UserBook table is unavailable on a lagging schema", async () => {
+    updateLibraryEntryMock.mockRejectedValueOnce(new UserBookSchemaUnavailableError());
+
+    const request = makePatchRequest({ status: "READ" });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = await PATCH(request as any, makeRouteContext());
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({
+      error: "Library write operations are unavailable until the database schema includes UserBook",
+      code: "USER_BOOK_SCHEMA_UNAVAILABLE",
+    });
+  });
+
+  it("returns 409 when guarded READ retries are exhausted", async () => {
+    updateLibraryEntryMock.mockRejectedValueOnce(new LibraryEntryWriteConflictError());
+
+    const request = makePatchRequest({ status: "READ" });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = await PATCH(request as any, makeRouteContext());
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual({
+      error: "Could not update this library entry because another update happened at the same time. Please retry.",
+      code: "CONCURRENT_UPDATE_CONFLICT",
+    });
   });
 
   it("returns 500 when an unexpected error occurs", async () => {

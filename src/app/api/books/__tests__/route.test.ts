@@ -1,22 +1,29 @@
+import { Prisma } from "@prisma/client";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { BookStatus, type Book, type UserBookWithBook } from "@/lib/types/book";
 import { requireAuth, UnauthorizedError } from "@/lib/auth/require-auth";
 
-const { revalidatePathMock } = vi.hoisted(() => ({
+const { revalidatePathMock, transactionMock, queryRawMock } = vi.hoisted(() => ({
   revalidatePathMock: vi.fn(),
+  transactionMock: vi.fn(),
+  queryRawMock: vi.fn(),
 }));
 
 // Mock prisma BEFORE importing the route so the module initialiser never
 // tries to connect to the database.
 vi.mock("@/lib/prisma", () => ({
   prisma: {
+    $transaction: transactionMock,
+    $queryRaw: queryRawMock,
     book: {
       findFirst: vi.fn(),
       create: vi.fn(),
     },
     userBook: {
       findMany: vi.fn(),
+      findFirst: vi.fn(),
       findUnique: vi.fn(),
+      findUniqueOrThrow: vi.fn(),
       create: vi.fn(),
     },
   },
@@ -70,6 +77,7 @@ function makeUserBook(book: Book, overrides: Partial<UserBookWithBook> = {}): Us
     userId: "test-user-001",
     bookId: book.id,
     status: BookStatus.WISHLIST,
+    ownershipStatus: "UNKNOWN",
     finishedAt: null,
     rating: null,
     notes: null,
@@ -108,7 +116,9 @@ describe("POST /api/books", () => {
     create: ReturnType<typeof vi.fn>;
   };
   const userBookMock = prisma.userBook as unknown as {
+    findFirst: ReturnType<typeof vi.fn>;
     findUnique: ReturnType<typeof vi.fn>;
+    findUniqueOrThrow: ReturnType<typeof vi.fn>;
     create: ReturnType<typeof vi.fn>;
   };
 
@@ -120,8 +130,10 @@ describe("POST /api/books", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    transactionMock.mockImplementation(async (callback: (tx: typeof prisma) => Promise<unknown>) => callback(prisma));
     // Default: no existing book found by ISBN, no existing userBook
     bookMock.findFirst.mockResolvedValue(null);
+    userBookMock.findFirst.mockResolvedValue(null);
     userBookMock.findUnique.mockResolvedValue(null);
   });
 
@@ -130,6 +142,7 @@ describe("POST /api/books", () => {
     const createdUserBook = makeUserBook(createdBook);
     bookMock.create.mockResolvedValue(createdBook);
     userBookMock.create.mockResolvedValue(createdUserBook);
+    userBookMock.findUniqueOrThrow.mockResolvedValue(createdUserBook);
 
     const request = makePostRequest(validBody);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -195,6 +208,75 @@ describe("POST /api/books", () => {
     expect(userBookMock.create).not.toHaveBeenCalled();
   });
 
+  it("returns 409 when a requested ownershipStatus cannot be persisted on a compat fallback", async () => {
+    userBookMock.create.mockRejectedValueOnce(
+      makeKnownRequestError("P2022", "The column `ownershipStatus` does not exist"),
+    );
+
+    const request = makePostRequest({
+      ...validBody,
+      ownershipStatus: "OWNED",
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = await POST(request as any);
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual({
+      error: "Ownership status updates require a database schema that includes ownershipStatus",
+      code: "OWNERSHIP_STATUS_UNSUPPORTED",
+    });
+  });
+
+  it("returns 503 when the UserBook table is missing on a lagging schema", async () => {
+    userBookMock.findUnique.mockRejectedValueOnce(
+      makeKnownRequestError("P2021", "The table `public.UserBook` does not exist in the current database."),
+    );
+
+    const request = makePostRequest(validBody);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = await POST(request as any);
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({
+      error: "Library write operations are unavailable until the database schema includes UserBook",
+      code: "USER_BOOK_SCHEMA_UNAVAILABLE",
+    });
+    expect(userBookMock.create).not.toHaveBeenCalled();
+  });
+
+  it("drops explicit UNKNOWN ownershipStatus instead of treating it as a hard persistence requirement", async () => {
+    const createdBook = makeBook();
+    const createdUserBook = makeUserBook(createdBook);
+
+    userBookMock.create.mockResolvedValueOnce(createdUserBook);
+    userBookMock.findUniqueOrThrow.mockResolvedValueOnce(createdUserBook);
+
+    const request = makePostRequest({
+      ...validBody,
+      ownershipStatus: "UNKNOWN",
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = await POST(request as any);
+
+    expect(response.status).toBe(201);
+    expect(userBookMock.create).toHaveBeenCalledTimes(1);
+    expect(userBookMock.create.mock.calls[0]?.[0]?.data).not.toHaveProperty("ownershipStatus");
+  });
+
+  it("returns 409 when serializable create contention exhausts retries", async () => {
+    transactionMock.mockRejectedValue(makeKnownRequestError("P2034", "Transaction failed due to a write conflict"));
+
+    const request = makePostRequest(validBody);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = await POST(request as any);
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual({
+      error: "Could not create this library entry because another write happened at the same time. Please retry.",
+      code: "CONCURRENT_CREATE_CONFLICT",
+    });
+  });
+
   it("returns 500 when prisma throws an unexpected error", async () => {
     bookMock.create.mockRejectedValue(new Error("DB connection lost"));
     const request = makePostRequest(validBody);
@@ -245,6 +327,24 @@ describe("GET /api/books", () => {
     const json: unknown = await response.json();
     expect(Array.isArray(json)).toBe(true);
     expect((json as unknown[]).length).toBe(2);
+  });
+
+  it("surfaces compatDegraded markers for synthesized library list values", async () => {
+    const book = makeBook();
+    const degradedEntry = {
+      ...makeUserBook(book, { ownershipStatus: "UNKNOWN", finishedAt: null }),
+      compatDegraded: true as const,
+    };
+    userBookMock.findMany.mockResolvedValue([degradedEntry]);
+
+    const request = makeGetRequest();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = await GET(request as any);
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual([
+      expect.objectContaining({ compatDegraded: true, ownershipStatus: "UNKNOWN", finishedAt: null }),
+    ]);
   });
 
   it("returns 400 when status param is invalid", async () => {
@@ -301,3 +401,18 @@ describe("GET /api/books", () => {
     expect(response.status).toBe(500);
   });
 });
+
+function makeKnownRequestError(code: string, message: string) {
+  const error = new Error(message) as Prisma.PrismaClientKnownRequestError;
+
+  Object.setPrototypeOf(error, Prisma.PrismaClientKnownRequestError.prototype);
+
+  Object.assign(error, {
+    code,
+    clientVersion: "test",
+    meta: {},
+    batchRequestIdx: 0,
+  });
+
+  return error;
+}

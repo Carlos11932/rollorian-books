@@ -29,7 +29,16 @@ export default async function StatsPage() {
     );
   }
 
-  const { totalBooks, booksReadThisYear, averageRating, totalPagesRead } = stats;
+  const {
+    totalBooks,
+    booksReadThisYear,
+    averageRating,
+    totalPagesRead,
+    booksOwned,
+    booksNotSpecified,
+    booksAvailableToLend,
+    booksCurrentlyLent,
+  } = stats;
 
   const formattedRating =
     averageRating != null ? averageRating.toFixed(1) : "--";
@@ -102,6 +111,33 @@ export default async function StatsPage() {
               current={stats.readingStreak.current}
               unit={stats.readingStreak.unit}
             />
+          </div>
+
+          {/* Collection section */}
+          <div className="mt-8">
+            <h2 className="text-xl font-bold text-on-surface mb-4">{t("collection")}</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <StatCard
+                icon="inventory_2"
+                label={t("booksOwned")}
+                value={booksOwned}
+              />
+              <StatCard
+                icon="help_outline"
+                label={t("booksNotSpecified")}
+                value={booksNotSpecified}
+              />
+              <StatCard
+                icon="swap_horiz"
+                label={t("booksAvailable")}
+                value={booksAvailableToLend}
+              />
+              <StatCard
+                icon="send"
+                label={t("booksLent")}
+                value={booksCurrentlyLent}
+              />
+            </div>
           </div>
         </>
       )}

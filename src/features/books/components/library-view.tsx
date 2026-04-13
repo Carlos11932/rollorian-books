@@ -1,32 +1,35 @@
 "use client";
 
+import { useState } from "react";
 import { useTranslations } from "next-intl";
-import type { BookStatus } from "@/lib/types/book";
+import { type OwnershipStatus, OWNERSHIP_STATUS_VALUES } from "@/lib/types/book";
 import { StatusTabs, type StatusCounts, type StatusTabValue } from "./status-tabs";
-import { type LibraryBook } from "./library-book-card";
-import { BookCardWithSelection } from "./book-card-with-selection";
+import { LibraryBookRow } from "./library-book-row";
 import { SelectionToolbar } from "./selection-toolbar";
-import { BookRailSection } from "@/features/shared/ui/book-rail-section";
 import { EmptyState } from "@/features/shared/components/empty-state";
-import { useLibraryVisibility } from "../hooks/use-library-visibility";
 import { useBatchSelection } from "../hooks/use-batch-selection";
 import { cn } from "@/lib/cn";
+import {
+  hasCompatDegradedField,
+  LIBRARY_COMPAT_DEGRADED_FIELD,
+  LIBRARY_READ_STATE,
+  type LibraryEntryView,
+  type LibraryReadState,
+} from "../types";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
 interface LibraryViewProps {
-  books: LibraryBook[];
+  books: LibraryEntryView[];
+  readState: LibraryReadState;
   counts: StatusCounts;
   activeStatus: StatusTabValue;
   searchParams: Record<string, string>;
 }
 
-// Issue #34: Preferred order — Reading, Rereading, Wishlist, To Read, On Hold, Read
-const STATUS_ORDERED: BookStatus[] = [
-  "READING", "REREADING", "WISHLIST", "TO_READ", "ON_HOLD", "READ",
-];
+type OwnershipFilterValue = OwnershipStatus | "ALL";
 
 // ---------------------------------------------------------------------------
 // Component
@@ -34,12 +37,14 @@ const STATUS_ORDERED: BookStatus[] = [
 
 export function LibraryView({
   books,
+  readState,
   counts,
   activeStatus,
   searchParams,
 }: LibraryViewProps) {
   const t = useTranslations();
-  const { isSectionVisible, toggleSectionVisibility } = useLibraryVisibility();
+  const [ownershipFilter, setOwnershipFilter] = useState<OwnershipFilterValue>("ALL");
+
   const {
     selectionMode,
     selectedIds,
@@ -51,11 +56,17 @@ export function LibraryView({
     handleBatchStatusChange,
   } = useBatchSelection();
 
-  const isEmpty = books.length === 0;
+  // Apply ownership filter on top of status-filtered books
+  const filteredBooks =
+    ownershipFilter === "ALL"
+      ? books
+      : books.filter((b) => b.ownershipStatus === ownershipFilter);
 
-  function getFilterTitle(status: BookStatus): string {
-    return `No ${t(`book.status.${status}`)} books`;
-  }
+  const isCompatReadOnly = readState === LIBRARY_READ_STATE.DEGRADED;
+  const hasSynthesizedOwnership = books.some((book) => (
+    hasCompatDegradedField(book, LIBRARY_COMPAT_DEGRADED_FIELD.OWNERSHIP_STATUS)
+  ));
+  const isEmpty = filteredBooks.length === 0;
 
   return (
     <div className="grid gap-6">
@@ -63,7 +74,9 @@ export function LibraryView({
       <div className="card-glass backdrop-blur-xl p-6 grid gap-4">
         <div className="flex items-start justify-between gap-4">
           <div className="grid gap-1">
-            <p className="text-xs font-bold uppercase tracking-widest text-muted">Library</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-muted">
+              {t("nav.library")}
+            </p>
             <h1 className="text-3xl font-bold text-text">
               {t("library.heading")}
             </h1>
@@ -73,7 +86,7 @@ export function LibraryView({
           </div>
 
           {/* Selection toggle button */}
-          {!isEmpty && (
+          {books.length > 0 && !isCompatReadOnly && (
             <button
               type="button"
               onClick={selectionMode ? exitSelectionMode : enterSelectionMode}
@@ -94,11 +107,11 @@ export function LibraryView({
         </div>
 
         {/* Select all / deselect all — only in selection mode */}
-        {selectionMode && (
+        {selectionMode && !isCompatReadOnly && (
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => selectAll(books)}
+              onClick={() => selectAll(filteredBooks)}
               className="text-xs text-accent font-bold hover:underline"
             >
               {t("library.selectAll")}
@@ -113,104 +126,108 @@ export function LibraryView({
           </div>
         )}
 
-        <StatusTabs activeStatus={activeStatus} counts={counts} searchParams={searchParams} />
+        {isCompatReadOnly && (
+          <div className="rounded-2xl border border-amber-400/30 bg-amber-400/10 p-4 text-sm text-on-surface/80">
+            <p className="text-xs font-bold uppercase tracking-widest text-amber-300">
+              {t("library.compat.snapshotEyebrow")}
+            </p>
+            <p className="mt-2 leading-relaxed">
+              {t("library.compat.readOnlyDescription")}
+            </p>
+          </div>
+        )}
+
+        {/* Reading status tabs */}
+        <StatusTabs
+          activeStatus={activeStatus}
+          counts={counts}
+          searchParams={searchParams}
+        />
+
+        {/* Ownership filter chips */}
+        {hasSynthesizedOwnership ? (
+          <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-xs leading-relaxed text-muted">
+            {t("library.compat.ownershipUnavailable")}
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-bold text-muted uppercase tracking-wider mr-1">
+              {t("book.ownershipLabel")}:
+            </span>
+
+            <button
+              type="button"
+              onClick={() => setOwnershipFilter("ALL")}
+              className={cn(
+                "inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border transition-all duration-150",
+                "focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent",
+                ownershipFilter === "ALL"
+                  ? "bg-white/12 text-text border-white/20"
+                  : "bg-white/5 text-muted border-white/8 hover:text-text hover:border-white/15",
+              )}
+            >
+              {t("library.ownershipFilter.ALL")}
+            </button>
+
+            {OWNERSHIP_STATUS_VALUES.map((os) => (
+              <button
+                key={os}
+                type="button"
+                onClick={() => setOwnershipFilter(os)}
+                className={cn(
+                  "inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border transition-all duration-150",
+                  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent",
+                  ownershipFilter === os
+                    ? os === "OWNED"
+                      ? "bg-emerald-500/25 text-emerald-300 border-emerald-500/35"
+                      : os === "NOT_OWNED"
+                        ? "bg-white/12 text-text border-white/20"
+                        : "bg-white/8 text-white/60 border-white/12"
+                    : os === "OWNED"
+                      ? "bg-emerald-500/8 text-emerald-500/60 border-emerald-500/12 hover:bg-emerald-500/15 hover:text-emerald-400"
+                      : "bg-white/5 text-muted border-white/8 hover:text-text hover:border-white/15",
+                )}
+              >
+                {t(`library.ownershipFilter.${os}`)}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Book content */}
+      {/* Book list */}
       {isEmpty ? (
         <EmptyState
           title={
-            activeStatus === "all"
-              ? t("library.emptyAll")
-              : getFilterTitle(activeStatus as BookStatus)
+            books.length === 0
+              ? activeStatus === "all"
+                ? t("library.emptyAll")
+                : t("library.emptyFilter")
+              : t("library.emptyFilter")
           }
           description={
-            activeStatus === "all"
+            books.length === 0 && activeStatus === "all"
               ? t("library.searchPlaceholder")
               : t("library.tryAnotherStatus")
           }
         />
-      ) : activeStatus !== "all" ? (
-        <BookRailSection
-          title={t(`library.statusEyebrow.${activeStatus}`)}
-          eyebrow={t(`book.status.${activeStatus}`)}
-          count={books.length}
-          emptyCopy={t("library.emptyFilter")}
-        >
-          {books.map((book) => (
-            <div
-              key={book.id}
-              className="shrink-0 w-[clamp(260px,32vw,340px)]"
-              style={{ scrollSnapAlign: "start" }}
-            >
-              <BookCardWithSelection
-                book={book}
-                selectionMode={selectionMode}
-                selected={selectedIds.has(book.id)}
-                onToggle={toggleSelect}
-              />
-            </div>
-          ))}
-        </BookRailSection>
       ) : (
-        <div className="grid gap-4">
-          {STATUS_ORDERED.map((status) => {
-            const statusBooks = books.filter((b) => b.status === status);
-            // Issue #34: hide empty sections
-            if (statusBooks.length === 0) return null;
-            const visible = isSectionVisible(status);
-
-            return (
-              <div key={status}>
-                {/* Section header with toggle */}
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-bold text-muted uppercase tracking-wider">
-                    {t(`library.statusEyebrow.${status}`)}
-                    <span className="ml-2 text-xs font-normal text-muted/60">
-                      {statusBooks.length}
-                    </span>
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={() => toggleSectionVisibility(status)}
-                    className="text-muted hover:text-text transition-colors p-1"
-                    aria-label={`${visible ? t("library.hideSection") : t("library.showSection")} — ${t(`library.statusEyebrow.${status}`)}`}
-                  >
-                    <span className="material-symbols-outlined text-[18px]">
-                      {visible ? "visibility" : "visibility_off"}
-                    </span>
-                  </button>
-                </div>
-
-                {visible && (
-                  <BookRailSection
-                    title={t(`book.status.${status}`)}
-                    count={statusBooks.length}
-                  >
-                    {statusBooks.map((book) => (
-                      <div
-                        key={book.id}
-                        className="shrink-0 w-[clamp(260px,32vw,340px)]"
-                        style={{ scrollSnapAlign: "start" }}
-                      >
-                        <BookCardWithSelection
-                          book={book}
-                          selectionMode={selectionMode}
-                          selected={selectedIds.has(book.id)}
-                          onToggle={toggleSelect}
-                        />
-                      </div>
-                    ))}
-                  </BookRailSection>
-                )}
-              </div>
-            );
-          })}
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
+          {filteredBooks.map((book) => (
+            <LibraryBookRow
+              key={book.id}
+              book={book}
+              readOnly={isCompatReadOnly}
+              selectionMode={!isCompatReadOnly && selectionMode}
+              selected={!isCompatReadOnly && selectedIds.has(book.id)}
+              onToggle={toggleSelect}
+            />
+          ))}
         </div>
       )}
 
       {/* Floating selection toolbar */}
-      {selectionMode && selectedIds.size > 0 && (
+      {selectionMode && !isCompatReadOnly && selectedIds.size > 0 && (
         <SelectionToolbar
           selectedCount={selectedIds.size}
           onBatchStatusChange={handleBatchStatusChange}

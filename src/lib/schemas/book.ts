@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { BookStatus, BOOK_STATUS_VALUES } from "@/lib/types/book";
+import { BookStatus, BOOK_STATUS_VALUES, OwnershipStatus, OWNERSHIP_STATUS_VALUES } from "@/lib/types/book";
 
 /** Schema for the book-level fields when creating/finding a book */
 const bookFieldsSchema = z.object({
@@ -19,6 +19,7 @@ const bookFieldsSchema = z.object({
 /** Schema for creating a book + linking it to a user (book fields + status) */
 export const createBookSchema = bookFieldsSchema.extend({
   status: z.enum(BOOK_STATUS_VALUES as [BookStatus, ...BookStatus[]]).default(BookStatus.WISHLIST),
+  ownershipStatus: z.enum(OWNERSHIP_STATUS_VALUES as [OwnershipStatus, ...OwnershipStatus[]]).default(OwnershipStatus.UNKNOWN),
   rating: z.number().int().min(1).max(5).optional(),
   notes: z.string().optional(),
 });
@@ -26,6 +27,7 @@ export const createBookSchema = bookFieldsSchema.extend({
 /** Schema for updating user-specific fields (status, rating, notes) on a UserBook */
 export const updateBookSchema = z.object({
   status: z.enum(BOOK_STATUS_VALUES as [BookStatus, ...BookStatus[]]).optional(),
+  ownershipStatus: z.enum(OWNERSHIP_STATUS_VALUES as [OwnershipStatus, ...OwnershipStatus[]]).optional(),
   rating: z.number().int().min(1).max(5).nullable().optional(),
   notes: z.string().nullable().optional(),
 });
@@ -34,7 +36,10 @@ export const searchQuerySchema = z.object({
   q: z.string().min(1, { error: "Search query cannot be empty" }),
 });
 
+/** Output type (after defaults are applied) */
 export type CreateBookInput = z.infer<typeof createBookSchema>;
+/** Input type (before defaults — allows omitting fields with defaults like ownershipStatus) */
+export type CreateBookPayload = z.input<typeof createBookSchema>;
 export type UpdateBookInput = z.infer<typeof updateBookSchema>;
 export type BookFields = z.infer<typeof bookFieldsSchema>;
 export type SearchQueryInput = z.infer<typeof searchQuerySchema>;

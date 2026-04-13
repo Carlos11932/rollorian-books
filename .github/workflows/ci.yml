@@ -66,6 +66,9 @@ jobs:
     env:
       DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/rollorian_books_ci?schema=public
       DIRECT_URL: postgresql://postgres:postgres@127.0.0.1:5432/rollorian_books_ci?schema=public
+      AUTH_SECRET: e2e-ci-auth-secret
+      AUTH_GOOGLE_ID: e2e-google-client-id
+      AUTH_GOOGLE_SECRET: e2e-google-client-secret
       GOOGLE_BOOKS_API_KEY: ${{ secrets.GOOGLE_BOOKS_API_KEY }}
       ROLLORIAN_DB_CONTEXT: ci-e2e-local
     steps:

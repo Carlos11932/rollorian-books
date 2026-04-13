@@ -12,7 +12,8 @@
     "viewAll": "Ver todo",
     "notRated": "Sin valorar",
     "anonymous": "Anónimo",
-    "loading": "Cargando..."
+    "loading": "Cargando...",
+    "moreOptions": "Más opciones"
   },
   "nav": {
     "home": "Inicio",
@@ -177,7 +178,8 @@
     "wishlist": "Lista de deseos",
     "wishlistEmpty": "Tu lista de deseos está vacía.",
     "viewAll": "Ver todo",
-    "seeMore": "Ver más"
+    "seeMore": "Ver más",
+    "booksOwned": "Libros que tienes"
   },
   "library": {
     "heading": "Tu Biblioteca",
@@ -212,7 +214,23 @@
     "selectAll": "Todos",
     "deselectAll": "Ninguno",
     "hideSection": "Ocultar sección",
-    "showSection": "Mostrar sección"
+    "showSection": "Mostrar sección",
+    "ownershipFilter": {
+      "ALL": "Todos",
+      "OWNED": "Lo tengo",
+      "NOT_OWNED": "No lo tengo",
+      "UNKNOWN": "Sin indicar"
+    },
+    "compat": {
+      "snapshotEyebrow": "Instantánea de compatibilidad",
+      "modeEyebrow": "Modo de compatibilidad",
+      "readOnlyDescription": "Rollorian sintetizó parte de esta lectura de la biblioteca local. La edición y las acciones por lotes están desactivadas hasta que el esquema de base de datos se ponga al día, así que la estantería sigue siendo explícitamente de solo lectura.",
+      "ownershipUnavailable": "La disponibilidad de posesión no está disponible temporalmente en esta instantánea de compatibilidad, así que los filtros de posesión permanecen desactivados hasta que Rollorian pueda volver a leer valores locales autoritativos.",
+      "unavailableTitle": "Biblioteca temporalmente no disponible",
+      "unavailableDescription": "Rollorian no pudo leer las entradas de la biblioteca local porque el esquema de base de datos todavía se está poniendo al día. Estamos evitando intencionadamente cualquier estado editable de biblioteca hasta que la tabla UserBook vuelva a estar disponible."
+    },
+    "selectBook": "Seleccionar {title}",
+    "deselectBook": "Deseleccionar {title}"
   },
   "search": {
     "heading": "Explorar libros",
@@ -261,6 +279,15 @@
       "READ": "Leído",
       "ON_HOLD": "En pausa"
     },
+    "ownership": {
+      "OWNED": "Lo tienes",
+      "NOT_OWNED": "No lo tienes",
+      "UNKNOWN": "Sin indicar"
+    },
+    "ownershipLabel": "Posesión",
+    "ownershipSocialAvailable": "Disponible",
+    "ownershipSocialLent": "Prestado",
+    "ownershipSocialUnknown": "Sin indicar",
     "statusLabel": "Estado",
     "ratingLabel": "Valoración",
     "notesLabel": "Notas",
@@ -275,6 +302,9 @@
     "removing": "Eliminando...",
     "backToLibrary": "Volver a la biblioteca",
     "ownedByConnections": "Quién lo tiene",
+    "friendActivityTitle": "Lo que dicen tus amigos",
+    "friendActivityStatus": "Estado: {status}",
+    "friendActivityNoNotes": "Sin notas",
     "backToSearch": "Volver a la búsqueda",
     "googlePreview": "Vista previa en Google Books",
     "externalPreview": "Vista previa del libro",
@@ -284,6 +314,9 @@
     "saveToLibrary": "Guardar en biblioteca",
     "savedRedirecting": "Guardado — redirigiendo...",
     "openDetail": "Abrir detalle",
+    "ratingAriaLabel": "Valoración: {rating} de 5",
+    "pageCountCompact": "{count} págs.",
+    "friendActivityAriaLabel": "{count, plural, one {# amigo ha valorado este libro} other {# amigos han valorado este libro}}",
     "details": "Detalles",
     "publisher": "Editorial",
     "published": "Publicación",
@@ -297,6 +330,25 @@
       "3": "Bueno",
       "4": "Muy bueno",
       "5": "Excelente"
+    },
+    "saveQuickOptions": {
+      "wantToRead": "Quiero leerlo",
+      "haveIt": "Lo tengo",
+      "alreadyRead": "Ya lo leí"
+    },
+    "manageBook": "Gestionar libro",
+    "readingStatus": "Estado de lectura",
+    "ownershipStatus": "Estado de posesión",
+    "bookRating": "Valoración del libro",
+    "clearRating": "Quitar valoración",
+    "bookNotes": "Notas del libro",
+    "rateStar": "Valorar con {star} de 5",
+    "compat": {
+      "readOnlyModeEyebrow": "Modo de compatibilidad de solo lectura",
+      "readOnlyDescription": "Esta entrada de la biblioteca está disponible en modo de solo lectura mientras el esquema de base de datos se pone al día. La edición y los controles de posesión están temporalmente desactivados para no mostrar acciones locales que no están soportadas.",
+      "modeEyebrow": "Modo de compatibilidad",
+      "unavailableTitle": "Detalle del libro temporalmente no disponible",
+      "unavailableDescription": "Rollorian no pudo cargar tu entrada local del libro porque la tabla UserBook no existe en esta base de datos. Estamos evitando intencionadamente cualquier detalle local editable o descubierto hasta que el esquema se ponga al día."
     }
   },
   "profile": {
@@ -310,7 +362,15 @@
     "follow": "Seguir",
     "unfollow": "Dejar de seguir",
     "following_action": "Siguiendo",
-    "editProfile": "Editar perfil"
+    "editProfile": "Editar perfil",
+    "thisUser": "este usuario",
+    "compat": {
+      "snapshotEyebrow": "Instantánea de compatibilidad",
+      "snapshotDescription": "Parte de esta biblioteca de perfil fue sintetizada desde un lector de compatibilidad. Rollorian la muestra como solo lectura y oculta los detalles de posesión no compatibles hasta que haya datos locales autoritativos disponibles.",
+      "readOnlyBadge": "Instantánea de solo lectura",
+      "modeEyebrow": "Modo de compatibilidad",
+      "unavailableDescription": "La biblioteca de este perfil está temporalmente no disponible mientras el esquema de base de datos se pone al día. Rollorian está ocultando intencionadamente el estado de lectura local en lugar de fingir que la estantería está vacía."
+    }
   },
   "groups": {
     "nav": "Grupos",
@@ -372,13 +432,19 @@
     "filterAll": "Todos",
     "filterRead": "Leídos",
     "filterUnread": "No leídos",
+    "filterAvailable": "Disponibles",
+    "ownedBy": "Lo tiene {name}",
     "noGenre": "Sin género",
     "readCheck": "Leído por ti",
     "emptyGenre": "No hay libros en esta categoría.",
     "emptyCatalog": "La biblioteca compartida está vacía.",
     "emptyCatalogDescription": "Los miembros deben añadir libros a su biblioteca primero.",
     "emptyFiltered": "No hay libros con este filtro.",
-    "bookCount": "{count, plural, one {# libro} other {# libros}}"
+    "bookCount": "{count, plural, one {# libro} other {# libros}}",
+    "compat": {
+      "modeEyebrow": "Modo de compatibilidad",
+      "unavailableDescription": "Los datos de la biblioteca compartida están temporalmente no disponibles mientras el esquema de base de datos se pone al día. Rollorian evita mostrar señales engañosas de disponibilidad y posesión hasta que UserBook vuelva a ser legible."
+    }
   },
   "lists": {
     "title": "Mis Listas",
@@ -424,7 +490,12 @@
     "streakDays": "Racha de {count} días",
     "noStreak": "¡Empieza a leer para construir tu racha!",
     "noData": "Aún no hay datos de lectura",
-    "startReading": "Añade libros para ver tus estadísticas"
+    "startReading": "Añade libros para ver tus estadísticas",
+    "collection": "Colección",
+    "booksOwned": "Libros que tienes",
+    "booksNotSpecified": "Sin indicar",
+    "booksAvailable": "Prestables",
+    "booksLent": "Prestados ahora"
   },
   "loans": {
     "lentTo": "Prestado a {name}",

@@ -66,6 +66,7 @@ describe("saveBook", () => {
       userId: "user-001",
       bookId: book.id,
       status: "WISHLIST",
+      ownershipStatus: "UNKNOWN",
       finishedAt: null,
       rating: null,
       notes: null,

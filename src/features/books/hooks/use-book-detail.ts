@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import type { LibraryEntryView } from "../types";
-import type { BookStatus } from "@/lib/types/book";
+import type { BookStatus, OwnershipStatus } from "@/lib/types/book";
 import { updateBook, deleteBook } from "@/lib/api/books";
 
 const SAVE_STATE = {
@@ -26,6 +27,7 @@ type DeleteState = (typeof DELETE_STATE)[keyof typeof DELETE_STATE];
 export interface UseBookDetailReturn {
   // State
   status: BookStatus;
+  ownershipStatus: OwnershipStatus;
   rating: number | null;
   hoverRating: number | null;
   notes: string;
@@ -38,6 +40,7 @@ export interface UseBookDetailReturn {
   isDeleting: boolean;
   // Handlers
   setStatus: (status: BookStatus) => void;
+  setOwnershipStatus: (ownership: OwnershipStatus) => void;
   setRating: (rating: number | null) => void;
   setHoverRating: (rating: number | null) => void;
   setNotes: (notes: string) => void;
@@ -48,9 +51,11 @@ export interface UseBookDetailReturn {
 
 export function useBookDetail(book: LibraryEntryView): UseBookDetailReturn {
   const router = useRouter();
+  const t = useTranslations("common");
   const saveStateResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [status, setStatus] = useState<BookStatus>(book.status);
+  const [ownershipStatus, setOwnershipStatus] = useState<OwnershipStatus>(book.ownershipStatus);
   const [rating, setRating] = useState<number | null>(book.rating ?? null);
   const [hoverRating, setHoverRating] = useState<number | null>(null);
   const [notes, setNotes] = useState(book.notes ?? "");
@@ -76,10 +81,12 @@ export function useBookDetail(book: LibraryEntryView): UseBookDetailReturn {
     setErrorMessage(null);
 
     try {
+      const trimmedNotes = notes.trim() || null;
       await updateBook(book.id, {
         status,
         rating: rating ?? null,
-        notes: notes.trim() || null,
+        notes: trimmedNotes,
+        ...(ownershipStatus !== book.ownershipStatus ? { ownershipStatus } : {}),
       });
 
       setSaveState(SAVE_STATE.saved);
@@ -92,7 +99,7 @@ export function useBookDetail(book: LibraryEntryView): UseBookDetailReturn {
       }, 2000);
     } catch (err) {
       setSaveState(SAVE_STATE.error);
-      setErrorMessage(err instanceof Error ? err.message : "An unexpected error occurred");
+      setErrorMessage(err instanceof Error ? err.message : t("error"));
     }
   }
 
@@ -105,7 +112,7 @@ export function useBookDetail(book: LibraryEntryView): UseBookDetailReturn {
       router.push("/library");
     } catch (err) {
       setDeleteState(DELETE_STATE.idle);
-      setErrorMessage(err instanceof Error ? err.message : "Failed to delete book");
+      setErrorMessage(err instanceof Error ? err.message : t("error"));
     }
   }
 
@@ -115,6 +122,7 @@ export function useBookDetail(book: LibraryEntryView): UseBookDetailReturn {
 
   return {
     status,
+    ownershipStatus,
     rating,
     hoverRating,
     notes,
@@ -125,6 +133,7 @@ export function useBookDetail(book: LibraryEntryView): UseBookDetailReturn {
     isSaving,
     isDeleting,
     setStatus,
+    setOwnershipStatus,
     setRating,
     setHoverRating,
     setNotes,

@@ -12,6 +12,12 @@ import { cn } from "@/lib/cn";
 // Types
 // ---------------------------------------------------------------------------
 
+export interface CatalogBookOwner {
+  userId: string;
+  userName: string | null;
+  hasExclusiveLoan: boolean;
+}
+
 interface CatalogBook {
   id: string;
   title: string;
@@ -20,13 +26,18 @@ interface CatalogBook {
   genres: string[];
   currentUserStatus: string | null;
   isRead: boolean;
+  owners: CatalogBookOwner[];
 }
 
 type ViewMode = "genre" | "all";
-type ReadFilter = "all" | "read" | "unread";
+type ReadFilter = "all" | "read" | "unread" | "available";
 
 interface GroupLibraryCatalogProps {
   books: CatalogBook[];
+}
+
+export function isCatalogBookAvailable(book: CatalogBook): boolean {
+  return book.owners.some((owner) => !owner.hasExclusiveLoan);
 }
 
 // ---------------------------------------------------------------------------
@@ -68,13 +79,15 @@ export function GroupLibraryCatalog({ books }: GroupLibraryCatalogProps) {
   const [viewMode, setViewMode] = useState<ViewMode>("genre");
   const [readFilter, setReadFilter] = useState<ReadFilter>("all");
 
-  // Apply read filter
+  // Apply read/availability filter
   const filteredBooks =
     readFilter === "read"
-      ? books.filter((b) => b.isRead)
+        ? books.filter((b) => b.isRead)
       : readFilter === "unread"
         ? books.filter((b) => !b.isRead)
-        : books;
+        : readFilter === "available"
+          ? books.filter(isCatalogBookAvailable)
+          : books;
 
   // Group by normalized genre for the genre view
   const genreSections = groupByNormalizedGenre(filteredBooks, t("noGenre"));
@@ -173,7 +186,7 @@ function CatalogFilters({
       {/* Separator */}
       <div className="w-px h-6 bg-line" aria-hidden="true" />
 
-      {/* Read filter */}
+      {/* Read / availability filter */}
       <div className="flex gap-1.5">
         <FilterPill
           label={t("filterAll")}
@@ -189,6 +202,11 @@ function CatalogFilters({
           label={t("filterUnread")}
           active={readFilter === "unread"}
           onClick={() => onReadFilterChange("unread")}
+        />
+        <FilterPill
+          label={t("filterAvailable")}
+          active={readFilter === "available"}
+          onClick={() => onReadFilterChange("available")}
         />
       </div>
     </div>

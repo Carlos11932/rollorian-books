@@ -7,7 +7,12 @@ import {
   getUserLoans,
   requestLoan,
   offerLoan,
+  LoanInvalidTransitionError,
   LoanBookNotInLibraryError,
+  LoanBookNotOwnedError,
+  LoanOwnershipVerificationUnavailableError,
+  LoanSelfBorrowError,
+  LoanWriteConflictError,
 } from "@/lib/loans";
 
 const createLoanSchema = z.object({
@@ -54,8 +59,26 @@ export async function POST(request: Request): Promise<Response> {
     if (error instanceof UnauthorizedError) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
+    if (error instanceof SyntaxError) {
+      return Response.json({ error: "Invalid request" }, { status: 400 });
+    }
     if (error instanceof LoanBookNotInLibraryError) {
       return Response.json({ error: error.message }, { status: 400 });
+    }
+    if (error instanceof LoanBookNotOwnedError) {
+      return Response.json({ error: error.message }, { status: 400 });
+    }
+    if (error instanceof LoanOwnershipVerificationUnavailableError) {
+      return Response.json({ error: error.message }, { status: 503 });
+    }
+    if (error instanceof LoanSelfBorrowError) {
+      return Response.json({ error: error.message }, { status: 400 });
+    }
+    if (error instanceof LoanInvalidTransitionError) {
+      return Response.json({ error: error.message }, { status: 400 });
+    }
+    if (error instanceof LoanWriteConflictError) {
+      return Response.json({ error: error.message }, { status: 409 });
     }
     logger.error("Request failed", error, { endpoint: "POST /api/loans" });
     return Response.json({ error: "Internal server error" }, { status: 500 });

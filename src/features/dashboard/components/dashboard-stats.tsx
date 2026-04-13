@@ -23,6 +23,7 @@ export async function DashboardStats({ stats }: DashboardStatsProps) {
     { icon: "local_fire_department", label: t("readingStreak"), value: `${stats.readingStreak.current}`, subtext: t("weeks") },
     { icon: "star", label: t("avgRating"), value: formattedRating },
     { icon: "description", label: t("pagesRead"), value: formattedPages },
+    { icon: "inventory_2", label: t("booksOwned"), value: stats.booksOwned },
   ];
 
   return (
@@ -33,7 +34,7 @@ export async function DashboardStats({ stats }: DashboardStatsProps) {
           {t("viewAllStats")}
         </Link>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
         {cards.map((card) => (
           <div
             key={card.label}

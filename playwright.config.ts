@@ -28,6 +28,10 @@ export default defineConfig({
         timeout: 120000,
         env: {
           AUTH_SECRET: process.env.AUTH_SECRET ?? 'e2e-test-secret',
+          AUTH_GOOGLE_ID:
+            process.env.AUTH_GOOGLE_ID ?? 'e2e-google-client-id',
+          AUTH_GOOGLE_SECRET:
+            process.env.AUTH_GOOGLE_SECRET ?? 'e2e-google-client-secret',
           DATABASE_URL: process.env.DATABASE_URL ?? '',
           DIRECT_URL: process.env.DIRECT_URL ?? '',
           E2E_TEST_MODE: 'true',

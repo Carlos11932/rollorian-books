@@ -42,6 +42,7 @@ export type BookInput = {
 export type NormalizedLibraryEntry = {
   book: NormalizedBook;
   status: SelectedUserBook["status"];
+  ownershipStatus: SelectedUserBook["ownershipStatus"];
   semanticState: DonnaSemanticState;
   rating: number | null;
   notes: string | null;
@@ -100,6 +101,7 @@ export function normalizeEntry(
   return {
     book: normalizeBook(entry.book),
     status: entry.status,
+    ownershipStatus: entry.ownershipStatus,
     semanticState: getSemanticState(entry.status, semanticState),
     rating: entry.rating ?? null,
     notes: entry.notes ?? null,
