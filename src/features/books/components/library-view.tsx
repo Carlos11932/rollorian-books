@@ -214,7 +214,7 @@ export function LibraryView({
           }
         />
       ) : (
-        <div className="grid gap-2">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
           {filteredBooks.map((book) => (
             <LibraryBookRow
               key={book.id}

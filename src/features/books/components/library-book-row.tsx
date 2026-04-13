@@ -44,18 +44,20 @@ export function LibraryBookRow({
 
   const [status, setStatus] = useState<BookStatus>(book.status);
   const [isStatusLoading, setIsStatusLoading] = useState(false);
-
   useEffect(() => { setStatus(book.status); }, [book.status]);
+
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   const authorLine =
     book.authors.length > 0 ? book.authors.join(", ") : t("common.unknownAuthor");
-  const ownershipSynthesized = hasCompatDegradedField(book, LIBRARY_COMPAT_DEGRADED_FIELD.OWNERSHIP_STATUS);
-  const readOnlyReason = ownershipSynthesized
-    ? "Ownership availability is synthesized in compatibility mode."
-    : "Compatibility mode disables local edits until schema support is restored.";
+  const ownershipSynthesized = hasCompatDegradedField(
+    book,
+    LIBRARY_COMPAT_DEGRADED_FIELD.OWNERSHIP_STATUS,
+  );
+
+  const publishYear = book.publishedDate ? book.publishedDate.slice(0, 4) : null;
 
   async function handleStatusChange(newStatus: BookStatus) {
     if (newStatus === status) return;
@@ -84,29 +86,30 @@ export function LibraryBookRow({
     }
   }
 
-  function handleRowClick() {
-    if (selectionMode && onToggle) {
-      onToggle(book.id);
-    }
+  function handleCardClick() {
+    if (selectionMode && onToggle) onToggle(book.id);
   }
 
   return (
     <article
       className={cn(
-        "group relative flex gap-3 sm:gap-4 rounded-[var(--radius-md)] border border-line p-3 sm:p-4",
-        "bg-gradient-to-br from-[rgba(19,27,41,0.82)] to-[rgba(8,12,20,0.82)]",
+        "group relative flex flex-col rounded-[var(--radius-md)] border border-line overflow-hidden",
+        "bg-gradient-to-b from-[rgba(19,27,41,0.88)] to-[rgba(8,12,20,0.92)]",
         "backdrop-blur-[12px] transition-all duration-200",
-        "hover:border-white/18 hover:from-[rgba(19,27,41,0.92)] hover:to-[rgba(8,12,20,0.92)]",
-        "hover:shadow-[0_4px_24px_rgba(0,0,0,0.35)]",
+        "hover:border-white/20 hover:shadow-[0_8px_32px_rgba(0,0,0,0.40)]",
         "animate-[fade-slide-up_200ms_ease_both]",
-        (isDeleting) && "opacity-60 pointer-events-none",
+        isDeleting && "opacity-60 pointer-events-none",
         selectionMode && selected && "ring-2 ring-accent",
         selectionMode && "cursor-pointer",
       )}
-      onClick={selectionMode ? handleRowClick : undefined}
+      onClick={selectionMode ? handleCardClick : undefined}
       role={selectionMode ? "checkbox" : undefined}
       aria-checked={selectionMode ? selected : undefined}
-      aria-label={selectionMode ? t(selected ? "library.deselectBook" : "library.selectBook", { title: book.title }) : undefined}
+      aria-label={
+        selectionMode
+          ? t(selected ? "library.deselectBook" : "library.selectBook", { title: book.title })
+          : undefined
+      }
       tabIndex={selectionMode ? 0 : undefined}
       onKeyDown={
         selectionMode
@@ -119,55 +122,66 @@ export function LibraryBookRow({
           : undefined
       }
     >
-      {/* Selection checkbox indicator */}
+      {/* Selection checkbox */}
       {selectionMode && (
         <div
           className={cn(
-            "absolute top-2 left-2 z-10 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-150",
+            "absolute top-2 left-2 z-10 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-150",
             selected
               ? "bg-accent border-accent text-white"
-              : "bg-black/40 border-white/40 text-transparent",
+              : "bg-black/50 border-white/40 text-transparent",
           )}
           aria-hidden="true"
         >
-          <span className="material-symbols-outlined text-[12px]">check</span>
+          <span className="material-symbols-outlined text-[13px]">check</span>
         </div>
       )}
 
-      {/* Cover */}
+      {/* Cover — full bleed at the top */}
       <div
-        className="shrink-0"
+        className="relative w-full"
         onClick={(e) => selectionMode && e.stopPropagation()}
       >
         <Link
           href={`/books/${book.id}`}
-          className={cn(
-            "block focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent rounded-[var(--radius-sm)]",
-            selectionMode && "pointer-events-none",
-          )}
+          className={cn("block", selectionMode && "pointer-events-none")}
           tabIndex={selectionMode ? -1 : 0}
-          aria-label={t("book.openDetail") + ": " + book.title}
+          aria-label={`${t("book.openDetail")}: ${book.title}`}
         >
           <BookCover
             coverUrl={book.coverUrl}
             title={book.title}
             tone="cool"
-            className="w-16 h-24 sm:w-[72px] sm:h-[108px]"
-            sizes="(max-width: 640px) 64px, 72px"
+            className="w-full h-52 rounded-none border-0"
+            sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
           />
         </Link>
+
+        {/* Gradient fade at the bottom of the cover */}
+        <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[rgba(8,12,20,0.90)] to-transparent pointer-events-none" />
+
+        {/* Badges overlaid on the gradient */}
+        <div className="absolute bottom-2 left-3 flex flex-wrap gap-1.5">
+          <Badge status={status} />
+          {!ownershipSynthesized && <OwnershipBadge status={book.ownershipStatus} />}
+          {readOnly && (
+            <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-300">
+              Read-only
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Main info — grows to fill available space */}
+      {/* Content */}
       <div
-        className="flex flex-col gap-1.5 flex-1 min-w-0"
+        className="flex flex-col gap-2 px-4 pt-3 pb-2 flex-1"
         onClick={(e) => selectionMode && e.stopPropagation()}
       >
         {/* Title */}
         <Link
           href={`/books/${book.id}`}
           className={cn(
-            "text-base font-bold text-text leading-tight line-clamp-2",
+            "text-sm font-bold text-text leading-snug line-clamp-2",
             "hover:text-accent-strong transition-colors duration-150",
             "focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent rounded-sm",
             selectionMode && "pointer-events-none",
@@ -178,57 +192,62 @@ export function LibraryBookRow({
         </Link>
 
         {/* Author */}
-        <p className="text-sm text-muted truncate">{authorLine}</p>
+        <p className="text-xs text-muted truncate -mt-1">{authorLine}</p>
 
-        {/* Status chips */}
-        <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
-          <Badge status={status} />
-          {!ownershipSynthesized && <OwnershipBadge status={book.ownershipStatus} />}
-          {readOnly && (
-            <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-amber-300">
-              Read-only
-            </span>
-          )}
-        </div>
+        {/* Rating */}
+        {book.rating !== null && (
+          <span
+            className="text-xs text-gold tabular-nums"
+            aria-label={t("book.ratingAriaLabel", { rating: book.rating })}
+          >
+            {"★".repeat(book.rating)}{"☆".repeat(5 - book.rating)}
+          </span>
+        )}
 
-        {/* Rating + notes */}
-        <div className="flex flex-wrap items-center gap-2 mt-0.5">
-          {book.rating !== null && (
-            <span
-              className="text-xs text-gold tabular-nums"
-              aria-label={t("book.ratingAriaLabel", { rating: book.rating })}
-            >
-              {"★".repeat(book.rating)}{"☆".repeat(5 - book.rating)}
-            </span>
-          )}
-          {book.notes && (
-            <p className="text-xs text-muted/60 line-clamp-1 min-w-0 flex-1">
-              {book.notes}
-            </p>
-          )}
-        </div>
+        {/* Description */}
+        {book.description && (
+          <p className="text-xs text-muted/70 leading-relaxed line-clamp-4">
+            {book.description}
+          </p>
+        )}
+
+        {/* Notes */}
+        {book.notes && (
+          <p className="text-xs text-muted/50 italic line-clamp-1">
+            &ldquo;{book.notes}&rdquo;
+          </p>
+        )}
+
+        {/* Meta */}
+        {(book.pageCount ?? publishYear) && (
+          <div className="flex items-center gap-1.5 text-[11px] text-muted/40 mt-auto pt-1">
+            {book.pageCount && <span>{book.pageCount} págs.</span>}
+            {book.pageCount && publishYear && <span aria-hidden>·</span>}
+            {publishYear && <span>{publishYear}</span>}
+          </div>
+        )}
       </div>
 
-      {/* Right controls — stop propagation from selection */}
+      {/* Footer actions */}
       <div
-        className="flex flex-col gap-2 shrink-0 items-end justify-start"
+        className="border-t border-line/40 px-3 py-2.5 flex items-center gap-2"
         onClick={(e) => e.stopPropagation()}
       >
         {readOnly ? (
-          <div className="max-w-[12rem] rounded-2xl border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-right text-[11px] leading-relaxed text-amber-100/90">
-            <p className="font-bold uppercase tracking-wide text-amber-300">Compatibility snapshot</p>
-            <p className="mt-1">{readOnlyReason}</p>
-          </div>
+          <p className="text-[11px] text-amber-300/70 font-bold uppercase tracking-wide">
+            Compatibility snapshot
+          </p>
         ) : (
           <>
-            <div className="relative">
+            {/* Status selector */}
+            <div className="relative flex-1">
               <select
                 value={status}
                 disabled={isStatusLoading}
                 onChange={(e) => void handleStatusChange(e.target.value as BookStatus)}
                 aria-label={t("book.statusLabel")}
                 className={cn(
-                  "appearance-none cursor-pointer rounded-full border border-line bg-white/6 px-3 py-1.5 text-xs font-bold text-muted",
+                  "w-full appearance-none cursor-pointer rounded-full border border-line bg-white/6 px-3 py-1.5 text-xs font-bold text-muted",
                   "focus:border-accent focus:outline-none focus:text-text",
                   "hover:border-white/25 hover:text-text",
                   "transition-colors duration-150 pr-6",
@@ -249,69 +268,68 @@ export function LibraryBookRow({
               </span>
             </div>
 
-            {showDeleteConfirm ? (
-              <div className="flex gap-1.5">
+            {/* Delete confirm / more menu */}
+            <div className="relative shrink-0">
+              {showDeleteConfirm ? (
+                <div className="flex gap-1">
+                  <button
+                    type="button"
+                    disabled={isDeleting}
+                    onClick={handleDelete}
+                    aria-label={t("book.confirmRemove")}
+                    className={cn(
+                      "rounded-full border border-danger/40 bg-danger/10 px-2.5 py-1 text-xs font-bold text-danger",
+                      "hover:bg-danger/20 transition-colors duration-150",
+                      isDeleting && "opacity-60 cursor-wait",
+                    )}
+                  >
+                    {isDeleting ? "…" : t("common.confirm")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteConfirm(false)}
+                    aria-label={t("common.cancel")}
+                    className="rounded-full border border-line bg-white/6 px-2.5 py-1 text-xs font-bold text-muted hover:text-text transition-colors duration-150"
+                  >
+                    {t("common.cancel")}
+                  </button>
+                </div>
+              ) : showMoreMenu ? (
+                <div className="absolute bottom-9 right-0 z-20 flex flex-col gap-1 p-1 rounded-xl border border-line bg-surface/95 backdrop-blur-xl shadow-xl">
+                  <button
+                    type="button"
+                    onClick={() => { setShowDeleteConfirm(true); setShowMoreMenu(false); }}
+                    className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-danger/80 hover:text-danger hover:bg-danger/8 rounded-lg transition-colors whitespace-nowrap"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">delete</span>
+                    {t("common.delete")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowMoreMenu(false)}
+                    className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-muted hover:text-text hover:bg-white/5 rounded-lg transition-colors whitespace-nowrap"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">close</span>
+                    {t("common.cancel")}
+                  </button>
+                </div>
+              ) : (
                 <button
                   type="button"
-                  disabled={isDeleting}
-                  onClick={handleDelete}
-                  aria-label={t("book.confirmRemove")}
+                  onClick={() => setShowMoreMenu(true)}
+                  aria-label={t("common.moreOptions")}
                   className={cn(
-                    "rounded-full border border-danger/40 bg-danger/10 px-2.5 py-1 text-xs font-bold text-danger",
-                    "hover:bg-danger/20 transition-colors duration-150",
+                    "w-7 h-7 flex items-center justify-center rounded-full",
+                    "border border-transparent bg-transparent text-muted/50",
+                    "hover:border-line hover:text-text hover:bg-white/6",
+                    "transition-all duration-150",
                     "focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent",
-                    isDeleting && "opacity-60 cursor-wait",
                   )}
                 >
-                  {isDeleting ? "…" : t("common.confirm")}
+                  <span className="material-symbols-outlined text-[18px]">more_horiz</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setShowDeleteConfirm(false)}
-                  aria-label={t("common.cancel")}
-                  className="rounded-full border border-line bg-white/6 px-2.5 py-1 text-xs font-bold text-muted hover:text-text transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
-                >
-                  {t("common.cancel")}
-                </button>
-              </div>
-            ) : showMoreMenu ? (
-              <div className="flex flex-col gap-1 p-1 rounded-xl border border-line bg-surface/95 backdrop-blur-xl shadow-xl">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowDeleteConfirm(true);
-                    setShowMoreMenu(false);
-                  }}
-                  className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-danger/80 hover:text-danger hover:bg-danger/8 rounded-lg transition-colors duration-150 whitespace-nowrap"
-                >
-                  <span className="material-symbols-outlined text-[14px]">delete</span>
-                  {t("common.delete")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowMoreMenu(false)}
-                  className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-muted hover:text-text hover:bg-white/5 rounded-lg transition-colors duration-150 whitespace-nowrap"
-                >
-                  <span className="material-symbols-outlined text-[14px]">close</span>
-                  {t("common.cancel")}
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setShowMoreMenu(true)}
-                aria-label={t("common.moreOptions")}
-                className={cn(
-                  "w-7 h-7 flex items-center justify-center rounded-full",
-                  "border border-transparent bg-transparent text-muted/50",
-                  "hover:border-line hover:text-text hover:bg-white/6",
-                  "transition-all duration-150",
-                  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent",
-                )}
-              >
-                <span className="material-symbols-outlined text-[18px]">more_horiz</span>
-              </button>
-            )}
+              )}
+            </div>
           </>
         )}
       </div>
