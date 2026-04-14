@@ -1,6 +1,6 @@
 ## Rollorian Books
 
-Next.js 15 + Prisma app for searching books, curating a local library, and exercising the UI with Vitest + Playwright.
+Next.js 16 + Prisma app for searching books, curating a local library, and exercising the UI with Vitest + Playwright.
 
 ## Getting Started
 
