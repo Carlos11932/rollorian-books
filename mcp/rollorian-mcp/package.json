@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev:stdio": "tsx src/index.ts stdio",
-    "dev:http": "tsx src/index.ts http"
+    "dev:http": "tsx src/index.ts http",
+    "smoke": "node dist/smoke.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "latest",

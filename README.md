@@ -48,6 +48,34 @@ npm test
 npm run lint
 ```
 
+## Agent Platform
+
+`origin/main` already includes the Rollorian agent surface used by Donna and the private MCP package.
+
+- Product-facing overview: `docs/agent-platform.md`
+- Donna contract examples: `contracts/donna/README.md`
+- Private MCP package: `mcp/rollorian-mcp/README.md`
+
+The Agent API lives under `/api/agent/v1` and the authenticated settings endpoints for connection management live under `/api/agent-clients`.
+
+### Agent platform validation
+
+Root application validation:
+
+```bash
+npm run lint:strict
+npm run test:run
+```
+
+Private MCP package validation:
+
+```bash
+cd mcp/rollorian-mcp
+npm ci
+npm run build
+npm run smoke
+```
+
 ## GitHub issue enrichment
 
 This repo includes a GitHub-native issue intake and enrichment flow based on:
