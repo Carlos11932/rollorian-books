@@ -47,6 +47,24 @@ The package at `mcp/rollorian-mcp` supports:
 
 It talks only to the Agent API and never to Prisma directly.
 
+## Validation
+
+Validate the Next.js app from the repo root:
+
+```bash
+npm run lint:strict
+npm run test:run
+```
+
+Validate the private MCP package separately:
+
+```bash
+cd mcp/rollorian-mcp
+npm ci
+npm run build
+npm run smoke
+```
+
 ## Public MCP next step
 
 The public MCP should live in a separate Vercel project and reuse the same Agent API contract. That rollout is intentionally deferred until auth, scopes, audit, and docs are already stable.

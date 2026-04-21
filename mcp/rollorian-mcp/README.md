@@ -24,7 +24,14 @@ ROLLORIAN_MCP_HTTP_PORT=8787
 
 ```bash
 cd mcp/rollorian-mcp
-npm install
+npm ci
+```
+
+## Build and smoke test
+
+```bash
+npm run build
+npm run smoke
 ```
 
 ## Run over stdio
@@ -79,6 +86,11 @@ Default binding is loopback only so the private MCP stays local to the Pi unless
 ## Inspector
 
 Use MCP Inspector against stdio or HTTP after exporting the environment variables above.
+
+## Related docs
+
+- Product-facing overview: `../../docs/agent-platform.md`
+- Donna contract examples: `../../contracts/donna/README.md`
 
 ## Pi 5 service
 
