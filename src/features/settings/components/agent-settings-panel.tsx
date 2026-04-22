@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/features/shared/components/button";
+import { AgentOnboardingPanel } from "./agent-onboarding-panel";
 import {
   AGENT_CLIENT_KINDS,
   AGENT_SCOPES,
@@ -14,7 +15,7 @@ import {
   revokeAgentClient,
   revokeAgentCredential,
 } from "@/lib/api/agents";
-import type { AgentAuditEventSummary, AgentClientSummary } from "@/lib/types/agent";
+import type { AgentAuditEventSummary, AgentClientSummary } from "@/lib/agents/types";
 
 function formatDate(value: string | null, emptyLabel: string): string {
   if (!value) {
@@ -45,14 +46,17 @@ function statusClasses(status: "ACTIVE" | "REVOKED" | "SUCCESS" | "FAILURE" | "R
 interface AgentSettingsPanelProps {
   initialClients: AgentClientSummary[];
   initialRecentEvents: AgentAuditEventSummary[];
+  baseUrl: string;
 }
 
 export function AgentSettingsPanel({
   initialClients,
   initialRecentEvents,
+  baseUrl,
 }: AgentSettingsPanelProps) {
   const t = useTranslations("settingsPage");
   const [clients, setClients] = useState(initialClients);
+  const [recentEvents, setRecentEvents] = useState(initialRecentEvents);
   const [connectionName, setConnectionName] = useState("");
   const [connectionKind, setConnectionKind] = useState<(typeof AGENT_CLIENT_KINDS)[number]>("PRIVATE_COMPANION");
   const [selectedScopes, setSelectedScopes] = useState<AgentScope[]>([
@@ -111,6 +115,7 @@ export function AgentSettingsPanel({
         });
 
         updateClient(result.client);
+        setRecentEvents(result.recentEvents);
         setLatestToken({ label: result.client.name, token: result.plainToken ?? "" });
         resetCreateForm();
       } catch (caught) {
@@ -129,6 +134,7 @@ export function AgentSettingsPanel({
       });
 
       updateClient(result.client);
+      setRecentEvents(result.recentEvents);
       setLatestToken({ label: client.name, token: result.plainToken ?? "" });
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : t("errors.generic"));
@@ -144,6 +150,7 @@ export function AgentSettingsPanel({
     try {
       const result = await revokeAgentClient(client.id);
       updateClient(result.client);
+      setRecentEvents(result.recentEvents);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : t("errors.generic"));
     } finally {
@@ -158,6 +165,7 @@ export function AgentSettingsPanel({
     try {
       const result = await revokeAgentCredential(clientId, credentialId);
       updateClient(result.client);
+      setRecentEvents(result.recentEvents);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : t("errors.generic"));
     } finally {
@@ -299,17 +307,12 @@ export function AgentSettingsPanel({
             </div>
           )}
 
-          <div className="grid gap-2 rounded-[var(--radius-lg)] border border-line bg-surface-soft p-4 text-sm text-on-surface-variant">
-            <p className="font-semibold text-on-surface">{t("agents.instructions.title")}</p>
-            <p>{t("agents.instructions.api")}</p>
-            <pre className="overflow-x-auto rounded-[var(--radius-sm)] bg-black/30 px-3 py-3 text-xs text-white">
-              <code>{`curl -H "Authorization: Bearer <TOKEN>" https://your-rollorian.vercel.app/api/agent/v1/summary`}</code>
-            </pre>
-            <p>{t("agents.instructions.mcp")}</p>
-            <pre className="overflow-x-auto rounded-[var(--radius-sm)] bg-black/30 px-3 py-3 text-xs text-white">
-              <code>{`ROLLORIAN_BASE_URL=https://your-rollorian.vercel.app\nROLLORIAN_AGENT_TOKEN=<TOKEN>`}</code>
-            </pre>
-          </div>
+          <AgentOnboardingPanel
+            baseUrl={baseUrl}
+            token={latestToken?.token ?? null}
+            repoRootPlaceholder="/absolute/path/to/rollorian-books"
+            serverName="rollorian-books"
+          />
         </section>
       </div>
 
@@ -424,13 +427,13 @@ export function AgentSettingsPanel({
           <p className="text-sm text-muted">{t("agents.activity.description")}</p>
         </div>
 
-        {initialRecentEvents.length === 0 ? (
+        {recentEvents.length === 0 ? (
           <div className="rounded-[var(--radius-lg)] border border-dashed border-line px-5 py-8 text-sm text-muted">
             {t("agents.activity.empty")}
           </div>
         ) : (
           <div className="grid gap-2">
-            {initialRecentEvents.map((event) => (
+            {recentEvents.map((event) => (
               <div
                 key={event.id}
                 className="grid gap-2 rounded-[var(--radius-md)] border border-line bg-surface-soft px-4 py-3 md:grid-cols-[auto_1fr_auto]"
