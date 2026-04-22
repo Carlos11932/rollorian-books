@@ -1,12 +1,41 @@
 import { getTranslations } from "next-intl/server";
+import { headers } from "next/headers";
 import { AgentSettingsPanel } from "@/features/settings/components/agent-settings-panel";
 import { requireAuth } from "@/lib/auth/require-auth";
 import { listAgentClientsForUser, listRecentAgentAuditEventsForUser } from "@/lib/agents";
+import { env } from "@/lib/env";
+
+function resolveBaseUrl({
+  headerHost,
+  headerProtocol,
+}: {
+  headerHost: string | null;
+  headerProtocol: string | null;
+}): string {
+  if (env.NEXTAUTH_URL) {
+    return env.NEXTAUTH_URL;
+  }
+
+  if (headerHost) {
+    return `${headerProtocol ?? "https"}://${headerHost}`;
+  }
+
+  if (env.VERCEL_URL) {
+    return `https://${env.VERCEL_URL}`;
+  }
+
+  return "https://your-rollorian.vercel.app";
+}
 
 export default async function SettingsPage() {
+  const headersList = await headers();
   const tNav = await getTranslations("nav");
   const tSettings = await getTranslations("settingsPage");
   const { userId } = await requireAuth();
+  const baseUrl = resolveBaseUrl({
+    headerHost: headersList.get("x-forwarded-host") ?? headersList.get("host"),
+    headerProtocol: headersList.get("x-forwarded-proto"),
+  });
   const [clients, recentEvents] = await Promise.all([
     listAgentClientsForUser(userId),
     listRecentAgentAuditEventsForUser(userId),
@@ -31,6 +60,7 @@ export default async function SettingsPage() {
       <AgentSettingsPanel
         initialClients={clients}
         initialRecentEvents={recentEvents}
+        baseUrl={baseUrl}
       />
     </div>
   );

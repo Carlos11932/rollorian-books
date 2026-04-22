@@ -69,6 +69,41 @@
         "api": "Usa la Agent API directamente para scripts, automatizaciones o asistentes que no hablen MCP.",
         "mcp": "Usa el mismo token en tu paquete MCP privado para que los agentes de escritorio puedan invocar herramientas de Rollorian."
       },
+      "onboarding": {
+        "title": "Onboarding por proveedor",
+        "description": "Elige tu cliente MCP y copia el snippet listo para pegar. Todos usan el mismo token de Agent API y tu MCP privado en local.",
+        "baseUrlLabel": "Base URL detectada",
+        "repoPathLabel": "Ruta local a sustituir",
+        "repoPathHelp": "Sustituye esta ruta por la ubicación real de tu clon local antes de pegar el comando o el JSON.",
+        "liveToken": "Estas instrucciones ya incluyen el último token emitido en esta sesión.",
+        "placeholderToken": "Todavía no hay token visible. Los snippets usan <TOKEN> hasta que crees o rotes una credencial.",
+        "copy": "Copiar",
+        "copied": "Copiado",
+        "snippetLabel": {
+          "command": "Comando listo para pegar",
+          "json": "Configuración JSON",
+          "env": "Variables comunes",
+          "curl": "Smoke test de la Agent API"
+        },
+        "provider": {
+          "codex": {
+            "title": "Codex",
+            "description": "Registra el MCP desde la CLI de Codex. La configuración se comparte con la extensión o desktop."
+          },
+          "claude": {
+            "title": "Claude Code",
+            "description": "Da de alta el servidor stdio con `claude mcp add` y reutiliza el mismo token privado."
+          },
+          "cursor": {
+            "title": "Cursor",
+            "description": "Pega este bloque en `~/.cursor/mcp.json` o en `.cursor/mcp.json` dentro del proyecto que quieras usar."
+          },
+          "generic": {
+            "title": "Cliente MCP genérico",
+            "description": "Usa esta plantilla stdio si tu cliente espera command, args y env, o prueba antes la Agent API directamente."
+          }
+        }
+      },
       "connections": {
         "title": "Conexiones existentes",
         "description": "Cada conexión corresponde a un cliente de agente del usuario y puede tener varias credenciales revocables.",

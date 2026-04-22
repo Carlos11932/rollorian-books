@@ -5,7 +5,7 @@ import type {
 import type {
   AgentClientMutationResponse,
   AgentConnectionsResponse,
-} from "@/lib/types/agent";
+} from "@/lib/agents/types";
 import { apiFetch } from "./client";
 
 export async function fetchAgentConnections(): Promise<AgentConnectionsResponse> {
@@ -45,4 +45,3 @@ export async function revokeAgentCredential(
     method: "POST",
   });
 }
-

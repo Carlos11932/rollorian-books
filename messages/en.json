@@ -69,6 +69,41 @@
         "api": "Use the Agent API directly for scripts, automations, or assistants that do not speak MCP.",
         "mcp": "Use the same token in your private MCP package so desktop agents can call Rollorian tools."
       },
+      "onboarding": {
+        "title": "Provider onboarding",
+        "description": "Pick your MCP client and copy the ready-to-paste snippet. They all use the same Agent API token and your local private MCP.",
+        "baseUrlLabel": "Detected base URL",
+        "repoPathLabel": "Local path to replace",
+        "repoPathHelp": "Replace this path with the real location of your local clone before pasting the command or JSON.",
+        "liveToken": "These instructions already include the latest token issued in this session.",
+        "placeholderToken": "No token is visible yet. Snippets use <TOKEN> until you create or rotate a credential.",
+        "copy": "Copy",
+        "copied": "Copied",
+        "snippetLabel": {
+          "command": "Ready-to-paste command",
+          "json": "JSON configuration",
+          "env": "Shared environment",
+          "curl": "Agent API smoke test"
+        },
+        "provider": {
+          "codex": {
+            "title": "Codex",
+            "description": "Register the MCP from the Codex CLI. The configuration is shared with the extension or desktop."
+          },
+          "claude": {
+            "title": "Claude Code",
+            "description": "Register the stdio server with `claude mcp add` and reuse the same private token."
+          },
+          "cursor": {
+            "title": "Cursor",
+            "description": "Paste this block into `~/.cursor/mcp.json` or `.cursor/mcp.json` inside the project you want to use."
+          },
+          "generic": {
+            "title": "Generic MCP client",
+            "description": "Use this stdio template if your client expects command, args, and env, or smoke-test the Agent API directly first."
+          }
+        }
+      },
       "connections": {
         "title": "Existing connections",
         "description": "Every connection maps to one user-owned agent client and can carry multiple revocable credentials.",
