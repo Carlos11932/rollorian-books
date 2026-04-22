@@ -1,8 +1,17 @@
 import type { NextRequest } from "next/server";
-import { createAgentClientSchema, createAgentClientForUser, listAgentClientsForUser, listRecentAgentAuditEventsForUser } from "@/lib/agents";
+import {
+  createAgentClientSchema,
+  createAgentClientForUser,
+  listAgentClientsForUser,
+  listRecentAgentAuditEventsForUser,
+} from "@/lib/agents";
 import { AgentInputError, getErrorStatus, getPublicErrorMessage } from "@/lib/agents/errors";
 import { requireAuth, UnauthorizedError } from "@/lib/auth/require-auth";
 import { logger } from "@/lib/logger";
+
+async function listRecentEvents(userId: string) {
+  return listRecentAgentAuditEventsForUser(userId);
+}
 
 export async function GET(): Promise<Response> {
   try {
@@ -34,7 +43,8 @@ export async function POST(request: NextRequest): Promise<Response> {
     }
 
     const result = await createAgentClientForUser(userId, parsed.data);
-    return Response.json(result, { status: 201 });
+    const recentEvents = await listRecentEvents(userId);
+    return Response.json({ ...result, recentEvents }, { status: 201 });
   } catch (error) {
     if (error instanceof UnauthorizedError) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -49,4 +59,3 @@ export async function POST(request: NextRequest): Promise<Response> {
     return Response.json({ error: getPublicErrorMessage(error) }, { status });
   }
 }
-

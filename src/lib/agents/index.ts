@@ -3,6 +3,7 @@ export { agentReadingEventRequestSchema, createAgentClientSchema, issueAgentCred
 export { AgentAuthError, AgentConflictError, AgentInputError, AgentNotFoundError, AgentRateLimitError, AgentScopeError } from "./errors";
 export { type AgentOwner, type AgentContext, requireAgentScope, resolveAgentRequestContext } from "./context";
 export { createAgentToken, hashAgentToken } from "./tokens";
+export { type AgentAuditEventSummary, type AgentClientMutationResponse, type AgentClientSummary, type AgentConnectionsResponse, type AgentCredentialSummary } from "./types";
 export { listAgentClientsForUser, listRecentAgentAuditEventsForUser, createAgentClientForUser, issueAgentCredentialForUser, revokeAgentCredentialForUser, revokeAgentClientForUser } from "./management";
 export { getAgentProfile, getAgentSummary, getAgentLibrarySnapshot, getAgentLists, getAgentRecommendations, resolveAgentBook, applyAgentReadingEvent } from "./service";
 export { handleAgentRoute } from "./http";

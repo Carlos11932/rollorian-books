@@ -9,7 +9,7 @@ import { createAgentToken } from "./tokens";
 import type {
   AgentAuditEventSummary,
   AgentClientSummary,
-} from "@/lib/types/agent";
+} from "./types";
 
 type AgentClientWithRelations = Prisma.AgentClientGetPayload<{
   include: {
