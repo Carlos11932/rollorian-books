@@ -72,7 +72,12 @@ export function AgentOnboardingPanel({
     serverName,
   }), [baseUrl, token, repoRootPlaceholder, serverName]);
 
-  const currentSnippet = snippets.find((entry) => entry.provider === selectedProvider) ?? snippets[0];
+  const defaultSnippet = snippets[0];
+  if (!defaultSnippet) {
+    return null;
+  }
+
+  const currentSnippet = snippets.find((entry) => entry.provider === selectedProvider) ?? defaultSnippet;
   const hasLiveToken = Boolean(token?.trim());
 
   async function handleCopy(key: string, value: string) {
